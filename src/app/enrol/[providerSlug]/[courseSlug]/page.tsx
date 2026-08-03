@@ -1,19 +1,24 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { EnrolmentWizard } from "@/components/enrolment/EnrolmentWizard";
 import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
 
-type EnrolmentPlaceholderPageProps = {
+type EnrolmentPageProps = {
   params: Promise<{
     providerSlug: string;
     courseSlug: string;
   }>;
+  searchParams: Promise<{
+    payment?: string;
+  }>;
 };
 
-export default async function EnrolmentPlaceholderPage({
+export default async function EnrolmentPage({
   params,
-}: EnrolmentPlaceholderPageProps) {
+  searchParams,
+}: EnrolmentPageProps) {
   const { providerSlug, courseSlug } = await params;
+  const { payment } = await searchParams;
 
   const provider = getProviderBySlug(providerSlug);
 
@@ -27,27 +32,16 @@ export default async function EnrolmentPlaceholderPage({
     notFound();
   }
 
+  const initialPaymentOption =
+    payment === "full" || payment === "plan"
+      ? payment
+      : "plan";
+
   return (
-    <section className="enrolment-placeholder">
-      <div className="page-shell enrolment-placeholder__card">
-        <p className="course-detail-eyebrow">
-          StudentPay Enrolment
-        </p>
-
-        <h1>{course.title}</h1>
-
-        <p>
-          The reusable enrolment wizard will be built here next.
-          This route is now connected correctly from the course page.
-        </p>
-
-        <Link
-          href={`/providers/${provider.slug}/courses/${course.slug}`}
-          className="button button--primary"
-        >
-          Return to course
-        </Link>
-      </div>
-    </section>
+    <EnrolmentWizard
+      provider={provider}
+      course={course}
+      initialPaymentOption={initialPaymentOption}
+    />
   );
 }
