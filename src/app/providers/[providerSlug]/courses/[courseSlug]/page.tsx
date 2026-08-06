@@ -109,7 +109,7 @@ export default async function CourseDetailPage({
               </p>
 
               <Link
-                href={`/enrol/${provider.slug}/${course.slug}`}
+                href={`/providers/${provider.slug}/courses/${course.slug}/enrol`}
                 className="button button--course-primary"
               >
                 Start enrolment
@@ -123,10 +123,10 @@ export default async function CourseDetailPage({
               </Link>
 
               <div className="course-detail-payment-card__note">
-                <strong>Demonstration only</strong>
+                <strong>StudentPay sandbox</strong>
                 <span>
-                  No enrolment or payment will be submitted from this
-                  version.
+                  Completing enrolment creates a real sandbox checkout
+                  and continues to direct-debit setup.
                 </span>
               </div>
             </aside>
@@ -333,7 +333,7 @@ export default async function CourseDetailPage({
               </p>
 
               <Link
-                href={`/enrol/${provider.slug}/${course.slug}?payment=full`}
+                href={`/providers/${provider.slug}/courses/${course.slug}/enrol?payment=full`}
                 className="button button--course-secondary"
               >
                 Choose pay in full
@@ -366,7 +366,7 @@ export default async function CourseDetailPage({
               </p>
 
               <Link
-                href={`/enrol/${provider.slug}/${course.slug}?payment=plan`}
+                href={`/providers/${provider.slug}/courses/${course.slug}/enrol?payment=plan`}
                 className="button button--course-primary"
               >
                 Choose payment plan
@@ -392,7 +392,7 @@ export default async function CourseDetailPage({
           </div>
 
           <Link
-            href={`/enrol/${provider.slug}/${course.slug}`}
+            href={`/providers/${provider.slug}/courses/${course.slug}/enrol`}
             className="button button--light"
           >
             Start enrolment

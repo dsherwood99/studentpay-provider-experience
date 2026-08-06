@@ -1,9 +1,10 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { EnrolmentWizard } from "@/components/enrolment/EnrolmentWizard";
 import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
 
-type EnrolmentPageProps = {
+type SandboxEnrolPageProps = {
   params: Promise<{
     providerSlug: string;
     courseSlug: string;
@@ -13,10 +14,31 @@ type EnrolmentPageProps = {
   }>;
 };
 
-export default async function EnrolmentPage({
+export async function generateMetadata({
+  params,
+}: SandboxEnrolPageProps): Promise<Metadata> {
+  const { providerSlug, courseSlug } = await params;
+  const provider = getProviderBySlug(providerSlug);
+  const course = provider
+    ? getCourseBySlug(provider.code, courseSlug)
+    : undefined;
+
+  if (!provider || !course) {
+    return {
+      title: "Sandbox enrolment",
+    };
+  }
+
+  return {
+    title: `Sandbox enrol · ${course.title}`,
+    description: `Create a StudentPay sandbox enrolment for ${course.title} with ${provider.name}.`,
+  };
+}
+
+export default async function SandboxEnrolPage({
   params,
   searchParams,
-}: EnrolmentPageProps) {
+}: SandboxEnrolPageProps) {
   const { providerSlug, courseSlug } = await params;
   const { payment } = await searchParams;
 
@@ -33,16 +55,14 @@ export default async function EnrolmentPage({
   }
 
   const initialPaymentOption =
-    payment === "full" || payment === "plan"
-      ? payment
-      : "plan";
+    payment === "full" || payment === "plan" ? payment : "plan";
 
   return (
     <EnrolmentWizard
       provider={provider}
       course={course}
       initialPaymentOption={initialPaymentOption}
-      mode="demo"
+      mode="sandbox"
     />
   );
 }

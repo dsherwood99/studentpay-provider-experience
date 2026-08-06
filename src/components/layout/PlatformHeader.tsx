@@ -13,7 +13,9 @@ export function PlatformHeader() {
           <Link href="/">Platform</Link>
           <Link href="/providers/academy-australia">Providers</Link>
           <Link href="/providers/academy-australia/courses">Courses</Link>
-          <Link href="/enrol/academy-australia/makeup-artistry">Demo</Link>
+          <Link href="/providers/academy-australia/courses/criminal-psychology/enrol">
+            Sandbox enrol
+          </Link>
         </nav>
       </div>
     </header>

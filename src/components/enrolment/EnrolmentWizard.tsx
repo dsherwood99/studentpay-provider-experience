@@ -21,10 +21,13 @@ import {
   formatPaymentFrequency,
 } from "@/lib/format";
 
+export type EnrolmentWizardMode = "demo" | "sandbox";
+
 type EnrolmentWizardProps = {
   provider: Provider;
   course: Course;
   initialPaymentOption: EnrolmentPaymentOption;
+  mode?: EnrolmentWizardMode;
 };
 
 const TOTAL_STEPS = 5;
@@ -74,8 +77,10 @@ export function EnrolmentWizard({
   provider,
   course,
   initialPaymentOption,
+  mode = "demo",
 }: EnrolmentWizardProps) {
-  const storageKey = `studentpay-enrolment:${provider.slug}:${course.slug}`;
+  const isSandbox = mode === "sandbox";
+  const storageKey = `studentpay-enrolment:${mode}:${provider.slug}:${course.slug}`;
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<EnrolmentFormData>(() =>
@@ -85,6 +90,8 @@ export function EnrolmentWizard({
   const [hasLoadedSavedData, setHasLoadedSavedData] =
     useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const paymentFrequency = formatPaymentFrequency(
     course.paymentPlan.frequency,
@@ -277,20 +284,73 @@ export function EnrolmentWizard({
     });
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!validateCurrentStep()) {
       return;
     }
 
-    window.localStorage.removeItem(storageKey);
-    setIsComplete(true);
+    setSubmitError(null);
 
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    if (!isSandbox) {
+      window.localStorage.removeItem(storageKey);
+      setIsComplete(true);
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/studentpay/provider-checkouts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          providerSlug: provider.slug,
+          courseSlug: course.slug,
+          formData,
+        }),
+      });
+
+      const result = (await response.json()) as {
+        success?: boolean;
+        setup_url?: string;
+        error?: {
+          message?: string;
+          code?: string;
+        };
+      };
+
+      if (!response.ok || !result.success || !result.setup_url) {
+        throw new Error(
+          result.error?.message ||
+            "Unable to start StudentPay sandbox enrolment.",
+        );
+      }
+
+      window.localStorage.removeItem(storageKey);
+      window.location.assign(result.setup_url);
+    } catch (error) {
+      setIsSubmitting(false);
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "Unable to start StudentPay sandbox enrolment.",
+      );
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
   }
 
   function startAgain() {
@@ -299,6 +359,8 @@ export function EnrolmentWizard({
     setErrors({});
     setCurrentStep(1);
     setIsComplete(false);
+    setSubmitError(null);
+    setIsSubmitting(false);
   }
 
   if (isComplete) {
@@ -313,19 +375,18 @@ export function EnrolmentWizard({
           </div>
 
           <p className="enrolment-wizard__eyebrow">
-            Demonstration complete
+            {isSandbox ? "Sandbox enrolment" : "Demonstration complete"}
           </p>
 
           <h1>
-            Thanks, {formData.firstName}. Your demo enrolment is
-            complete.
+            Thanks, {formData.firstName}. Your{" "}
+            {isSandbox ? "sandbox" : "demo"} enrolment is complete.
           </h1>
 
           <p className="enrolment-complete__lead">
-            No application, payment or personal information has
-            been submitted. In the production version, the provider
-            would receive the application and the student would
-            proceed to the secure payment or direct-debit setup.
+            {isSandbox
+              ? "Your sandbox checkout was created with the StudentPay Provider Checkout API. In this flow you are redirected to direct-debit setup when the API returns a setup URL."
+              : "No application, payment or personal information has been submitted. In the production version, the provider would receive the application and the student would proceed to the secure payment or direct-debit setup."}
           </p>
 
           <div className="enrolment-complete__summary">
@@ -368,7 +429,7 @@ export function EnrolmentWizard({
               className="button button--secondary"
               onClick={startAgain}
             >
-              Restart demo
+              {isSandbox ? "Start again" : "Restart demo"}
             </button>
           </div>
         </div>
@@ -397,7 +458,9 @@ export function EnrolmentWizard({
           />
 
           <span className="enrolment-wizard__powered-by">
-            Powered by StudentPay Enrolment
+            {isSandbox
+              ? "StudentPay sandbox enrolment"
+              : "Powered by StudentPay Enrolment"}
           </span>
         </div>
       </header>
@@ -459,6 +522,15 @@ export function EnrolmentWizard({
             onSubmit={handleSubmit}
             noValidate
           >
+            {submitError ? (
+              <div
+                className="wizard-field__error enrolment-wizard__submit-error"
+                role="alert"
+              >
+                {submitError}
+              </div>
+            ) : null}
+
             {currentStep === 1 ? (
               <section className="wizard-step">
                 <p className="enrolment-wizard__eyebrow">
@@ -508,11 +580,15 @@ export function EnrolmentWizard({
                 </div>
 
                 <div className="wizard-notice">
-                  <strong>Demonstration environment</strong>
+                  <strong>
+                    {isSandbox
+                      ? "StudentPay sandbox"
+                      : "Demonstration environment"}
+                  </strong>
                   <span>
-                    You may enter sample details. Nothing will be
-                    submitted or retained after this demonstration
-                    is completed.
+                    {isSandbox
+                      ? "Completing this form creates a real sandbox checkout with StudentPay and continues to direct-debit setup."
+                      : "You may enter sample details. Nothing will be submitted or retained after this demonstration is completed."}
                   </span>
                 </div>
               </section>
@@ -914,8 +990,10 @@ export function EnrolmentWizard({
                 <h1>Check your enrolment details.</h1>
 
                 <p className="wizard-step__lead">
-                  Review the information below before completing the
-                  demonstration.
+                  Review the information below before{" "}
+                  {isSandbox
+                    ? "continuing to StudentPay payment setup."
+                    : "completing the demonstration."}
                 </p>
 
                 <div className="wizard-review">
@@ -1045,8 +1123,9 @@ export function EnrolmentWizard({
                     />
 
                     <span>
-                      I confirm that the information entered in this
-                      demonstration is correct.
+                      {isSandbox
+                        ? "I confirm that the information entered is correct."
+                        : "I confirm that the information entered in this demonstration is correct."}
                     </span>
                   </label>
 
@@ -1069,8 +1148,9 @@ export function EnrolmentWizard({
                     />
 
                     <span>
-                      I acknowledge that this is a demonstration and
-                      no enrolment or payment will be submitted.
+                      {isSandbox
+                        ? "I confirm these details are correct and agree to proceed to StudentPay sandbox payment setup."
+                        : "I acknowledge that this is a demonstration and no enrolment or payment will be submitted."}
                     </span>
                   </label>
 
@@ -1131,8 +1211,13 @@ export function EnrolmentWizard({
                 <button
                   type="submit"
                   className="button button--primary"
+                  disabled={isSubmitting}
                 >
-                  Complete demo enrolment
+                  {isSubmitting
+                    ? "Starting sandbox enrolment..."
+                    : isSandbox
+                      ? "Continue to payment setup"
+                      : "Complete demo enrolment"}
                 </button>
               )}
             </div>
@@ -1185,7 +1270,9 @@ export function EnrolmentWizard({
               <span aria-hidden="true">✓</span>
               <p>
                 <strong>Progress saved</strong>
-                Your demo progress is saved in this browser.
+                {isSandbox
+                  ? "Your sandbox enrolment progress is saved in this browser."
+                  : "Your demo progress is saved in this browser."}
               </p>
             </div>
           </aside>
