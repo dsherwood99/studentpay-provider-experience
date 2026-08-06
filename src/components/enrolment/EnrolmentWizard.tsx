@@ -9,6 +9,7 @@ import {
   type ChangeEvent,
   type FormEvent,
 } from "react";
+import { DdaSetupEmbed } from "@/components/enrolment/DdaSetupEmbed";
 import type { Course } from "@/types/course";
 import type {
   EnrolmentFieldErrors,
@@ -92,6 +93,7 @@ export function EnrolmentWizard({
   const [isComplete, setIsComplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [ddaSetupUrl, setDdaSetupUrl] = useState<string | null>(null);
 
   const paymentFrequency = formatPaymentFrequency(
     course.paymentPlan.frequency,
@@ -337,7 +339,13 @@ export function EnrolmentWizard({
       }
 
       window.localStorage.removeItem(storageKey);
-      window.location.assign(result.setup_url);
+      setDdaSetupUrl(result.setup_url);
+      setIsSubmitting(false);
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
     } catch (error) {
       setIsSubmitting(false);
       setSubmitError(
@@ -361,6 +369,18 @@ export function EnrolmentWizard({
     setIsComplete(false);
     setSubmitError(null);
     setIsSubmitting(false);
+    setDdaSetupUrl(null);
+  }
+
+  if (isSandbox && ddaSetupUrl) {
+    return (
+      <DdaSetupEmbed
+        setupUrl={ddaSetupUrl}
+        studentFirstName={formData.firstName}
+        courseTitle={course.title}
+        onRestart={startAgain}
+      />
+    );
   }
 
   if (isComplete) {
@@ -385,7 +405,7 @@ export function EnrolmentWizard({
 
           <p className="enrolment-complete__lead">
             {isSandbox
-              ? "Your sandbox checkout was created with the StudentPay Provider Checkout API. In this flow you are redirected to direct-debit setup when the API returns a setup URL."
+              ? "Your sandbox checkout was created with the StudentPay Provider Checkout API. Bank capture is embedded on this page after submit."
               : "No application, payment or personal information has been submitted. In the production version, the provider would receive the application and the student would proceed to the secure payment or direct-debit setup."}
           </p>
 

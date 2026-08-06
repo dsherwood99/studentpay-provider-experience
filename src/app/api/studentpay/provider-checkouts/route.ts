@@ -3,6 +3,7 @@ import {
   createProviderOrderId,
   extractDirectDebitSetupUrl,
   getStudentPayConfig,
+  toEmbeddedSetupUrl,
   type StudentPayCheckoutSuccess,
 } from "@/lib/studentpay/checkout";
 import { getCourseBySlug } from "@/config/courses";
@@ -179,7 +180,7 @@ export async function POST(request: Request) {
     return Response.json({
       success: true,
       provider_order_id: providerOrderId,
-      setup_url: setupUrl,
+      setup_url: toEmbeddedSetupUrl(setupUrl),
       checkout: (upstreamJson as StudentPayCheckoutSuccess).checkout,
       request_id: (upstreamJson as StudentPayCheckoutSuccess).request_id,
     });

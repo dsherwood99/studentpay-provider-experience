@@ -248,3 +248,16 @@ export function extractDirectDebitSetupUrl(
     null
   );
 }
+
+/** Prefer iframe-friendly DD setup URL when the API supports embed mode. */
+export function toEmbeddedSetupUrl(setupUrl: string): string {
+  try {
+    const url = new URL(setupUrl);
+    if (!url.searchParams.has("embed")) {
+      url.searchParams.set("embed", "1");
+    }
+    return url.toString();
+  } catch {
+    return setupUrl;
+  }
+}

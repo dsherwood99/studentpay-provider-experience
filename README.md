@@ -23,7 +23,9 @@ Primary sandbox target:
 
 - [/providers/academy-australia/courses/criminal-psychology/enrol](/providers/academy-australia/courses/criminal-psychology/enrol)
 
-On successful sandbox submit the browser is redirected to the returned `direct_debit.setup_url` (StudentPay DD setup).
+On successful sandbox submit the browser stays on the enrol page and embeds
+the returned `direct_debit.setup_url` (Pinch test bank capture) in a
+mobile-friendly iframe. A new-tab fallback is also provided.
 
 ## StudentPay sandbox env
 
