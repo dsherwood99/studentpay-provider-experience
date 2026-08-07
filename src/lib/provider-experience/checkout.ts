@@ -158,9 +158,15 @@ export function getProviderExperienceConfig() {
 
   // Real StudentPay confirm handler is /api/provider-checkout-confirm
   // (not /v1/provider-checkouts/confirm — that path returns 405).
-  const confirmUrl =
+  const configuredConfirmUrl =
     process.env.PROVIDER_CHECKOUT_CONFIRM_API_URL ||
     `${apiBaseUrl}/api/provider-checkout-confirm`;
+
+  const confirmUrl = configuredConfirmUrl.includes(
+    "/v1/provider-checkouts/confirm",
+  )
+    ? `${apiBaseUrl}/api/provider-checkout-confirm`
+    : configuredConfirmUrl;
 
   const apiKey =
     process.env.ACADEMY_API_KEY ||
