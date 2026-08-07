@@ -7,6 +7,8 @@ type TermsModalProps = {
   checkoutToken: string;
   providerName: string;
   providerCode: string;
+  /** Must match the API that signed the checkout token (sandbox vs production). */
+  legalApiBaseUrl: string;
   onClose: () => void;
 };
 
@@ -15,8 +17,11 @@ export function TermsModal({
   checkoutToken,
   providerName,
   providerCode,
+  legalApiBaseUrl,
   onClose,
 }: TermsModalProps) {
+  const apiBase = legalApiBaseUrl.replace(/\/$/, "");
+
   const content = {
     provider: {
       title: `${providerName} Terms & Conditions`,
@@ -44,7 +49,7 @@ export function TermsModal({
       body: checkoutToken ? (
         <iframe
           className="legalTermsFrame"
-          src={`https://api.studentpay.com.au/api/legal/payment-plan-terms?token=${encodeURIComponent(
+          src={`${apiBase}/api/legal/payment-plan-terms?token=${encodeURIComponent(
             checkoutToken,
           )}`}
           title="Student Payment Plan Agreement"
@@ -65,7 +70,7 @@ export function TermsModal({
       body: (
         <iframe
           className="legalTermsFrame"
-          src={`https://api.studentpay.com.au/api/legal-direct-debit-terms?provider_code=${encodeURIComponent(
+          src={`${apiBase}/api/legal-direct-debit-terms?provider_code=${encodeURIComponent(
             providerCode,
           )}`}
           title="StudentPay Direct Debit Request and Service Agreement"

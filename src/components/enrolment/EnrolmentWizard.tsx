@@ -36,6 +36,10 @@ type EnrolmentWizardProps = {
   provider: Provider;
   course: Course;
   initialPaymentOption?: EnrolmentPaymentOption;
+  /** StudentPay API host used for legal agreement iframes (must match token issuer). */
+  legalApiBaseUrl?: string;
+  /** Provider code sent to StudentPay APIs (e.g. SANDBOX_DEMO), not the catalogue brand code. */
+  studentPayProviderCode?: string;
 };
 
 const STEPS = [
@@ -99,7 +103,10 @@ export function EnrolmentWizard({
   provider,
   course,
   initialPaymentOption = "plan",
+  legalApiBaseUrl = "https://sandbox-api.studentpay.com.au",
+  studentPayProviderCode,
 }: EnrolmentWizardProps) {
+  const apiProviderCode = studentPayProviderCode || provider.code;
   const storageKey = `studentpay-px-enrolment:${provider.slug}:${course.slug}`;
   const paymentFrequency = formatPaymentFrequency(
     course.paymentPlan.frequency,
@@ -569,7 +576,7 @@ export function EnrolmentWizard({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             provider: {
-              provider_code: provider.code,
+              provider_code: apiProviderCode,
               provider_order_id: checkoutSession.providerOrderId,
             },
             checkout: {
@@ -1589,7 +1596,8 @@ export function EnrolmentWizard({
           type={termsModal}
           checkoutToken={checkoutSession?.checkoutToken || ""}
           providerName={provider.name}
-          providerCode="ACADEMY_AUSTRALIA"
+          providerCode={apiProviderCode}
+          legalApiBaseUrl={legalApiBaseUrl}
           onClose={() => setTermsModal(null)}
         />
       ) : null}

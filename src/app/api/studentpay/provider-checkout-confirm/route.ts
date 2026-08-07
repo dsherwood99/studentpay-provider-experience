@@ -129,6 +129,17 @@ export async function POST(request: Request) {
       );
     }
 
+    const upstreamPayload = {
+      ...payload,
+      provider: {
+        ...payload.provider,
+        // Always use the StudentPay integration provider code (e.g. SANDBOX_DEMO),
+        // not the branded catalogue code (ACADEMY_AUSTRALIA).
+        provider_code: config.providerCode,
+        provider_order_id: payload.provider?.provider_order_id,
+      },
+    };
+
     const upstreamResponse = await fetch(config.confirmUrl, {
       method: "POST",
       headers: {
@@ -136,7 +147,7 @@ export async function POST(request: Request) {
         Authorization: `Bearer ${config.apiKey}`,
         "x-api-key": config.apiKey,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(upstreamPayload),
       cache: "no-store",
     });
 

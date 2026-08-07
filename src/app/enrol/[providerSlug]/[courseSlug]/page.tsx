@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { EnrolmentWizard } from "@/components/enrolment/EnrolmentWizard";
 import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
+import { getProviderExperienceConfig } from "@/lib/provider-experience/checkout";
 import type { EnrolmentPaymentOption } from "@/types/enrolment";
 
 type EnrolmentPageProps = {
@@ -20,6 +21,7 @@ export default async function EnrolmentPage({
 }: EnrolmentPageProps) {
   const { providerSlug, courseSlug } = await params;
   const { payment } = await searchParams;
+  const config = getProviderExperienceConfig();
 
   const provider = getProviderBySlug(providerSlug);
 
@@ -43,6 +45,8 @@ export default async function EnrolmentPage({
       provider={provider}
       course={course}
       initialPaymentOption={initialPaymentOption}
+      legalApiBaseUrl={config.apiBaseUrl}
+      studentPayProviderCode={config.providerCode}
     />
   );
 }
