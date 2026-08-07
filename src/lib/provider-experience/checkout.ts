@@ -176,8 +176,12 @@ export function getProviderExperienceConfig() {
     process.env.STUDENTPAY_PROVIDER_ACCOUNT_ID ||
     "";
 
+  // Default off in deployed environments with credentials so sandbox E2E hits
+  // StudentPay. Opt in explicitly for local harness work without an API key.
+  const mockModeEnv = process.env.HARNESS_MOCK_MODE?.toLowerCase();
   const mockMode =
-    (process.env.HARNESS_MOCK_MODE || "true").toLowerCase() !== "false";
+    mockModeEnv === "true" ||
+    (mockModeEnv !== "false" && !(apiKey && providerAccountId));
 
   return {
     apiBaseUrl,

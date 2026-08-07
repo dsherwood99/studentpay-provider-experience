@@ -41,7 +41,7 @@ STUDENTPAY_API_BASE_URL=https://sandbox-api.studentpay.com.au
 STUDENTPAY_PROVIDER_API_KEY=         # sandbox API key
 STUDENTPAY_PROVIDER_CODE=SANDBOX_DEMO
 STUDENTPAY_PROVIDER_ACCOUNT_ID=0018r0000165S4mAAE
-HARNESS_MOCK_MODE=true               # set false to call live sandbox API
+# HARNESS_MOCK_MODE=true             # optional local mock; unset/false uses sandbox when credentials are set
 ```
 
 Never expose `STUDENTPAY_PROVIDER_API_KEY` with a `NEXT_PUBLIC_` prefix.
