@@ -25,17 +25,17 @@ export default function HomePage() {
 
             <div className="button-row">
               <Link
-                href="/providers/academy-australia"
+                href="/providers/academy-australia/courses/criminal-psychology/enrol"
                 className="button button--primary"
               >
-                View the provider demo
+                Enrol in Criminal Psychology
               </Link>
 
               <Link
-                href="/providers/academy-australia/courses"
+                href="/providers/academy-australia"
                 className="button button--secondary"
               >
-                Browse demo courses
+                View the provider demo
               </Link>
             </div>
           </div>

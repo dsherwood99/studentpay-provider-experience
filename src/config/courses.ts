@@ -56,6 +56,7 @@ export const courses: Course[] = [
       depositAmount: 25,
       repaymentAmount: 28,
       frequency: "weekly",
+      numberOfPayments: 42,
     },
     visualTone: "psychology",
     featured: true,

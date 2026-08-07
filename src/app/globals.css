@@ -2408,6 +2408,17 @@ main {
   font-weight: 700;
 }
 
+.enrolment-wizard__submit-error {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border-radius: var(--radius-medium);
+  background: rgba(200, 60, 70, 0.08);
+  border: 1px solid rgba(200, 60, 70, 0.22);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
 .wizard-payment-options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2632,6 +2643,99 @@ main {
     var(--colour-cream-50);
 }
 
+.dda-setup {
+  min-height: 100dvh;
+  padding: 32px 0 48px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(244, 95, 104, 0.08),
+      transparent 28%
+    ),
+    var(--colour-cream-50);
+}
+
+.dda-setup__shell {
+  display: grid;
+  gap: 20px;
+}
+
+.dda-setup__header h1 {
+  margin: 8px 0 10px;
+  color: var(--colour-charcoal-900);
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  line-height: 1.15;
+}
+
+.dda-setup__lead {
+  margin: 0;
+  max-width: 46rem;
+  color: var(--colour-charcoal-700);
+}
+
+.dda-setup__frame-wrap {
+  position: relative;
+  width: 100%;
+  min-height: min(720px, calc(100dvh - 220px));
+  border: 1px solid var(--colour-grey-300);
+  border-radius: var(--radius-large);
+  background: var(--colour-white);
+  box-shadow: var(--shadow-small);
+  overflow: hidden;
+}
+
+.dda-setup__loading {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  color: var(--colour-grey-500);
+  background: rgba(255, 249, 244, 0.92);
+  font-weight: 700;
+}
+
+.dda-setup__iframe {
+  display: block;
+  width: 100%;
+  height: min(720px, calc(100dvh - 220px));
+  min-height: 560px;
+  border: 0;
+  background: var(--colour-white);
+}
+
+.dda-setup__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .dda-setup {
+    padding: 16px 0 28px;
+  }
+
+  .dda-setup__frame-wrap {
+    min-height: calc(100dvh - 210px);
+    border-radius: var(--radius-medium);
+  }
+
+  .dda-setup__iframe {
+    height: calc(100dvh - 210px);
+    min-height: 480px;
+  }
+
+  .dda-setup__footer {
+    flex-direction: column;
+  }
+
+  .dda-setup__footer .button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+
 .enrolment-complete__card {
   max-width: 860px;
   padding: 58px;
@@ -2798,3 +2902,761 @@ main {
     width: 100%;
   }
 }
+/* ========================================================================== */
+/* OnFit wizard parity · checkout / DDA / terms (ported)                      */
+/* ========================================================================== */
+:root {
+  --purple: var(--provider-primary);
+  --purple-dark: var(--colour-coral-600);
+  --purple-light: var(--provider-secondary);
+  --muted: var(--colour-grey-500);
+  --ink: var(--colour-charcoal-900);
+  --border: var(--colour-grey-300);
+  --border-soft: #e4dbe9;
+}
+.confirmationChecks { display: grid; gap: 10px; }
+.legalTermsUnavailable { padding: 24px; color: var(--muted); }
+.checkboxLine {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.checkboxLine input {
+  width: auto;
+  accent-color: var(--purple);
+}
+
+.result {
+  margin-top: 18px;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.result.success {
+  background: #f1eaf5;
+  border: 1px solid #cdb6da;
+}
+
+.result.error {
+  background: #fff0f0;
+  border: 1px solid #e7a3a3;
+}
+
+.result pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 420px;
+  overflow: auto;
+  font-size: 11px;
+  background: #24152f;
+  color: #f3edf7;
+  padding: 14px;
+  border-radius: 8px;
+}
+
+.planBox {
+  background: linear-gradient(
+    135deg,
+    var(--purple-dark),
+    var(--purple-light)
+  );
+  color: #ffffff;
+  border-radius: 14px;
+  padding: 18px;
+  display: grid;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.planBox span,
+.planBox small {
+  opacity: 0.85;
+}
+
+.planBox strong {
+  font-size: 18px;
+}
+
+.checkoutSection {
+  border: 1px solid #d9cde1;
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: 16px;
+  background: #ffffff;
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.sectionHeading h3 {
+  margin: 1px 0 4px;
+  font-size: 19px;
+}
+
+.sectionHeading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.sectionNumber {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  border-radius: 50%;
+  background: var(--purple);
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.paymentOptions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.paymentOption {
+  text-align: left;
+  border: 1.5px solid var(--border);
+  border-radius: 13px;
+  background: #ffffff;
+  color: var(--ink);
+  padding: 16px;
+  min-height: 155px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.paymentOption:hover {
+  border-color: var(--purple-light);
+}
+
+.paymentOption.selected {
+  border: 2px solid var(--purple);
+  background: #f5eff8;
+}
+
+.paymentOptionTop {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  margin-bottom: 9px;
+}
+
+.paymentOptionTop input {
+  width: auto;
+  accent-color: var(--purple);
+}
+
+.paymentOption span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.paymentOptionPrice {
+  margin-top: auto;
+  padding-top: 13px;
+  color: var(--purple);
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.paymentDetailsGrid {
+  align-items: end;
+}
+
+.planSummary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+
+.planSummary > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 15px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.planSummary > div:nth-child(odd) {
+  border-right: 1px solid var(--border-soft);
+}
+
+.planSummary > div:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+
+.planSummary span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.planSummary strong {
+  text-align: right;
+}
+
+.securePaymentNotice {
+  margin-top: 18px;
+  padding: 15px;
+  border-left: 4px solid var(--purple-light);
+  background: #f4eef7;
+  border-radius: 8px;
+}
+
+.securePaymentNotice p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.testPaymentBadge {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #fff5df;
+  color: #8a560d;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.paymentCardFields input {
+  font-family: inherit;
+}
+
+.amountDue {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f0e5f5;
+  border-radius: 10px;
+  margin-top: 18px;
+  padding: 15px;
+}
+
+.amountDue span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.amountDue strong {
+  color: var(--purple);
+  font-size: 21px;
+}
+
+.afterpayMock {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  background: #f8f5fa;
+}
+
+.afterpayMock p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.afterpayMock > div {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 17px;
+  padding-top: 15px;
+  border-top: 1px solid var(--border);
+}
+
+.checkoutConsent {
+  grid-template-columns: auto 1fr;
+  display: grid;
+  gap: 11px;
+  align-items: start;
+  margin: 14px 0;
+  line-height: 1.45;
+}
+
+.checkoutConsent input {
+  width: auto;
+  margin-top: 2px;
+  accent-color: var(--purple);
+}
+
+.ddaSetupCard {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #faf8fc;
+}
+
+.ddaSetupCard {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 32px;
+
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #faf8fc;
+}
+
+.ddaSetupContent {
+    flex: 1;
+}
+
+.ddaSetupContent strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 18px;
+}
+
+.ddaSetupContent p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.ddaSetupCard .primary {
+    flex-shrink: 0;
+    min-width: 220px;
+}
+
+.ddaSetupCard .primary {
+    flex-shrink: 0;
+    min-width: 220px;
+}
+
+.ddaAuthorisedCard {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 18px;
+    border: 1px solid #b9e3c5;
+    border-radius: 12px;
+    background: #f5fcf7;
+}
+
+.ddaAuthorisedIcon {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #2e7d32;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.checkoutSection {
+  padding: 15px 16px;
+  margin-top: 11px;
+  border-radius: 13px;
+}
+
+.sectionHeading {
+  gap: 9px;
+  margin-bottom: 12px;
+}
+
+.sectionHeading h3 {
+  margin: 0 0 2px;
+  font-size: 17px;
+}
+
+.sectionHeading p {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.sectionNumber {
+  width: 25px;
+  height: 25px;
+  font-size: 11px;
+}
+
+.paymentOptions {
+  gap: 9px;
+}
+
+.paymentOption {
+  min-height: 125px;
+  padding: 12px;
+  border-radius: 11px;
+}
+
+.paymentOptionTop {
+  margin-bottom: 6px;
+}
+
+.paymentOption span {
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.paymentOptionPrice {
+  padding-top: 8px;
+  font-size: 12px;
+}
+
+.planSummary {
+  margin-bottom: 12px;
+}
+
+.planSummary > div {
+  padding: 10px 12px;
+}
+
+.planSummary span {
+  font-size: 11px;
+}
+
+.planSummary strong {
+  font-size: 13px;
+}
+
+.formGrid {
+  gap: 11px;
+  margin-top: 13px;
+}
+
+label {
+  gap: 5px;
+  font-size: 11px;
+}
+
+input,
+select {
+  padding: 9px 10px;
+  border-radius: 8px;
+}
+
+.testPaymentBadge {
+  margin-bottom: 0;
+  padding: 5px 8px;
+}
+
+.paymentCardFields {
+  margin-top: 12px;
+}
+
+.amountDue {
+  margin-top: 12px;
+  padding: 11px 13px;
+}
+
+.amountDue strong {
+  font-size: 18px;
+}
+
+.checkboxLine {
+  margin: 12px 0 0;
+  font-size: 11px;
+}
+
+.termsModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(24, 12, 32, 0.62);
+}
+
+.termsModal {
+  width: min(720px, 100%);
+  max-height: min(760px, 90vh);
+  overflow: hidden;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow:
+    0 24px 80px
+    rgba(18, 6, 27, 0.28);
+}
+
+.termsModalHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 26px 18px;
+  border-bottom: 1px solid #e4dbe9;
+}
+
+.termsModalHeader h2 {
+  margin: 0;
+  color: #24152f;
+  font-size: 25px;
+}
+
+.termsModalClose {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 50%;
+  background: #f3edf6;
+  color: #45215e;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.termsModalBody {
+  max-height: 56vh;
+  overflow-y: auto;
+  padding: 24px 26px;
+  color: #4f4357;
+  line-height: 1.6;
+}
+
+.termsModalBody h4 {
+  margin: 24px 0 8px;
+  color: #24152f;
+  font-size: 17px;
+}
+
+.termsModalBody p {
+  margin: 0 0 14px;
+}
+
+.termsModalFooter {
+  display: flex;
+  justify-content: flex-end;
+  padding: 18px 26px 24px;
+  border-top: 1px solid #e4dbe9;
+}
+
+@media (max-width: 650px) {
+  .finalReviewRow {
+    display: block;
+  }
+
+  .finalReviewRow strong {
+    display: block;
+    margin-top: 4px;
+    text-align: left;
+  }
+
+  .termsModalBackdrop {
+    padding: 10px;
+  }
+
+  .termsModalHeader {
+    padding: 20px 18px 15px;
+  }
+
+  .termsModalHeader h2 {
+    font-size: 21px;
+  }
+
+  .termsModalBody {
+    padding: 20px 18px;
+  }
+
+  .termsModalFooter {
+    padding: 15px 18px 20px;
+  }
+  
+  .legalTermsModalBody {
+    height: 72vh;
+  }
+}
+
+.legalTermsModalBody {
+  height: min(70vh, 760px);
+  max-height: none;
+  padding: 0;
+  overflow: hidden;
+}
+
+.legalTermsFrame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #ffffff;
+}
+
+.enrolment-wizard .checkoutSection,
+.enrolment-wizard .sectionHeading,
+.enrolment-wizard .planSummary,
+.enrolment-wizard .ddaSetupCard,
+.enrolment-wizard .ddaAuthorisedCard,
+.enrolment-wizard .amountDue,
+.enrolment-wizard .testPaymentBadge,
+.enrolment-wizard .confirmationChecks,
+.enrolment-wizard .checkboxLine,
+.enrolment-wizard .result {
+  font-family: inherit;
+}
+
+.enrolment-wizard .sectionHeading h3 {
+  margin: 0 0 4px;
+  color: var(--colour-charcoal-900);
+}
+
+.enrolment-wizard .sectionNumber {
+  background: var(--colour-coral-500);
+}
+
+.enrolment-wizard .planBox {
+  margin-top: 18px;
+  background: rgba(244, 95, 104, 0.08);
+  border-color: rgba(244, 95, 104, 0.18);
+}
+
+.wizard-guardian {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--colour-grey-100);
+}
+
+.harness-px-card {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fff9f4, #ffffff);
+}
+
+.harness-px-card h2 {
+  margin: 0;
+
+.wizard-guardian .wizard-field--full {
+  grid-column: 1 / -1;
+}
+
+.wizard-field label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--colour-charcoal-900);
+}
+
+.wizard-field input,
+.wizard-field select {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--colour-grey-300);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--colour-charcoal-900);
+  font: inherit;
+}
+
+.enrolment-complete,
+.dda-setup {
+  min-height: 100dvh;
+  padding: 40px 0 64px;
+}
+
+.enrolment-complete__card {
+  max-width: 860px;
+  padding: 48px;
+  border: 1px solid var(--colour-grey-300);
+  border-radius: var(--radius-large);
+  background: #fff;
+  box-shadow: var(--shadow-small);
+}
+
+.enrolment-complete__icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 18px;
+  border-radius: 50%;
+  background: rgba(39, 136, 95, 0.12);
+  color: var(--colour-success);
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+
+.enrolment-complete__summary {
+  display: grid;
+  gap: 12px;
+  margin: 28px 0;
+}
+
+.enrolment-complete__summary div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--colour-grey-100);
+}
+
+.enrolment-complete__summary span {
+  color: var(--colour-grey-500);
+}
+
+.enrolment-complete__actions,
+.dda-setup__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.dda-setup__shell {
+  display: grid;
+  gap: 20px;
+}
+
+.dda-setup__frame-wrap {
+  position: relative;
+  width: 100%;
+  min-height: min(720px, calc(100dvh - 220px));
+  border: 1px solid var(--colour-grey-300);
+  border-radius: var(--radius-large);
+  background: #fff;
+  box-shadow: var(--shadow-small);
+  overflow: hidden;
+}
+
+.dda-setup__loading {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  color: var(--colour-grey-500);
+  background: rgba(255, 249, 244, 0.92);
+  font-weight: 700;
+}
+
+.dda-setup__iframe {
+  display: block;
+  width: 100%;
+  height: min(720px, calc(100dvh - 220px));
+  min-height: 560px;
+  border: 0;
+  background: #fff;
+}
+
+
