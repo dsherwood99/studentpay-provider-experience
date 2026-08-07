@@ -12,35 +12,39 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## Enrolment modes
+## Criminal Psychology enrolment (OnFit wizard parity)
 
-| Route | Mode | Behaviour |
-| --- | --- | --- |
-| `/enrol/[providerSlug]/[courseSlug]` | Demo | LocalStorage-only wizard. No StudentPay API calls. |
-| `/providers/[providerSlug]/courses/[courseSlug]/enrol` | Sandbox | Reuses the same wizard UI and creates a real StudentPay sandbox checkout. |
-
-Primary sandbox target:
+Primary route:
 
 - [/providers/academy-australia/courses/criminal-psychology/enrol](/providers/academy-australia/courses/criminal-psychology/enrol)
 
-On successful sandbox submit the browser stays on the enrol page and embeds
-the returned `direct_debit.setup_url` (Pinch test bank capture) in a
-mobile-friendly iframe. A new-tab fallback is also provided.
+Flow:
 
-## StudentPay sandbox env
+1. Course confirmation
+2. Screening (citizenship + under-18 guardian)
+3. Study Skills Check
+4. Student dossier (address, USI, emergency contact, photo ID simulation)
+5. Confirm and Pay — plan summary, deposit simulation, DDA (popup + embed fallback), terms modals, confirm enrolment
 
-Configure these server-side only (already set on Vercel):
+APIs:
+
+- `POST /api/studentpay/provider-checkouts` — create checkout (mock or sandbox)
+- `POST /api/studentpay/provider-checkout-confirm` — confirm enrolment after DDA
+- `GET /api/studentpay/provider-checkouts` — configuration probe
+
+Legacy alias route `/enrol/[providerSlug]/[courseSlug]` uses the same wizard.
+
+## StudentPay env
 
 ```bash
 STUDENTPAY_API_BASE_URL=https://sandbox-api.studentpay.com.au
-STUDENTPAY_PROVIDER_API_KEY=         # sandbox SANDBOX_DEMO_API_KEY
+STUDENTPAY_PROVIDER_API_KEY=         # sandbox API key
 STUDENTPAY_PROVIDER_CODE=SANDBOX_DEMO
 STUDENTPAY_PROVIDER_ACCOUNT_ID=0018r0000165S4mAAE
+HARNESS_MOCK_MODE=true               # set false to call live sandbox API
 ```
 
 Never expose `STUDENTPAY_PROVIDER_API_KEY` with a `NEXT_PUBLIC_` prefix.
-
-Check configuration:
 
 ```bash
 curl http://localhost:3000/api/studentpay/provider-checkouts

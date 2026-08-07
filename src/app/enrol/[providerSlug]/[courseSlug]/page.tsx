@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { EnrolmentWizard } from "@/components/enrolment/EnrolmentWizard";
 import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
+import type { EnrolmentPaymentOption } from "@/types/enrolment";
 
 type EnrolmentPageProps = {
   params: Promise<{
@@ -32,8 +33,8 @@ export default async function EnrolmentPage({
     notFound();
   }
 
-  const initialPaymentOption =
-    payment === "full" || payment === "plan"
+  const initialPaymentOption: EnrolmentPaymentOption =
+    payment === "full" || payment === "afterpay" || payment === "plan"
       ? payment
       : "plan";
 
@@ -42,7 +43,6 @@ export default async function EnrolmentPage({
       provider={provider}
       course={course}
       initialPaymentOption={initialPaymentOption}
-      mode="demo"
     />
   );
 }

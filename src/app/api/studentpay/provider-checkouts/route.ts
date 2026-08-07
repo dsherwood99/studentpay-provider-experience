@@ -1,13 +1,17 @@
 import {
-  buildCheckoutPayload,
-  createProviderOrderId,
-  extractDirectDebitSetupUrl,
-  getStudentPayConfig,
+  academyAustralia,
+  criminalPsychology,
+  getCourseBySlug,
+  getProviderBySlug,
+} from "@/lib/provider-experience/catalogue";
+import {
+  buildProviderCheckoutPayload,
+  getProviderExperienceConfig,
+  resolveCheckoutSession,
   toEmbeddedSetupUrl,
-  type StudentPayCheckoutSuccess,
-} from "@/lib/studentpay/checkout";
-import { getCourseBySlug } from "@/config/courses";
-import { getProviderBySlug } from "@/config/providers";
+  type ProviderCheckoutApiResult,
+} from "@/lib/provider-experience/checkout";
+import { createId } from "@/lib/provider-experience/format";
 import type { EnrolmentFormData } from "@/types/enrolment";
 
 export const runtime = "nodejs";
@@ -16,6 +20,7 @@ type CreateCheckoutBody = {
   providerSlug?: string;
   courseSlug?: string;
   formData?: EnrolmentFormData;
+  providerOrderId?: string;
 };
 
 function jsonError(
@@ -38,30 +43,39 @@ function jsonError(
 }
 
 export async function GET() {
-  const config = getStudentPayConfig();
+  const config = getProviderExperienceConfig();
 
   return Response.json({
     success: true,
     configured: config.configured,
+    mock_mode: config.mockMode,
     api_base_url: config.apiBaseUrl,
     provider_code: config.providerCode,
     provider_account_id_configured: Boolean(config.providerAccountId),
     api_key_configured: Boolean(config.apiKey),
     endpoints: {
       create_checkout: "POST /api/studentpay/provider-checkouts",
-      upstream: `${config.apiBaseUrl}/v1/provider-checkouts`,
+      confirm_checkout: "POST /api/studentpay/provider-checkout-confirm",
+      upstream: config.checkoutUrl,
     },
+    courses: [
+      {
+        provider: academyAustralia.slug,
+        course: criminalPsychology.slug,
+        path: `/providers/${academyAustralia.slug}/courses/${criminalPsychology.slug}/enrol`,
+      },
+    ],
   });
 }
 
 export async function POST(request: Request) {
-  const config = getStudentPayConfig();
+  const config = getProviderExperienceConfig();
 
   if (!config.configured) {
     return jsonError(
       503,
       "NOT_CONFIGURED",
-      "StudentPay sandbox is not configured. Set STUDENTPAY_PROVIDER_API_KEY and STUDENTPAY_PROVIDER_ACCOUNT_ID.",
+      "StudentPay Provider Experience checkout is not configured. Set API credentials or leave HARNESS_MOCK_MODE=true.",
     );
   }
 
@@ -95,81 +109,90 @@ export async function POST(request: Request) {
     return jsonError(404, "COURSE_NOT_FOUND", "Course not found.");
   }
 
-  if (!formData.termsAccepted || !formData.informationConfirmed) {
+  if (!formData.sscPassed) {
     return jsonError(
       400,
-      "CONSENTS_REQUIRED",
-      "Enrolment declarations must be accepted before creating a checkout.",
+      "SSC_REQUIRED",
+      "The Study Skills Check must be passed before creating a checkout.",
     );
   }
 
-  const providerOrderId = createProviderOrderId(course.code);
-  const payload = buildCheckoutPayload({
+  if (!formData.depositConfirmed) {
+    return jsonError(
+      400,
+      "DEPOSIT_REQUIRED",
+      "The provider deposit must be confirmed before creating a checkout.",
+    );
+  }
+
+  if (formData.paymentOption !== "plan") {
+    return jsonError(
+      400,
+      "PLAN_REQUIRED",
+      "Only the StudentPay payment plan path creates a Provider Checkout session.",
+    );
+  }
+
+  const providerOrderId =
+    body.providerOrderId || createId(`AA-${course.code}`);
+
+  const payload = buildProviderCheckoutPayload({
     provider,
     course,
     formData,
     providerOrderId,
   });
 
-  try {
-    const upstreamResponse = await fetch(
-      `${config.apiBaseUrl}/v1/provider-checkouts`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${config.apiKey}`,
-          "Idempotency-Key": providerOrderId,
-        },
-        body: JSON.stringify(payload),
-        cache: "no-store",
-      },
-    );
+  if (config.mockMode) {
+    const mockRedirect = `https://sandbox-api.studentpay.com.au/dda-setup?token=mock_${providerOrderId}&embed=1`;
 
-    const upstreamJson = (await upstreamResponse.json()) as
-      | StudentPayCheckoutSuccess
-      | {
-          success?: false;
-          error?:
-            | string
-            | {
-                code?: string;
-                message?: string;
-              };
-          request_id?: string;
-        };
+    return Response.json({
+      success: true,
+      mock: true,
+      provider_order_id: providerOrderId,
+      setup_url: mockRedirect,
+      redirect_url: mockRedirect,
+      checkout_token: `mock_token_${providerOrderId}`,
+      opportunity_id: `mock_opp_${providerOrderId}`,
+      dda_id: `mock_dda_${providerOrderId}`,
+      checkout_id: `mock_checkout_${providerOrderId}`,
+      checkout: {
+        checkout_token: `mock_token_${providerOrderId}`,
+        opportunity_id: `mock_opp_${providerOrderId}`,
+        dda_id: `mock_dda_${providerOrderId}`,
+        checkout_id: `mock_checkout_${providerOrderId}`,
+        redirect_url: mockRedirect,
+      },
+      payload,
+    });
+  }
+
+  try {
+    const upstreamResponse = await fetch(config.checkoutUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${config.apiKey}`,
+        "Idempotency-Key": providerOrderId,
+        "x-api-key": config.apiKey,
+      },
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    });
+
+    const upstreamJson =
+      (await upstreamResponse.json()) as ProviderCheckoutApiResult;
 
     if (!upstreamResponse.ok || upstreamJson.success === false) {
-      const errorValue =
-        "error" in upstreamJson ? upstreamJson.error : undefined;
       const message =
-        typeof errorValue === "string"
-          ? errorValue
-          : errorValue?.message ||
-            "Unable to create StudentPay sandbox checkout.";
-      const code =
-        typeof errorValue === "object" && errorValue?.code
-          ? errorValue.code
-          : "CHECKOUT_FAILED";
+        typeof upstreamJson.error === "string"
+          ? upstreamJson.error
+          : "Unable to create StudentPay Provider Experience checkout.";
 
-      return jsonError(upstreamResponse.status || 502, code, message, {
-        request_id:
-          "request_id" in upstreamJson
-            ? upstreamJson.request_id
-            : undefined,
-        provider_order_id: providerOrderId,
-      });
-    }
-
-    const setupUrl = extractDirectDebitSetupUrl(
-      upstreamJson as StudentPayCheckoutSuccess,
-    );
-
-    if (!setupUrl) {
       return jsonError(
-        502,
-        "MISSING_SETUP_URL",
-        "Checkout was created but no direct debit setup URL was returned.",
+        upstreamResponse.status || 502,
+        "CHECKOUT_FAILED",
+        message,
         {
           provider_order_id: providerOrderId,
           upstream: upstreamJson,
@@ -177,20 +200,46 @@ export async function POST(request: Request) {
       );
     }
 
-    return Response.json({
-      success: true,
-      provider_order_id: providerOrderId,
-      setup_url: toEmbeddedSetupUrl(setupUrl),
-      checkout: (upstreamJson as StudentPayCheckoutSuccess).checkout,
-      request_id: (upstreamJson as StudentPayCheckoutSuccess).request_id,
-    });
+    try {
+      const session = resolveCheckoutSession(upstreamJson, providerOrderId);
+
+      return Response.json({
+        success: true,
+        provider_order_id: providerOrderId,
+        setup_url: toEmbeddedSetupUrl(session.redirectUrl),
+        redirect_url: session.redirectUrl,
+        checkout_token: session.checkoutToken,
+        opportunity_id: session.opportunityId,
+        dda_id: session.ddaId,
+        checkout_id: session.checkoutId,
+        checkout: {
+          checkout_token: session.checkoutToken,
+          opportunity_id: session.opportunityId,
+          dda_id: session.ddaId,
+          checkout_id: session.checkoutId,
+          redirect_url: session.redirectUrl,
+        },
+      });
+    } catch (error) {
+      return jsonError(
+        502,
+        "MISSING_CHECKOUT_IDENTIFIERS",
+        error instanceof Error
+          ? error.message
+          : "Checkout was created but required identifiers were missing.",
+        {
+          provider_order_id: providerOrderId,
+          upstream: upstreamJson,
+        },
+      );
+    }
   } catch (error) {
     return jsonError(
       502,
       "UPSTREAM_ERROR",
       error instanceof Error
         ? error.message
-        : "Failed to reach StudentPay sandbox API.",
+        : "Failed to reach StudentPay Provider Checkout API.",
       {
         provider_order_id: providerOrderId,
       },

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { EnrolmentWizard } from "@/components/enrolment/EnrolmentWizard";
 import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
+import type { EnrolmentPaymentOption } from "@/types/enrolment";
 
 type SandboxEnrolPageProps = {
   params: Promise<{
@@ -25,13 +26,13 @@ export async function generateMetadata({
 
   if (!provider || !course) {
     return {
-      title: "Sandbox enrolment",
+      title: "Enrolment",
     };
   }
 
   return {
-    title: `Sandbox enrol · ${course.title}`,
-    description: `Create a StudentPay sandbox enrolment for ${course.title} with ${provider.name}.`,
+    title: `Enrol · ${course.title} · ${provider.name}`,
+    description: `Enrol in ${course.title} with ${provider.name} through the StudentPay Provider Experience wizard.`,
   };
 }
 
@@ -54,15 +55,16 @@ export default async function SandboxEnrolPage({
     notFound();
   }
 
-  const initialPaymentOption =
-    payment === "full" || payment === "plan" ? payment : "plan";
+  const initialPaymentOption: EnrolmentPaymentOption =
+    payment === "full" || payment === "afterpay" || payment === "plan"
+      ? payment
+      : "plan";
 
   return (
     <EnrolmentWizard
       provider={provider}
       course={course}
       initialPaymentOption={initialPaymentOption}
-      mode="sandbox"
     />
   );
 }

@@ -6,7 +6,7 @@ type DdaSetupEmbedProps = {
   setupUrl: string;
   studentFirstName: string;
   courseTitle: string;
-  onComplete?: () => void;
+  onAuthorised: () => void;
   onRestart?: () => void;
 };
 
@@ -16,34 +16,41 @@ type DdaMessage =
       event?: string;
       status?: string;
       source?: string;
+      ddaId?: string;
+      opportunityId?: string;
     }
   | string;
 
-function isCompletionMessage(data: DdaMessage): boolean {
+function isAuthorisedMessage(data: DdaMessage): boolean {
   if (typeof data === "string") {
     const normalised = data.toLowerCase();
     return (
       normalised.includes("dda") &&
-      (normalised.includes("complete") ||
-        normalised.includes("success") ||
-        normalised.includes("done"))
+      (normalised.includes("authoris") ||
+        normalised.includes("complete") ||
+        normalised.includes("success"))
     );
   }
 
-  const type = `${data.type || ""} ${data.event || ""} ${data.status || ""} ${data.source || ""}`.toLowerCase();
+  if (
+    data.type === "studentpay:dda-authorised" &&
+    data.status === "authorised"
+  ) {
+    return true;
+  }
+
+  const type =
+    `${data.type || ""} ${data.event || ""} ${data.status || ""} ${data.source || ""}`.toLowerCase();
 
   return (
-    type.includes("dda") ||
-    type.includes("dd-setup") ||
-    type.includes("direct_debit") ||
-    type.includes("direct-debit") ||
-    type.includes("studentpay")
-  ) && (
-    type.includes("complete") ||
-    type.includes("completed") ||
-    type.includes("success") ||
-    type.includes("done") ||
-    type.includes("finished")
+    (type.includes("dda") ||
+      type.includes("direct_debit") ||
+      type.includes("direct-debit") ||
+      type.includes("studentpay")) &&
+    (type.includes("authoris") ||
+      type.includes("complete") ||
+      type.includes("success") ||
+      type.includes("done"))
   );
 }
 
@@ -51,66 +58,50 @@ export function DdaSetupEmbed({
   setupUrl,
   studentFirstName,
   courseTitle,
-  onComplete,
+  onAuthorised,
   onRestart,
 }: DdaSetupEmbedProps) {
-  const [isComplete, setIsComplete] = useState(false);
   const [iframeLoaded, setIframeLoaded] = useState(false);
 
   useEffect(() => {
     function handleMessage(event: MessageEvent) {
+      const trustedOrigins = [
+        "https://api.studentpay.com.au",
+        "https://sandbox-api.studentpay.com.au",
+      ];
+
+      if (
+        typeof event.origin === "string" &&
+        event.origin.startsWith("http") &&
+        !trustedOrigins.includes(event.origin) &&
+        !event.origin.includes("studentpay") &&
+        !event.origin.includes("getpinch")
+      ) {
+        return;
+      }
+
       if (!event.data) {
         return;
       }
 
-      if (isCompletionMessage(event.data as DdaMessage)) {
-        setIsComplete(true);
-        onComplete?.();
+      if (isAuthorisedMessage(event.data as DdaMessage)) {
+        onAuthorised();
       }
     }
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [onComplete]);
-
-  if (isComplete) {
-    return (
-      <section className="enrolment-complete">
-        <div className="page-shell enrolment-complete__card">
-          <div className="enrolment-complete__icon" aria-hidden="true">
-            ✓
-          </div>
-          <p className="enrolment-wizard__eyebrow">Sandbox enrolment</p>
-          <h1>Thanks, {studentFirstName}. Bank details captured.</h1>
-          <p className="enrolment-complete__lead">
-            Your StudentPay sandbox direct-debit setup for {courseTitle} is
-            complete.
-          </p>
-          {onRestart ? (
-            <div className="enrolment-complete__actions">
-              <button
-                type="button"
-                className="button button--secondary"
-                onClick={onRestart}
-              >
-                Start again
-              </button>
-            </div>
-          ) : null}
-        </div>
-      </section>
-    );
-  }
+  }, [onAuthorised]);
 
   return (
     <section className="dda-setup">
       <div className="page-shell dda-setup__shell">
         <header className="dda-setup__header">
-          <p className="enrolment-wizard__eyebrow">Payment setup</p>
-          <h1>Enter your bank details to finish enrolment.</h1>
+          <p className="enrolment-wizard__eyebrow">Direct debit authority</p>
+          <h1>Authorise your StudentPay payment plan, {studentFirstName}.</h1>
           <p className="dda-setup__lead">
-            Secure Pinch test bank capture is embedded below. Use Pinch sandbox
-            test account details to complete the direct-debit authority.
+            Secure bank capture for {courseTitle} is embedded below. Complete
+            the authority to continue enrolment confirmation.
           </p>
         </header>
 
@@ -146,7 +137,7 @@ export function DdaSetupEmbed({
               className="button button--secondary"
               onClick={onRestart}
             >
-              Cancel and start again
+              Cancel and return
             </button>
           ) : null}
         </div>
