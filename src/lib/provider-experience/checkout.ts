@@ -156,9 +156,11 @@ export function getProviderExperienceConfig() {
     process.env.PROVIDER_CHECKOUT_API_URL ||
     `${apiBaseUrl}/v1/provider-checkouts`;
 
+  // Real StudentPay confirm handler is /api/provider-checkout-confirm
+  // (not /v1/provider-checkouts/confirm — that path returns 405).
   const confirmUrl =
     process.env.PROVIDER_CHECKOUT_CONFIRM_API_URL ||
-    `${apiBaseUrl}/v1/provider-checkouts/confirm`;
+    `${apiBaseUrl}/api/provider-checkout-confirm`;
 
   const apiKey =
     process.env.ACADEMY_API_KEY ||
@@ -394,6 +396,53 @@ export function resolveCheckoutSession(
   };
 }
 
+export function formatApiError(
+  value: unknown,
+  fallback = "An unexpected StudentPay error occurred.",
+): string {
+  if (!value) {
+    return fallback;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed || fallback;
+  }
+
+  if (value instanceof Error) {
+    return value.message || fallback;
+  }
+
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+
+    for (const key of ["message", "error", "detail", "title"]) {
+      const nested = record[key];
+      if (typeof nested === "string" && nested.trim()) {
+        return nested.trim();
+      }
+      if (nested && typeof nested === "object") {
+        const nestedMessage = formatApiError(nested, "");
+        if (nestedMessage) {
+          return nestedMessage;
+        }
+      }
+    }
+
+    if (Array.isArray(record.missing_fields) && record.missing_fields.length) {
+      return `Missing fields: ${record.missing_fields.join(", ")}`;
+    }
+
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return fallback;
+    }
+  }
+
+  return String(value);
+}
+
 export function toEmbeddedSetupUrl(setupUrl: string): string {
   try {
     const url = new URL(setupUrl);
@@ -405,3 +454,4 @@ export function toEmbeddedSetupUrl(setupUrl: string): string {
     return setupUrl;
   }
 }
+

@@ -1,4 +1,7 @@
-import { getProviderExperienceConfig } from "@/lib/provider-experience/checkout";
+import {
+  formatApiError,
+  getProviderExperienceConfig,
+} from "@/lib/provider-experience/checkout";
 
 export const runtime = "nodejs";
 
@@ -140,6 +143,11 @@ export async function POST(request: Request) {
       },
     };
 
+    console.log(
+      "Provider Experience confirmation upstream:",
+      config.confirmUrl,
+    );
+
     const upstreamResponse = await fetch(config.confirmUrl, {
       method: "POST",
       headers: {
@@ -151,12 +159,19 @@ export async function POST(request: Request) {
       cache: "no-store",
     });
 
-    const upstreamJson = (await upstreamResponse.json()) as {
-      success?: boolean;
-      error?: string;
-      message?: string;
-      [key: string]: unknown;
-    };
+    let upstreamJson: Record<string, unknown> = {};
+    const upstreamText = await upstreamResponse.text();
+
+    try {
+      upstreamJson = upstreamText
+        ? (JSON.parse(upstreamText) as Record<string, unknown>)
+        : {};
+    } catch {
+      upstreamJson = {
+        success: false,
+        error: upstreamText || `Upstream returned HTTP ${upstreamResponse.status}`,
+      };
+    }
 
     console.log(
       "Provider Experience confirmation response:",
@@ -167,10 +182,12 @@ export async function POST(request: Request) {
       return Response.json(
         {
           success: false,
-          error:
-            upstreamJson.error ||
-            upstreamJson.message ||
-            "The enrolment could not be confirmed.",
+          error: formatApiError(
+            upstreamJson.error ?? upstreamJson.message ?? upstreamJson,
+            `The enrolment could not be confirmed (HTTP ${upstreamResponse.status}).`,
+          ),
+          confirm_url: config.confirmUrl,
+          upstream_status: upstreamResponse.status,
           upstream: upstreamJson,
         },
         { status: upstreamResponse.status || 502 },
@@ -179,9 +196,10 @@ export async function POST(request: Request) {
 
     return Response.json({
       success: true,
-      message:
-        upstreamJson.message ||
+      message: formatApiError(
+        upstreamJson.message,
         "Your enrolment and StudentPay payment plan have been confirmed.",
+      ),
       ...upstreamJson,
     });
   } catch (error) {
@@ -190,10 +208,10 @@ export async function POST(request: Request) {
     return Response.json(
       {
         success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "The enrolment could not be confirmed.",
+        error: formatApiError(
+          error,
+          "The enrolment could not be confirmed.",
+        ),
       },
       { status: 500 },
     );

@@ -22,7 +22,10 @@ import {
   formatPaymentFrequency,
   futureDate,
 } from "@/lib/provider-experience/format";
-import { toEmbeddedSetupUrl } from "@/lib/provider-experience/checkout";
+import {
+  formatApiError,
+  toEmbeddedSetupUrl,
+} from "@/lib/provider-experience/checkout";
 import type { Course } from "@/types/course";
 import type {
   CheckoutSession,
@@ -604,7 +607,10 @@ export function EnrolmentWizard({
 
       if (!response.ok || data.success === false) {
         throw new Error(
-          data.error || "The enrolment could not be confirmed.",
+          formatApiError(
+            data.error ?? data.message ?? data,
+            "The enrolment could not be confirmed.",
+          ),
         );
       }
 

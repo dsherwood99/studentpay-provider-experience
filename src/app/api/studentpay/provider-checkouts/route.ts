@@ -57,6 +57,7 @@ export async function GET() {
       create_checkout: "POST /api/studentpay/provider-checkouts",
       confirm_checkout: "POST /api/studentpay/provider-checkout-confirm",
       upstream: config.checkoutUrl,
+      upstream_confirm: config.confirmUrl,
       legal_payment_plan_terms: `${config.apiBaseUrl}/api/legal/payment-plan-terms`,
     },
     courses: [
