@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { courses } from "@/config/courses";
-import { providers } from "@/config/providers";
 import { formatCurrency, formatPaymentFrequency } from "@/lib/format";
 
 const courseAreas = [
@@ -10,26 +9,25 @@ const courseAreas = [
     description:
       "Learn practical service skills including makeup artistry and beauty business basics.",
     href: "/providers/academy-australia/courses/makeup-artistry",
-    tone: "beauty",
+    image: "/providers/academy-australia/imagery/beauty-makeup.jpg",
   },
   {
     title: "Psychology & Criminology",
     description:
       "Explore criminal behaviour, forensic science and pathways into justice-related study.",
     href: "/providers/academy-australia/courses/criminal-psychology",
-    tone: "psychology",
+    image: "/providers/academy-australia/imagery/psychology-study.jpg",
   },
   {
     title: "Technology",
     description:
       "Build practical front-end and back-end skills through project-based online learning.",
     href: "/providers/academy-australia/courses/full-stack-developer",
-    tone: "technology",
+    image: "/providers/academy-australia/imagery/technology-laptop.jpg",
   },
 ] as const;
 
 export default function HomePage() {
-  const academyAustralia = providers[0];
   const featuredCourses = courses.filter((course) => course.featured).slice(0, 3);
   const criminalPsychology = courses.find(
     (course) => course.slug === "criminal-psychology",
@@ -40,15 +38,6 @@ export default function HomePage() {
       <section className="aa-hero">
         <div className="page-shell aa-hero__grid">
           <div className="aa-hero__content">
-            <Image
-              src={academyAustralia.logoPath}
-              alt="Academy Australia"
-              width={220}
-              height={88}
-              className="aa-hero__logo"
-              priority
-            />
-
             <p className="aa-script">Flexible online learning</p>
 
             <h1>
@@ -73,8 +62,16 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="aa-hero__visual" aria-hidden="true">
+          <div className="aa-hero__visual">
             <div className="aa-hero__visual-plane">
+              <Image
+                src="/providers/academy-australia/imagery/hero-students.jpg"
+                alt=""
+                fill
+                priority
+                className="aa-hero__visual-image"
+                sizes="(max-width: 980px) 100vw, 48vw"
+              />
               <div className="aa-hero__visual-copy">
                 <span>Start now. Pay over time.</span>
                 <strong>
@@ -87,35 +84,6 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      <section className="aa-benefits">
-        <div className="page-shell aa-benefits__grid">
-          <article>
-            <span>01</span>
-            <h2>Learn anytime</h2>
-            <p>
-              Access course material online and study around work, family and
-              existing commitments.
-            </p>
-          </article>
-          <article>
-            <span>02</span>
-            <h2>Get tutor support</h2>
-            <p>
-              Build practical, career-relevant skills with guidance available as
-              you progress.
-            </p>
-          </article>
-          <article>
-            <span>03</span>
-            <h2>Pay your way</h2>
-            <p>
-              Choose a payment plan that makes enrolment easier and more
-              affordable.
-            </p>
-          </article>
         </div>
       </section>
 
@@ -135,9 +103,17 @@ export default function HomePage() {
               <Link
                 key={area.title}
                 href={area.href}
-                className={`aa-course-area aa-course-area--${area.tone}`}
+                className="aa-course-area"
               >
-                <span className="aa-course-area__media" aria-hidden="true" />
+                <span className="aa-course-area__media" aria-hidden="true">
+                  <Image
+                    src={area.image}
+                    alt=""
+                    fill
+                    className="aa-course-area__image"
+                    sizes="(max-width: 980px) 100vw, 33vw"
+                  />
+                </span>
                 <strong>{area.title}</strong>
                 <p>{area.description}</p>
                 <span className="aa-course-area__cta">Learn more →</span>

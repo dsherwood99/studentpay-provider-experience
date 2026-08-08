@@ -113,7 +113,7 @@ main {
 }
 
 .platform-header__inner {
-  min-height: 78px;
+  min-height: 88px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -128,7 +128,7 @@ main {
 
 .platform-brand__logo {
   width: auto;
-  height: 46px;
+  height: 64px;
   object-fit: contain;
 }
 
@@ -328,26 +328,45 @@ main {
 }
 
 .aa-hero__visual-plane {
+  position: relative;
   height: 100%;
   min-height: 460px;
   display: flex;
   align-items: flex-end;
   padding: 36px;
-  background:
-    linear-gradient(
-      160deg,
-      rgba(247, 160, 75, 0.92),
-      rgba(239, 88, 101, 0.9) 58%,
-      rgba(233, 73, 87, 0.95)
-    ),
-    radial-gradient(
-      circle at 30% 20%,
-      rgba(255, 255, 255, 0.35),
-      transparent 45%
-    );
+  overflow: hidden;
+  background: linear-gradient(
+    160deg,
+    #f7a04b,
+    #ef5865 58%,
+    #e94957
+  );
+}
+
+.aa-hero__visual-image {
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+}
+
+.aa-hero__visual-plane::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    160deg,
+    rgba(247, 160, 75, 0.55),
+    rgba(239, 88, 101, 0.62) 55%,
+    rgba(233, 73, 87, 0.72)
+  );
+  pointer-events: none;
 }
 
 .aa-hero__visual-copy {
+  position: relative;
+  z-index: 2;
   max-width: 22rem;
   color: var(--colour-white);
 }
@@ -460,27 +479,32 @@ main {
 }
 
 .aa-course-area__media {
+  position: relative;
   display: block;
-  height: 140px;
+  height: 160px;
   border-radius: var(--radius-medium);
-  background:
-    linear-gradient(
-      145deg,
-      rgba(247, 160, 75, 0.85),
-      rgba(239, 88, 101, 0.88)
-    );
+  overflow: hidden;
+  background: linear-gradient(145deg, #f7a04b, #ef5865 60%, #e94957);
 }
 
-.aa-course-area--beauty .aa-course-area__media {
-  background: linear-gradient(145deg, #ff9a9e, #fad0c4);
+.aa-course-area__image {
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.5;
 }
 
-.aa-course-area--psychology .aa-course-area__media {
-  background: linear-gradient(145deg, #a18cd1, #fbc2eb);
-}
-
-.aa-course-area--technology .aa-course-area__media {
-  background: linear-gradient(145deg, #89f7fe, #66a6ff);
+.aa-course-area__media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    145deg,
+    rgba(247, 160, 75, 0.45),
+    rgba(239, 88, 101, 0.5) 55%,
+    rgba(233, 73, 87, 0.55)
+  );
+  pointer-events: none;
 }
 
 .aa-course-area strong {
@@ -4159,8 +4183,8 @@ select {
     gap: 28px;
   }
 
-  .aa-hero__logo {
-    height: 58px;
+  .platform-brand__logo {
+    height: 52px;
   }
 
   .aa-course-areas,

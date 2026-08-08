@@ -9,8 +9,8 @@ export function PlatformHeader() {
           <Image
             src="/providers/academy-australia/academy-australia-logo.png"
             alt="Academy Australia"
-            width={168}
-            height={54}
+            width={240}
+            height={78}
             className="platform-brand__logo"
             priority
           />
