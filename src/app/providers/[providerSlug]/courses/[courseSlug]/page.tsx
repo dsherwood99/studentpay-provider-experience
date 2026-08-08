@@ -53,8 +53,8 @@ export default async function CourseDetailPage({
             <Image
               src={provider.logoPath}
               alt={`${provider.name} logo`}
-              width={190}
-              height={72}
+              width={140}
+              height={44}
               className="course-detail-hero__logo"
               priority
             />
@@ -183,59 +183,6 @@ export default async function CourseDetailPage({
                 confidence progressively through practical learning,
                 online resources and provider support.
               </p>
-            </section>
-
-            <section className="course-detail-copy-block">
-              <p className="course-detail-eyebrow">
-                What you will learn
-              </p>
-
-              <h2>Skills and outcomes</h2>
-
-              <div className="course-outcomes-grid">
-                {course.outcomes.map((outcome, index) => (
-                  <article key={outcome}>
-                    <span>
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-                    <p>{outcome}</p>
-                  </article>
-                ))}
-              </div>
-            </section>
-
-            <section className="course-detail-copy-block">
-              <p className="course-detail-eyebrow">
-                Study experience
-              </p>
-
-              <h2>Designed to fit around real life.</h2>
-
-              <div className="course-study-grid">
-                <article>
-                  <h3>Flexible access</h3>
-                  <p>
-                    Study online and work through the course around
-                    your existing commitments.
-                  </p>
-                </article>
-
-                <article>
-                  <h3>Practical learning</h3>
-                  <p>
-                    Build your knowledge through clear modules,
-                    demonstrations and applied activities.
-                  </p>
-                </article>
-
-                <article>
-                  <h3>Provider support</h3>
-                  <p>
-                    Access course guidance and support from the
-                    education provider throughout your study.
-                  </p>
-                </article>
-              </div>
             </section>
           </div>
 
