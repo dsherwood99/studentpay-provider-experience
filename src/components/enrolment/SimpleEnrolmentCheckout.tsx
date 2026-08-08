@@ -14,7 +14,7 @@ import {
   formatApiError,
   toEmbeddedSetupUrl,
 } from "@/lib/provider-experience/checkout";
-import { createPinchCardToken } from "@/lib/provider-experience/pinch-capture";
+import { createPinchCardToken, PINCH_SANDBOX_TEST_CARD } from "@/lib/provider-experience/pinch-capture";
 import {
   createId,
   formatCurrency,
@@ -92,9 +92,9 @@ export function SimpleEnrolmentCheckout({
   );
   const [cardDetails, setCardDetails] = useState({
     cardholderName: "Jamie Nguyen",
-    cardNumber: "",
-    expiry: "",
-    cvc: "",
+    cardNumber: PINCH_SANDBOX_TEST_CARD,
+    expiry: "11/27",
+    cvc: "123",
   });
   const [pinchPublishableKey, setPinchPublishableKey] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -416,9 +416,7 @@ export function SimpleEnrolmentCheckout({
         await submitPayNowCardPayment();
       } catch (error) {
         setStatusError(
-          error instanceof Error
-            ? error.message
-            : "Unable to process card payment.",
+          formatApiError(error, "Unable to process card payment."),
         );
       } finally {
         setSubmitting(false);
@@ -690,6 +688,11 @@ export function SimpleEnrolmentCheckout({
                 Card details are tokenised in-browser with Pinch Capture.js.
                 Only the token is sent to StudentPay — the card number never
                 touches our servers.
+              </p>
+              <p className="simple-checkout__muted">
+                Sandbox test card: <code>{PINCH_SANDBOX_TEST_CARD}</code>{" "}
+                (any future expiry, any CVC). Numbers like 1234… are rejected by
+                Pinch.
               </p>
               <div className="simple-checkout__grid">
                 <label className="simple-checkout__full">

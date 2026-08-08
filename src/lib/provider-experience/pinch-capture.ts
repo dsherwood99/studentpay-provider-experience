@@ -1,6 +1,9 @@
 const PINCH_CAPTURE_SCRIPT =
   "https://cdn.getpinch.com.au/capturejs/pinch.capture.v2.js";
 
+/** Pinch sandbox Visa — any future expiry + any CVC. */
+export const PINCH_SANDBOX_TEST_CARD = "4242424242424242";
+
 type PinchCaptureInstance = {
   createToken: (input: Record<string, string>) => Promise<{
     token?: string;
@@ -10,8 +13,13 @@ type PinchCaptureInstance = {
   }>;
 };
 
+type PinchCaptureConstructor = {
+  new (options: { publishableKey: string }): PinchCaptureInstance;
+  (options: { publishableKey: string }): PinchCaptureInstance;
+};
+
 type PinchGlobal = {
-  Capture: new (options: { publishableKey: string }) => PinchCaptureInstance;
+  Capture: PinchCaptureConstructor;
 };
 
 declare global {
@@ -89,6 +97,76 @@ export function parseCardExpiry(expiry: string): {
   return { expiryMonth, expiryYear };
 }
 
+function formatPinchError(error: unknown): string {
+  if (!error) {
+    return "Pinch card tokenisation failed.";
+  }
+
+  if (typeof error === "string" && error.trim()) {
+    return error.trim();
+  }
+
+  if (error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
+
+  if (typeof error === "object") {
+    const record = error as Record<string, unknown>;
+
+    for (const key of ["message", "error", "detail", "title", "description"]) {
+      const value = record[key];
+      if (typeof value === "string" && value.trim()) {
+        return value.trim();
+      }
+    }
+
+    if (Array.isArray(record.errors) && record.errors.length) {
+      const parts = record.errors
+        .map((item) => {
+          if (typeof item === "string") {
+            return item;
+          }
+          if (item && typeof item === "object") {
+            const nested = item as Record<string, unknown>;
+            return (
+              (typeof nested.message === "string" && nested.message) ||
+              (typeof nested.error === "string" && nested.error) ||
+              ""
+            );
+          }
+          return "";
+        })
+        .filter(Boolean);
+
+      if (parts.length) {
+        return parts.join("; ");
+      }
+    }
+
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return "Pinch card tokenisation failed.";
+    }
+  }
+
+  return String(error);
+}
+
+function createCaptureInstance(publishableKey: string): PinchCaptureInstance {
+  const Capture = window.Pinch?.Capture;
+
+  if (!Capture) {
+    throw new Error("Pinch Capture.js did not initialise.");
+  }
+
+  try {
+    return new Capture({ publishableKey });
+  } catch {
+    return Capture({ publishableKey });
+  }
+}
+
 export async function createPinchCardToken({
   publishableKey,
   cardholderName,
@@ -110,21 +188,26 @@ export async function createPinchCardToken({
 
   await loadPinchCaptureScript();
 
-  if (!window.Pinch?.Capture) {
-    throw new Error("Pinch Capture.js did not initialise.");
-  }
-
   const { expiryMonth, expiryYear } = parseCardExpiry(expiry);
-  const capture = new window.Pinch.Capture({ publishableKey });
+  const capture = createCaptureInstance(publishableKey);
 
-  const tokenResult = await capture.createToken({
-    sourceType: "credit-card",
-    cardNumber: cardNumber.replace(/\s+/g, ""),
-    expiryMonth,
-    expiryYear,
-    cvc: cvc.trim(),
-    cardHolderName: cardholderName.trim(),
-  });
+  let tokenResult: Awaited<ReturnType<PinchCaptureInstance["createToken"]>>;
+
+  try {
+    tokenResult = await capture.createToken({
+      sourceType: "credit-card",
+      cardNumber: cardNumber.replace(/\s+/g, ""),
+      expiryMonth,
+      expiryYear,
+      cvc: cvc.trim(),
+      cardHolderName: cardholderName.trim(),
+    });
+  } catch (error) {
+    const detail = formatPinchError(error);
+    throw new Error(
+      `${detail} Use a Pinch sandbox test card such as ${PINCH_SANDBOX_TEST_CARD}.`,
+    );
+  }
 
   const token =
     tokenResult?.token ||
@@ -133,7 +216,9 @@ export async function createPinchCardToken({
     tokenResult?.id;
 
   if (!token) {
-    throw new Error("Pinch did not return a card token.");
+    throw new Error(
+      `Pinch did not return a card token. Use a Pinch sandbox test card such as ${PINCH_SANDBOX_TEST_CARD}.`,
+    );
   }
 
   return token;
