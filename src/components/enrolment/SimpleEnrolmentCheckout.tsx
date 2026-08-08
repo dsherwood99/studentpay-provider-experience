@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  useMemo,
   useState,
   type FormEvent,
 } from "react";
@@ -17,7 +16,6 @@ import {
 import {
   createId,
   formatCurrency,
-  formatPaymentFrequency,
   futureDate,
 } from "@/lib/provider-experience/format";
 import type { Course } from "@/types/course";
@@ -81,9 +79,6 @@ export function SimpleEnrolmentCheckout({
 }: SimpleEnrolmentCheckoutProps) {
   const apiProviderCode = studentPayProviderCode || provider.code;
   const termsProviderName = course.deliveryProvider || provider.name;
-  const paymentFrequency = formatPaymentFrequency(
-    course.paymentPlan.frequency,
-  );
 
   const [formData, setFormData] = useState<EnrolmentFormData>(() =>
     createFormData(
@@ -110,14 +105,6 @@ export function SimpleEnrolmentCheckout({
   const [statusError, setStatusError] = useState<string | null>(null);
   const [termsModal, setTermsModal] = useState<TermsModalType | null>(null);
 
-  const amountToday = useMemo(
-    () =>
-      paymentChoice === "plan"
-        ? course.paymentPlan.depositAmount
-        : course.paymentPlan.totalFee,
-    [course.paymentPlan.depositAmount, course.paymentPlan.totalFee, paymentChoice],
-  );
-
   const confirmBlocked =
     !formData.paymentTermsAccepted ||
     !formData.informationConfirmed ||
@@ -140,7 +127,6 @@ export function SimpleEnrolmentCheckout({
     !formData.email.trim() ||
     !formData.mobile.trim() ||
     !formData.addressLine1.trim() ||
-    !cardDetailsComplete ||
     openingDda ||
     directDebitAuthorised;
 
@@ -311,7 +297,7 @@ export function SimpleEnrolmentCheckout({
       return;
     }
 
-    if (!cardDetailsComplete) {
+    if (paymentChoice === "full" && !cardDetailsComplete) {
       setStatusError("Please complete the card payment fields.");
       return;
     }
@@ -585,117 +571,97 @@ export function SimpleEnrolmentCheckout({
           </div>
         </section>
 
-        <section className="simple-checkout__panel">
-          <span className="simple-checkout__step">3</span>
-          <div>
-            <h3>
-              {paymentChoice === "plan"
-                ? `Card details: ${formatCurrency(
-                    course.paymentPlan.depositAmount,
-                  )} deposit`
-                : "Card details: full payment"}
-            </h3>
-            <p className="simple-checkout__muted">
-              Card fields are for demo UX only in this sandbox. Card data is not
-              tokenised or stored. Payment plan enrolments continue to StudentPay
-              direct-debit setup after deposit simulation.
-            </p>
-            <div className="simple-checkout__grid">
-              {paymentChoice === "plan" ? (
+        {paymentChoice === "full" ? (
+          <section className="simple-checkout__panel">
+            <span className="simple-checkout__step">3</span>
+            <div>
+              <h3>Card details: full payment</h3>
+              <p className="simple-checkout__muted">
+                Card fields are for demo UX only in this sandbox. Card data is
+                not tokenised or stored.
+              </p>
+              <div className="simple-checkout__grid">
                 <label className="simple-checkout__full">
-                  First payment date *
+                  Cardholder name *
                   <input
-                    type="date"
-                    value={formData.firstPaymentDate}
+                    value={cardDetails.cardholderName}
                     onChange={(event) =>
-                      updateField("firstPaymentDate", event.target.value)
+                      setCardDetails((current) => ({
+                        ...current,
+                        cardholderName: event.target.value,
+                      }))
                     }
                     required
                   />
                 </label>
-              ) : null}
-              <label className="simple-checkout__full">
-                Cardholder name *
-                <input
-                  value={cardDetails.cardholderName}
-                  onChange={(event) =>
-                    setCardDetails((current) => ({
-                      ...current,
-                      cardholderName: event.target.value,
-                    }))
-                  }
-                  required
-                />
-              </label>
-              <label className="simple-checkout__full">
-                Card number *
-                <input
-                  value={cardDetails.cardNumber}
-                  onChange={(event) =>
-                    setCardDetails((current) => ({
-                      ...current,
-                      cardNumber: event.target.value,
-                    }))
-                  }
-                  placeholder="•••• •••• •••• ••••"
-                  required
-                />
-              </label>
-              <label>
-                Expiry *
-                <input
-                  value={cardDetails.expiry}
-                  onChange={(event) =>
-                    setCardDetails((current) => ({
-                      ...current,
-                      expiry: event.target.value,
-                    }))
-                  }
-                  placeholder="MM / YY"
-                  required
-                />
-              </label>
-              <label>
-                CVC *
-                <input
-                  value={cardDetails.cvc}
-                  onChange={(event) =>
-                    setCardDetails((current) => ({
-                      ...current,
-                      cvc: event.target.value,
-                    }))
-                  }
-                  placeholder="123"
-                  required
-                />
-              </label>
+                <label className="simple-checkout__full">
+                  Card number *
+                  <input
+                    value={cardDetails.cardNumber}
+                    onChange={(event) =>
+                      setCardDetails((current) => ({
+                        ...current,
+                        cardNumber: event.target.value,
+                      }))
+                    }
+                    placeholder="•••• •••• •••• ••••"
+                    required
+                  />
+                </label>
+                <label>
+                  Expiry *
+                  <input
+                    value={cardDetails.expiry}
+                    onChange={(event) =>
+                      setCardDetails((current) => ({
+                        ...current,
+                        expiry: event.target.value,
+                      }))
+                    }
+                    placeholder="MM / YY"
+                    required
+                  />
+                </label>
+                <label>
+                  CVC *
+                  <input
+                    value={cardDetails.cvc}
+                    onChange={(event) =>
+                      setCardDetails((current) => ({
+                        ...current,
+                        cvc: event.target.value,
+                      }))
+                    }
+                    placeholder="123"
+                    required
+                  />
+                </label>
+              </div>
             </div>
-            <div className="simple-checkout__summary">
-              <span>
-                {paymentChoice === "plan"
-                  ? "Deposit payable today"
-                  : "Amount payable today"}
-              </span>
-              <strong>{formatCurrency(amountToday)}</strong>
-            </div>
-            {paymentChoice === "plan" ? (
-              <p className="simple-checkout__muted">
-                Then about {formatCurrency(course.paymentPlan.repaymentAmount)}{" "}
-                per {paymentFrequency}.
-              </p>
-            ) : null}
-          </div>
-        </section>
+          </section>
+        ) : null}
 
         {paymentChoice === "plan" ? (
           <section className="simple-checkout__panel">
-            <span className="simple-checkout__step">4</span>
+            <span className="simple-checkout__step">3</span>
             <div>
               <h3>Direct debit authority</h3>
               <p className="simple-checkout__muted">
                 Authorise StudentPay to collect scheduled payment-plan
                 instalments from your nominated bank account.
               </p>
+
+              <label className="simple-checkout__plan-date">
+                First payment date *
+                <input
+                  type="date"
+                  value={formData.firstPaymentDate}
+                  onChange={(event) =>
+                    updateField("firstPaymentDate", event.target.value)
+                  }
+                  required
+                />
+              </label>
 
               {directDebitAuthorised ? (
                 <div className="simple-checkout__dda-authorised">
@@ -719,7 +685,7 @@ export function SimpleEnrolmentCheckout({
                   </p>
                   <button
                     type="button"
-                    className="button button--course-primary"
+                    className="button button--primary simple-checkout__action"
                     disabled={directDebitSetupBlocked}
                     onClick={openDirectDebitSetup}
                   >
@@ -734,9 +700,7 @@ export function SimpleEnrolmentCheckout({
         ) : null}
 
         <section className="simple-checkout__panel">
-          <span className="simple-checkout__step">
-            {paymentChoice === "plan" ? "5" : "4"}
-          </span>
+          <span className="simple-checkout__step">4</span>
           <div>
             <h3>Review &amp; Confirm</h3>
             <p className="simple-checkout__muted">
@@ -811,7 +775,7 @@ export function SimpleEnrolmentCheckout({
 
             <button
               type="submit"
-              className="button button--course-primary simple-checkout__submit"
+              className="button button--primary simple-checkout__submit simple-checkout__action"
               disabled={confirmBlocked}
             >
               {enrolmentConfirmed
