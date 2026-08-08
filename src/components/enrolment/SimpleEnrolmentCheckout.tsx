@@ -829,8 +829,9 @@ export function SimpleEnrolmentCheckout({
           <div>
             <h3>Review &amp; Confirm</h3>
             <p className="simple-checkout__muted">
-              You&apos;re almost done. Review your payment arrangement and accept
-              the terms below to confirm your enrolment.
+              {paymentChoice === "full"
+                ? "You're almost done. Accept the provider terms below, then pay and enrol."
+                : "You're almost done. Review your payment arrangement and accept the terms below to confirm your enrolment."}
             </p>
 
             <div className="simple-checkout__declarations">
@@ -843,40 +844,59 @@ export function SimpleEnrolmentCheckout({
                   }
                 />
                 <span>
-                  I have read and agree to the{" "}
-                  <button
-                    type="button"
-                    className="termsLink"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      setTermsModal("provider");
-                    }}
-                  >
-                    {`${termsProviderName} Terms & Conditions`}
-                  </button>
-                  , the{" "}
-                  <button
-                    type="button"
-                    className="termsLink"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      setTermsModal("studentpay");
-                    }}
-                  >
-                    StudentPay Payment Plan Agreement
-                  </button>{" "}
-                  and the{" "}
-                  <button
-                    type="button"
-                    className="termsLink"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      setTermsModal("direct-debit");
-                    }}
-                  >
-                    Direct Debit Service Agreement
-                  </button>
-                  .
+                  {paymentChoice === "full" ? (
+                    <>
+                      I have read and agree to the{" "}
+                      <button
+                        type="button"
+                        className="termsLink"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          setTermsModal("provider");
+                        }}
+                      >
+                        {`${termsProviderName} Terms & Conditions`}
+                      </button>
+                      .
+                    </>
+                  ) : (
+                    <>
+                      I have read and agree to the{" "}
+                      <button
+                        type="button"
+                        className="termsLink"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          setTermsModal("provider");
+                        }}
+                      >
+                        {`${termsProviderName} Terms & Conditions`}
+                      </button>
+                      , the{" "}
+                      <button
+                        type="button"
+                        className="termsLink"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          setTermsModal("studentpay");
+                        }}
+                      >
+                        StudentPay Payment Plan Agreement
+                      </button>{" "}
+                      and the{" "}
+                      <button
+                        type="button"
+                        className="termsLink"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          setTermsModal("direct-debit");
+                        }}
+                      >
+                        Direct Debit Service Agreement
+                      </button>
+                      .
+                    </>
+                  )}
                 </span>
               </label>
 
@@ -891,10 +911,21 @@ export function SimpleEnrolmentCheckout({
                   }}
                 />
                 <span>
-                  I confirm that the information I have supplied is true and
-                  complete, and I authorise {termsProviderName} and StudentPay to
-                  use my information to establish and administer my payment
-                  plan.
+                  {paymentChoice === "full" ? (
+                    <>
+                      I confirm that the information I have supplied is true and
+                      complete, and I authorise {termsProviderName} and StudentPay
+                      to use my information to process this enrolment and
+                      payment.
+                    </>
+                  ) : (
+                    <>
+                      I confirm that the information I have supplied is true and
+                      complete, and I authorise {termsProviderName} and StudentPay
+                      to use my information to establish and administer my
+                      payment plan.
+                    </>
+                  )}
                 </span>
               </label>
             </div>
