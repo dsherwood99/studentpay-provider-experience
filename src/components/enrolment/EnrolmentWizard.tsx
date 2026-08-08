@@ -57,6 +57,14 @@ const STEPS = [
 
 type StepId = (typeof STEPS)[number]["id"];
 
+const COURSE_VISUALS: Record<Course["visualTone"], string> = {
+  beauty: "/providers/academy-australia/imagery/beauty-makeup.jpg",
+  psychology: "/providers/academy-australia/imagery/psychology-study.jpg",
+  technology: "/providers/academy-australia/imagery/technology-laptop.jpg",
+  animal: "/providers/academy-australia/imagery/hero-students.jpg",
+  business: "/providers/academy-australia/imagery/hero-students.jpg",
+};
+
 function createInitialFormData(
   paymentOption: EnrolmentPaymentOption,
 ): EnrolmentFormData {
@@ -700,12 +708,12 @@ export function EnrolmentWizard({
           </div>
           <p className="enrolment-wizard__eyebrow">Enrolment confirmed</p>
           <h1>
-            Thanks, {formData.firstName}. Your Criminal Psychology enrolment
-            is confirmed.
+            Thanks, {formData.firstName}. Your {course.title} enrolment is
+            confirmed.
           </h1>
           <p className="enrolment-complete__lead">
-            Your StudentPay payment plan has been activated using the same
-            confirm-and-pay flow developed in the OnFit enrolment wizard.
+            Your StudentPay payment plan has been activated through the
+            confirm-and-pay enrolment flow.
           </p>
           <div className="enrolment-complete__summary">
             <div>
@@ -822,17 +830,27 @@ export function EnrolmentWizard({
             {currentStep === "course" ? (
               <section className="wizard-step">
                 <p className="enrolment-wizard__eyebrow">Course confirmation</p>
-                <h1>Confirm your Criminal Psychology enrolment.</h1>
+                <h1>Confirm your {course.title} enrolment.</h1>
                 <p className="wizard-step__lead">
-                  This Provider Experience checkout uses the full OnFit
-                  enrolment wizard flow: screening, study skills, dossier and
-                  StudentPay confirm-and-pay.
+                  This Provider Experience checkout uses the full StudentPay
+                  enrolment wizard flow: screening, study skills, student
+                  details and confirm-and-pay.
                 </p>
 
                 <div className="wizard-course-confirmation">
                   <div
                     className={`wizard-course-confirmation__visual wizard-course-confirmation__visual--${course.visualTone}`}
                   >
+                    {COURSE_VISUALS[course.visualTone] ? (
+                      <Image
+                        src={COURSE_VISUALS[course.visualTone]}
+                        alt=""
+                        fill
+                        className="wizard-course-confirmation__image"
+                        sizes="230px"
+                        priority
+                      />
+                    ) : null}
                     <span>{course.category}</span>
                   </div>
                   <div className="wizard-course-confirmation__content">
@@ -862,7 +880,7 @@ export function EnrolmentWizard({
                 </div>
 
                 <div className="wizard-notice">
-                  <strong>OnFit wizard parity</strong>
+                  <strong>StudentPay wizard flow</strong>
                   <span>
                     Course → Screening → Study skills → Details → Confirm and
                     Pay, including deposit simulation, direct debit authority,

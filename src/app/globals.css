@@ -2685,71 +2685,123 @@ main {
 .wizard-course-confirmation {
   overflow: hidden;
   display: grid;
-  grid-template-columns: 230px minmax(0, 1fr);
+  grid-template-columns: 180px minmax(0, 1fr);
   border: 1px solid var(--colour-grey-300);
   border-radius: var(--radius-large);
 }
 
 .wizard-course-confirmation__visual {
-  min-height: 290px;
+  position: relative;
+  min-height: 0;
   display: flex;
   align-items: flex-start;
-  padding: 24px;
+  padding: 14px;
+  overflow: hidden;
+}
+
+.wizard-course-confirmation__image {
+  object-fit: cover;
+  object-position: center;
+}
+
+.wizard-course-confirmation__visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .wizard-course-confirmation__visual--beauty {
   background: linear-gradient(145deg, #f45f68, #ffad55);
 }
 
+.wizard-course-confirmation__visual--beauty::after {
+  background: linear-gradient(
+    145deg,
+    rgba(244, 95, 104, 0.28),
+    rgba(255, 173, 85, 0.22)
+  );
+}
+
 .wizard-course-confirmation__visual--psychology {
   background: linear-gradient(145deg, #30364f, #7c6fb1);
+}
+
+.wizard-course-confirmation__visual--psychology::after {
+  background: linear-gradient(
+    145deg,
+    rgba(48, 54, 79, 0.28),
+    rgba(124, 111, 177, 0.22)
+  );
 }
 
 .wizard-course-confirmation__visual--technology {
   background: linear-gradient(145deg, #17324b, #2584a2);
 }
 
+.wizard-course-confirmation__visual--technology::after {
+  background: linear-gradient(
+    145deg,
+    rgba(23, 50, 75, 0.28),
+    rgba(37, 132, 162, 0.22)
+  );
+}
+
 .wizard-course-confirmation__visual--animal {
   background: linear-gradient(145deg, #557e63, #a6ae70);
 }
 
+.wizard-course-confirmation__visual--animal::after {
+  background: linear-gradient(
+    145deg,
+    rgba(85, 126, 99, 0.28),
+    rgba(166, 174, 112, 0.22)
+  );
+}
+
 .wizard-course-confirmation__visual span {
-  padding: 7px 11px;
+  position: relative;
+  z-index: 2;
+  padding: 6px 10px;
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.92);
   color: var(--colour-charcoal-900);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 800;
 }
 
 .wizard-course-confirmation__content {
-  padding: 30px;
+  padding: 16px 18px;
 }
 
 .wizard-course-confirmation__content h2 {
-  margin: 0 0 12px;
+  margin: 0 0 6px;
   color: var(--colour-charcoal-900);
-  font-size: 1.6rem;
-  line-height: 1.1;
+  font-size: 1.2rem;
+  line-height: 1.2;
 }
 
 .wizard-course-confirmation__content > p {
+  margin: 0;
   color: var(--colour-charcoal-700);
+  font-size: 0.92rem;
+  line-height: 1.4;
 }
 
 .wizard-course-confirmation dl,
 .wizard-review dl,
 .enrolment-wizard__summary dl {
-  margin: 24px 0 0;
+  margin: 12px 0 0;
 }
 
 .wizard-course-confirmation dl div,
 .wizard-review dl div,
 .enrolment-wizard__summary dl div {
   display: grid;
-  grid-template-columns: 125px minmax(0, 1fr);
-  gap: 16px;
-  padding: 11px 0;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 12px;
+  padding: 7px 0;
   border-bottom: 1px solid var(--colour-grey-300);
 }
 
@@ -2757,7 +2809,7 @@ main {
 .wizard-review dt,
 .enrolment-wizard__summary dt {
   color: var(--colour-grey-500);
-  font-size: 0.76rem;
+  font-size: 0.72rem;
 }
 
 .wizard-course-confirmation dd,
@@ -2766,6 +2818,7 @@ main {
   margin: 0;
   color: var(--colour-charcoal-900);
   font-weight: 750;
+  font-size: 0.92rem;
 }
 
 .wizard-notice {
@@ -3320,7 +3373,7 @@ main {
   }
 
   .wizard-course-confirmation__visual {
-    min-height: 150px;
+    min-height: 120px;
   }
 
   .wizard-field--full {
