@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FullStackCoursePage } from "@/components/courses/FullStackCoursePage";
 import { EnrolmentWizard } from "@/components/enrolment/EnrolmentWizard";
 import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
@@ -49,6 +50,17 @@ export default async function CourseDetailPage({
     payment === "full" || payment === "afterpay" || payment === "plan"
       ? payment
       : "plan";
+
+  if (course.slug === "full-stack-developer") {
+    return (
+      <FullStackCoursePage
+        provider={provider}
+        course={course}
+        initialPaymentOption={initialPaymentOption}
+        studentPayProviderCode={config.providerCode}
+      />
+    );
+  }
 
   return (
     <div className="course-detail-page">

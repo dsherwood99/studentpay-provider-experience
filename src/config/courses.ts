@@ -65,7 +65,7 @@ export const courses: Course[] = [
     code: "FULL_STACK_DEVELOPER",
     slug: "full-stack-developer",
     providerCode: "ACADEMY_AUSTRALIA",
-    title: "Full Stack Developer Accelerator",
+    title: "Advanced Full Stack Developer Accelerator",
     category: "Technology",
     shortDescription:
       "Build practical front-end and back-end development skills through project-based online learning.",
@@ -73,12 +73,13 @@ export const courses: Course[] = [
       "A career-focused development course covering modern web technologies, practical projects and core full-stack development concepts.",
     duration: "Flexible",
     deliveryMode: "Online and project-based",
-    badges: ["Career focused", "Project based", "Online learning"],
+    deliveryProvider: "Mission Ready",
+    badges: ["Online learning", "Project-based", "Career-focused"],
     outcomes: [
-      "Develop responsive web applications",
-      "Understand front-end and back-end development",
-      "Build a portfolio of practical projects",
-      "Prepare for entry-level development opportunities",
+      "Modern front-end development and responsive user interface design",
+      "Back-end development concepts, APIs and application logic",
+      "Database fundamentals and data-driven application workflows",
+      "Cloud, deployment and practical software delivery practices",
     ],
     paymentPlan: {
       totalFee: 4995,
