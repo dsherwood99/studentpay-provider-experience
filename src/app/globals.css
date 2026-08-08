@@ -2580,7 +2580,12 @@ main {
   margin: 18px 0 22px;
   overflow: hidden;
   border-radius: var(--radius-large);
-  background: linear-gradient(135deg, #0f2743, #14365d 55%, #ef4f69);
+  background: linear-gradient(
+    135deg,
+    var(--colour-coral-500) 0%,
+    var(--colour-coral-600) 48%,
+    var(--colour-orange-500) 100%
+  );
   color: var(--colour-white);
   box-shadow: var(--shadow-medium);
 }
@@ -2602,23 +2607,23 @@ main {
 .simple-course-visual__copy span {
   font-size: 0.88rem;
   line-height: 1.5;
-  opacity: 0.9;
+  opacity: 0.95;
 }
 
 .simple-course-visual__code {
   margin: 24px;
   padding: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.12);
-  color: #f7fbff;
+  background: rgba(61, 61, 61, 0.28);
+  color: var(--colour-cream-50);
   font-family: Consolas, Monaco, monospace;
   font-size: 0.78rem;
   line-height: 1.6;
 }
 
 .simple-course-visual__code em {
-  color: #ffd36d;
+  color: var(--colour-peach-200);
   font-style: normal;
 }
 
