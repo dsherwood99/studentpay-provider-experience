@@ -2065,7 +2065,7 @@ main {
 }
 
 .course-detail-content-section {
-  padding: 64px 0;
+  padding: 56px 0;
   background: var(--course-cream);
 }
 
@@ -2079,7 +2079,7 @@ main {
 .course-detail-main-content {
   display: flex;
   flex-direction: column;
-  gap: 82px;
+  gap: 48px;
 }
 
 .course-detail-copy-block {
@@ -2169,6 +2169,19 @@ main {
   background: var(--colour-white);
 }
 
+.course-glance-section {
+  padding: 0 0 40px;
+  background: var(--course-cream);
+}
+
+.course-glance-section .course-detail-sidebar-card {
+  max-width: 720px;
+}
+
+.course-detail-sidebar-card--compact {
+  padding: 16px 20px 14px;
+}
+
 .course-detail-sidebar-card dl {
   margin: 0;
 }
@@ -2176,6 +2189,18 @@ main {
 .course-detail-sidebar-card dl div {
   padding: 16px 0;
   border-bottom: 1px solid var(--colour-grey-300);
+}
+
+.course-detail-sidebar-card--compact .course-detail-sidebar-card__label {
+  margin-bottom: 4px;
+}
+
+.course-detail-sidebar-card--compact dl div {
+  padding: 8px 0;
+}
+
+.course-detail-sidebar-card--compact dl div:first-child {
+  padding-top: 6px;
 }
 
 .course-detail-sidebar-card dl div:last-child {
@@ -2188,10 +2213,21 @@ main {
   font-size: 0.74rem;
 }
 
+.course-detail-sidebar-card--compact dt {
+  font-size: 0.7rem;
+  line-height: 1.2;
+}
+
 .course-detail-sidebar-card dd {
   margin: 3px 0 0;
   color: var(--course-heading);
   font-weight: 800;
+}
+
+.course-detail-sidebar-card--compact dd {
+  margin-top: 1px;
+  font-size: 0.95rem;
+  line-height: 1.3;
 }
 
 .course-detail-support-card {
@@ -2217,7 +2253,7 @@ main {
 }
 
 .course-fees-section {
-  padding: 100px 0;
+  padding: 56px 0 88px;
   background: var(--colour-white);
 }
 

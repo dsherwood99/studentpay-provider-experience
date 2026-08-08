@@ -167,81 +167,59 @@ export default async function CourseDetailPage({
       </section>
 
       <section className="course-detail-content-section">
-        <div className="page-shell course-detail-content-grid">
-          <div className="course-detail-main-content">
-            <section className="course-detail-copy-block">
-              <p className="course-detail-eyebrow">
-                Course overview
-              </p>
+        <div className="page-shell">
+          <section className="course-detail-copy-block">
+            <p className="course-detail-eyebrow">Course overview</p>
 
-              <h2>Build practical skills with flexible online study.</h2>
+            <h2>Build practical skills with flexible online study.</h2>
 
-              <p>{course.description}</p>
+            <p>{course.description}</p>
 
-              <p>
-                The course is designed to help students build
-                confidence progressively through practical learning,
-                online resources and provider support.
-              </p>
-            </section>
+            <p>
+              The course is designed to help students build confidence
+              progressively through practical learning, online resources and
+              provider support.
+            </p>
+          </section>
+        </div>
+      </section>
+
+      <section className="course-glance-section">
+        <div className="page-shell">
+          <div className="course-detail-sidebar-card course-detail-sidebar-card--compact">
+            <p className="course-detail-sidebar-card__label">
+              Course at a glance
+            </p>
+
+            <dl>
+              <div>
+                <dt>Course</dt>
+                <dd>{course.title}</dd>
+              </div>
+
+              <div>
+                <dt>Category</dt>
+                <dd>{course.category}</dd>
+              </div>
+
+              <div>
+                <dt>Delivery</dt>
+                <dd>{course.deliveryMode}</dd>
+              </div>
+
+              <div>
+                <dt>Duration</dt>
+                <dd>{course.duration}</dd>
+              </div>
+
+              {course.deliveryProvider ? (
+                <div>
+                  <dt>Provider</dt>
+                  <dd>{course.deliveryProvider}</dd>
+                </div>
+              ) : null}
+            </dl>
           </div>
-
-          <aside className="course-detail-sidebar">
-            <div className="course-detail-sidebar-card">
-              <p className="course-detail-sidebar-card__label">
-                Course at a glance
-              </p>
-
-              <dl>
-                <div>
-                  <dt>Course</dt>
-                  <dd>{course.title}</dd>
-                </div>
-
-                <div>
-                  <dt>Category</dt>
-                  <dd>{course.category}</dd>
-                </div>
-
-                <div>
-                  <dt>Delivery</dt>
-                  <dd>{course.deliveryMode}</dd>
-                </div>
-
-                <div>
-                  <dt>Duration</dt>
-                  <dd>{course.duration}</dd>
-                </div>
-
-                {course.deliveryProvider ? (
-                  <div>
-                    <dt>Provider</dt>
-                    <dd>{course.deliveryProvider}</dd>
-                  </div>
-                ) : null}
-              </dl>
-            </div>
-
-            <div className="course-detail-support-card">
-              <p className="course-detail-sidebar-card__label">
-                Need help deciding?
-              </p>
-
-              <h3>Talk to the enrolment team.</h3>
-
-              <p>
-                Ask questions about the course, study options or
-                payment arrangements before starting.
-              </p>
-
-              <a
-                href={`mailto:${provider.supportEmail ?? "enrolments@academyaustralia.com"}`}
-                className="course-detail-text-link"
-              >
-                Contact Academy Australia →
-              </a>
-            </div>
-          </aside>
         </div>
       </section>
 
