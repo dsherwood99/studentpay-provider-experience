@@ -26,7 +26,9 @@ export function PlatformFooter() {
             <p className="platform-footer__heading">Explore</p>
             <Link href="/providers/academy-australia/courses">Courses</Link>
             <a href="/#payment-options">Payment options</a>
-            <a href="/#how-it-works">How it works</a>
+            <Link href="/providers/academy-australia/courses/criminal-psychology/enrol">
+              Enrol now
+            </Link>
           </div>
 
           <div>

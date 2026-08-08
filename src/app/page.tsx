@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { courses } from "@/config/courses";
-import { formatCurrency, formatPaymentFrequency } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
 
 const courseAreas = [
   {
@@ -28,7 +28,6 @@ const courseAreas = [
 ] as const;
 
 export default function HomePage() {
-  const featuredCourses = courses.filter((course) => course.featured).slice(0, 3);
   const criminalPsychology = courses.find(
     (course) => course.slug === "criminal-psychology",
   );
@@ -125,10 +124,8 @@ export default function HomePage() {
 
       <section className="aa-payment-banner" id="payment-options">
         <div className="page-shell aa-payment-banner__inner">
-          <div>
-            <p className="aa-script aa-script--on-coral">
-              Support that makes a difference
-            </p>
+          <div className="aa-payment-banner__copy">
+            <p className="aa-script">Support that makes a difference</p>
             <h2>Flexible payment plans built into enrolment.</h2>
             <p>
               Choose weekly, fortnightly or monthly repayments — or pay in full
@@ -137,100 +134,29 @@ export default function HomePage() {
           </div>
 
           <div className="aa-payment-banner__plans">
-            <div>
-              <span>Weekly</span>
-              <strong>From $25</strong>
-              <p>Best for tighter budgets</p>
-            </div>
-            <div>
-              <span>Fortnightly</span>
-              <strong>Flexible</strong>
-              <p>Aligned to pay cycles</p>
-            </div>
-            <div>
-              <span>Monthly</span>
-              <strong>Simple</strong>
-              <p>Easy to understand</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="aa-featured" id="why-us">
-        <div className="page-shell">
-          <div className="aa-section-heading">
-            <p className="aa-script">Why Academy Australia</p>
-            <h2>
-              Practical learning with clear support from enquiry to completion.
-            </h2>
-          </div>
-
-          <ol className="aa-why-list">
-            <li>
-              <span>1</span>
-              <p>We make course information easy to understand.</p>
-            </li>
-            <li>
-              <span>2</span>
-              <p>We help students choose a manageable payment option.</p>
-            </li>
-            <li>
-              <span>3</span>
-              <p>We provide online access and tutor support.</p>
-            </li>
-            <li>
-              <span>4</span>
-              <p>We keep the enrolment process simple and transparent.</p>
-            </li>
-          </ol>
-
-          <div className="aa-featured__courses">
-            {featuredCourses.map((course) => (
-              <Link
-                key={course.code}
-                href={`/providers/academy-australia/courses/${course.slug}`}
-                className="aa-featured-course"
-              >
-                <span>{course.category}</span>
-                <strong>{course.title}</strong>
-                <p>{course.shortDescription}</p>
-                <em>
-                  From {formatCurrency(course.paymentPlan.repaymentAmount)} per{" "}
-                  {formatPaymentFrequency(course.paymentPlan.frequency)}
-                </em>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="aa-steps" id="how-it-works">
-        <div className="page-shell">
-          <div className="aa-section-heading aa-section-heading--light">
-            <p className="aa-script aa-script--on-dark">How it works</p>
-            <h2>Four simple steps</h2>
-          </div>
-
-          <div className="aa-steps__grid">
             <article>
-              <span>1</span>
-              <h3>Enquire</h3>
-              <p>Request a course guide and speak with an advisor.</p>
+              <span className="aa-payment-banner__plan-index">01</span>
+              <div>
+                <span className="aa-payment-banner__plan-label">Weekly</span>
+                <strong>From $25</strong>
+                <p>Best for tighter budgets</p>
+              </div>
             </article>
             <article>
-              <span>2</span>
-              <h3>Choose</h3>
-              <p>Select your course and preferred payment option.</p>
+              <span className="aa-payment-banner__plan-index">02</span>
+              <div>
+                <span className="aa-payment-banner__plan-label">Fortnightly</span>
+                <strong>Flexible</strong>
+                <p>Aligned to pay cycles</p>
+              </div>
             </article>
             <article>
-              <span>3</span>
-              <h3>Start</h3>
-              <p>Access course material online and study at your own pace.</p>
-            </article>
-            <article>
-              <span>4</span>
-              <h3>Complete</h3>
-              <p>Finish your course and take the next career step.</p>
+              <span className="aa-payment-banner__plan-index">03</span>
+              <div>
+                <span className="aa-payment-banner__plan-label">Monthly</span>
+                <strong>Simple</strong>
+                <p>Easy to understand</p>
+              </div>
             </article>
           </div>
         </div>

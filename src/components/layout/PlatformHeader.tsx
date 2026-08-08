@@ -19,8 +19,6 @@ export function PlatformHeader() {
         <nav className="platform-nav" aria-label="Main navigation">
           <Link href="/providers/academy-australia/courses">Courses</Link>
           <a href="/#payment-options">Payment options</a>
-          <a href="/#how-it-works">How it works</a>
-          <a href="/#why-us">Why us</a>
           <Link
             href="/providers/academy-australia/courses/criminal-psychology/enrol"
             className="platform-nav__enrol"
