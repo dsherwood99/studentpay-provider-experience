@@ -2869,8 +2869,37 @@ main {
   line-height: 1.35;
 }
 
+.simple-checkout__declarations {
+  display: grid;
+  gap: 12px;
+  margin: 14px 0 4px;
+}
+
+.simple-checkout__declarations .simple-checkout__check {
+  margin: 0;
+  font-weight: 600;
+}
+
+.simple-checkout .termsLink {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--colour-coral-500);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .simple-checkout__check input {
   margin-top: 2px;
+}
+
+.simple-checkout__submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .simple-checkout__submit {
@@ -3907,6 +3936,18 @@ main {
 .checkboxLine input {
   width: auto;
   accent-color: var(--purple);
+}
+
+.termsLink {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--colour-coral-500);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .result {

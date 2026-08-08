@@ -58,6 +58,7 @@ export default async function CourseDetailPage({
         course={course}
         initialPaymentOption={initialPaymentOption}
         studentPayProviderCode={config.providerCode}
+        legalApiBaseUrl={config.apiBaseUrl}
       />
     );
   }

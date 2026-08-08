@@ -7,6 +7,10 @@ import {
 } from "react";
 import { DdaSetupEmbed } from "@/components/enrolment/DdaSetupEmbed";
 import {
+  TermsModal,
+  type TermsModalType,
+} from "@/components/enrolment/TermsModal";
+import {
   formatApiError,
   toEmbeddedSetupUrl,
 } from "@/lib/provider-experience/checkout";
@@ -29,6 +33,7 @@ type SimpleEnrolmentCheckoutProps = {
   course: Course;
   initialPaymentOption?: EnrolmentPaymentOption;
   studentPayProviderCode?: string;
+  legalApiBaseUrl?: string;
 };
 
 type SimplePaymentChoice = "full" | "plan";
@@ -72,8 +77,10 @@ export function SimpleEnrolmentCheckout({
   course,
   initialPaymentOption = "plan",
   studentPayProviderCode,
+  legalApiBaseUrl = "https://sandbox-api.studentpay.com.au",
 }: SimpleEnrolmentCheckoutProps) {
   const apiProviderCode = studentPayProviderCode || provider.code;
+  const termsProviderName = course.deliveryProvider || provider.name;
   const paymentFrequency = formatPaymentFrequency(
     course.paymentPlan.frequency,
   );
@@ -101,6 +108,7 @@ export function SimpleEnrolmentCheckout({
   const [enrolmentConfirmed, setEnrolmentConfirmed] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
+  const [termsModal, setTermsModal] = useState<TermsModalType | null>(null);
 
   const amountToday = useMemo(
     () =>
@@ -109,6 +117,14 @@ export function SimpleEnrolmentCheckout({
         : course.paymentPlan.totalFee,
     [course.paymentPlan.depositAmount, course.paymentPlan.totalFee, paymentChoice],
   );
+
+  const confirmBlocked =
+    !formData.paymentTermsAccepted ||
+    !formData.informationConfirmed ||
+    !formData.privacyAccepted ||
+    submitting ||
+    openingDda ||
+    enrolmentConfirmed;
 
   function updateField<K extends keyof EnrolmentFormData>(
     key: K,
@@ -120,6 +136,9 @@ export function SimpleEnrolmentCheckout({
   function selectPayment(choice: SimplePaymentChoice) {
     setPaymentChoice(choice);
     updateField("paymentOption", choice === "plan" ? "plan" : "full");
+    updateField("paymentTermsAccepted", false);
+    updateField("informationConfirmed", false);
+    updateField("privacyAccepted", false);
     setCheckoutSession(null);
     setDirectDebitAuthorised(false);
     setShowEmbeddedDda(false);
@@ -236,8 +255,10 @@ export function SimpleEnrolmentCheckout({
     setStatusError(null);
     setStatusMessage(null);
 
-    if (!formData.paymentTermsAccepted) {
-      setStatusError("Please accept the terms and conditions to continue.");
+    if (!formData.paymentTermsAccepted || !formData.informationConfirmed) {
+      setStatusError(
+        "Please accept the terms and confirm your information to continue.",
+      );
       return;
     }
 
@@ -637,46 +658,89 @@ export function SimpleEnrolmentCheckout({
         <section className="simple-checkout__panel">
           <span className="simple-checkout__step">4</span>
           <div>
-            <h3>Terms &amp; Conditions</h3>
+            <h3>Review &amp; Confirm</h3>
             <p className="simple-checkout__muted">
-              Before confirming your enrolment, please confirm:
+              You&apos;re almost done. Review your payment arrangement and accept
+              the terms below to confirm your enrolment.
             </p>
-            <label className="simple-checkout__check">
-              <input
-                type="checkbox"
-                checked={formData.paymentTermsAccepted}
-                onChange={(event) => {
-                  const checked = event.target.checked;
-                  updateField("paymentTermsAccepted", checked);
-                  updateField("informationConfirmed", checked);
-                  updateField("privacyAccepted", checked);
-                }}
-              />
-              <span>
-                I have read, understood, and agree to the StudentPay terms and
-                conditions as well as the provider course terms and conditions.
-              </span>
-            </label>
-            <label className="simple-checkout__check">
-              <input
-                type="checkbox"
-                checked={formData.marketingConsent}
-                onChange={(event) =>
-                  updateField("marketingConsent", event.target.checked)
-                }
-              />
-              <span>
-                I would like to receive news and exclusive offers from the
-                education provider.
-              </span>
-            </label>
+
+            <div className="simple-checkout__declarations">
+              <label className="simple-checkout__check">
+                <input
+                  type="checkbox"
+                  checked={formData.paymentTermsAccepted}
+                  onChange={(event) =>
+                    updateField("paymentTermsAccepted", event.target.checked)
+                  }
+                />
+                <span>
+                  I have read and agree to the{" "}
+                  <button
+                    type="button"
+                    className="termsLink"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      setTermsModal("provider");
+                    }}
+                  >
+                    {termsProviderName} Terms &amp; Conditions
+                  </button>
+                  , the{" "}
+                  <button
+                    type="button"
+                    className="termsLink"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      setTermsModal("studentpay");
+                    }}
+                  >
+                    StudentPay Payment Plan Agreement
+                  </button>{" "}
+                  and the{" "}
+                  <button
+                    type="button"
+                    className="termsLink"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      setTermsModal("direct-debit");
+                    }}
+                  >
+                    Direct Debit Service Agreement
+                  </button>
+                  .
+                </span>
+              </label>
+
+              <label className="simple-checkout__check">
+                <input
+                  type="checkbox"
+                  checked={formData.informationConfirmed}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    updateField("informationConfirmed", checked);
+                    updateField("privacyAccepted", checked);
+                  }}
+                />
+                <span>
+                  I confirm that the information I have supplied is true and
+                  complete, and I authorise {termsProviderName} and StudentPay to
+                  use my information to establish and administer my payment plan.
+                </span>
+              </label>
+            </div>
 
             <button
               type="submit"
               className="button button--course-primary simple-checkout__submit"
-              disabled={submitting || openingDda}
+              disabled={confirmBlocked}
             >
-              {submitting || openingDda ? "Processing…" : "Get Started"}
+              {enrolmentConfirmed
+                ? "✓ Enrolment Confirmed"
+                : submitting || openingDda
+                  ? "Confirming enrolment…"
+                  : paymentChoice === "plan"
+                    ? "Confirm Enrolment & Activate Payment Plan"
+                    : "Confirm Enrolment"}
             </button>
 
             {statusError ? (
@@ -692,6 +756,17 @@ export function SimpleEnrolmentCheckout({
           </div>
         </section>
       </form>
+
+      {termsModal ? (
+        <TermsModal
+          type={termsModal}
+          checkoutToken={checkoutSession?.checkoutToken || ""}
+          providerName={termsProviderName}
+          providerCode={apiProviderCode}
+          legalApiBaseUrl={legalApiBaseUrl}
+          onClose={() => setTermsModal(null)}
+        />
+      ) : null}
     </aside>
   );
 }

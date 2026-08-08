@@ -9,6 +9,7 @@ type FullStackCoursePageProps = {
   course: Course;
   initialPaymentOption: EnrolmentPaymentOption;
   studentPayProviderCode?: string;
+  legalApiBaseUrl?: string;
 };
 
 export function FullStackCoursePage({
@@ -16,6 +17,7 @@ export function FullStackCoursePage({
   course,
   initialPaymentOption,
   studentPayProviderCode,
+  legalApiBaseUrl,
 }: FullStackCoursePageProps) {
   return (
     <div className="simple-course-page">
@@ -159,6 +161,7 @@ export function FullStackCoursePage({
             course={course}
             initialPaymentOption={initialPaymentOption}
             studentPayProviderCode={studentPayProviderCode}
+            legalApiBaseUrl={legalApiBaseUrl}
           />
         </div>
       </section>
