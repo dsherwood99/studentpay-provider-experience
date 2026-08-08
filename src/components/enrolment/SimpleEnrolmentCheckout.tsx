@@ -235,9 +235,9 @@ export function SimpleEnrolmentCheckout({
             first_payment_date: formData.firstPaymentDate,
           },
           declarations: {
-            payment_plan_accepted: true,
-            information_confirmed: true,
-            privacy_accepted: true,
+            payment_plan_accepted: formData.paymentTermsAccepted,
+            information_confirmed: formData.informationConfirmed,
+            privacy_consent_accepted: formData.privacyAccepted,
           },
           confirmed_at: new Date().toISOString(),
         }),
@@ -727,7 +727,7 @@ export function SimpleEnrolmentCheckout({
                       setTermsModal("provider");
                     }}
                   >
-                    {termsProviderName} Terms &amp; Conditions
+                    {`${termsProviderName} Terms & Conditions`}
                   </button>
                   , the{" "}
                   <button
