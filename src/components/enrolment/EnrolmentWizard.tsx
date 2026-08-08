@@ -43,6 +43,8 @@ type EnrolmentWizardProps = {
   legalApiBaseUrl?: string;
   /** Provider code sent to StudentPay APIs (e.g. SANDBOX_DEMO), not the catalogue brand code. */
   studentPayProviderCode?: string;
+  /** When true, hide the standalone harness chrome for in-page embedding. */
+  embedded?: boolean;
 };
 
 const STEPS = [
@@ -108,6 +110,7 @@ export function EnrolmentWizard({
   initialPaymentOption = "plan",
   legalApiBaseUrl = "https://sandbox-api.studentpay.com.au",
   studentPayProviderCode,
+  embedded = false,
 }: EnrolmentWizardProps) {
   const apiProviderCode = studentPayProviderCode || provider.code;
   const storageKey = `studentpay-px-enrolment:${provider.slug}:${course.slug}`;
@@ -742,27 +745,36 @@ export function EnrolmentWizard({
   }
 
   return (
-    <div className="enrolment-wizard" style={themeStyle}>
-      <header className="enrolment-wizard__header">
-        <div className="page-shell enrolment-wizard__header-inner">
-          <Link href="/" className="enrolment-wizard__back-link">
-            ← Return to harness
-          </Link>
+    <div
+      className={
+        embedded
+          ? "enrolment-wizard enrolment-wizard--embedded"
+          : "enrolment-wizard"
+      }
+      style={themeStyle}
+    >
+      {embedded ? null : (
+        <header className="enrolment-wizard__header">
+          <div className="page-shell enrolment-wizard__header-inner">
+            <Link href="/" className="enrolment-wizard__back-link">
+              ← Return to harness
+            </Link>
 
-          <Image
-            src={provider.logoPath}
-            alt={`${provider.name} logo`}
-            width={185}
-            height={70}
-            className="enrolment-wizard__logo"
-            priority
-          />
+            <Image
+              src={provider.logoPath}
+              alt={`${provider.name} logo`}
+              width={185}
+              height={70}
+              className="enrolment-wizard__logo"
+              priority
+            />
 
-          <span className="enrolment-wizard__powered-by">
-            Provider Experience · OnFit wizard parity
-          </span>
-        </div>
-      </header>
+            <span className="enrolment-wizard__powered-by">
+              Provider Experience · OnFit wizard parity
+            </span>
+          </div>
+        </header>
+      )}
 
       <div className="enrolment-wizard__progress">
         <div className="page-shell">

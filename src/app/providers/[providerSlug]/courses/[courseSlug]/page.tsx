@@ -1,24 +1,33 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { EnrolmentWizard } from "@/components/enrolment/EnrolmentWizard";
 import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
 import {
   formatCurrency,
   formatPaymentFrequency,
 } from "@/lib/format";
+import { getProviderExperienceConfig } from "@/lib/provider-experience/checkout";
+import type { EnrolmentPaymentOption } from "@/types/enrolment";
 
 type CourseDetailPageProps = {
   params: Promise<{
     providerSlug: string;
     courseSlug: string;
   }>;
+  searchParams: Promise<{
+    payment?: string;
+  }>;
 };
 
 export default async function CourseDetailPage({
   params,
+  searchParams,
 }: CourseDetailPageProps) {
   const { providerSlug, courseSlug } = await params;
+  const { payment } = await searchParams;
+  const config = getProviderExperienceConfig();
 
   const provider = getProviderBySlug(providerSlug);
 
@@ -35,6 +44,11 @@ export default async function CourseDetailPage({
   const paymentFrequency = formatPaymentFrequency(
     course.paymentPlan.frequency,
   );
+
+  const initialPaymentOption: EnrolmentPaymentOption =
+    payment === "full" || payment === "afterpay" || payment === "plan"
+      ? payment
+      : "plan";
 
   return (
     <div className="course-detail-page">
@@ -108,19 +122,19 @@ export default async function CourseDetailPage({
                 plan during enrolment.
               </p>
 
-              <Link
-                href={`/providers/${provider.slug}/courses/${course.slug}/enrol`}
+              <a
+                href="#enrolment"
                 className="button button--course-primary"
               >
                 Start enrolment
-              </Link>
+              </a>
 
-              <Link
-                href="#course-fees"
+              <a
+                href="#enrolment"
                 className="course-detail-payment-card__secondary"
               >
-                View all payment options
-              </Link>
+                Continue to enrolment wizard
+              </a>
 
               <div className="course-detail-payment-card__note">
                 <strong>StudentPay sandbox</strong>
@@ -223,7 +237,7 @@ export default async function CourseDetailPage({
         </div>
       </section>
 
-      <section className="course-detail-final-cta">
+      <section className="course-detail-final-cta" id="ready-to-start">
         <div className="page-shell course-detail-final-cta__inner">
           <div>
             <p className="course-detail-eyebrow">
@@ -238,91 +252,31 @@ export default async function CourseDetailPage({
             </p>
           </div>
 
-          <Link
-            href={`/providers/${provider.slug}/courses/${course.slug}/enrol`}
-            className="button button--light"
-          >
+          <a href="#enrolment" className="button button--light">
             Start enrolment
-          </Link>
+          </a>
         </div>
       </section>
 
-      <section
-        className="course-fees-section"
-        id="course-fees"
-      >
-        <div className="page-shell">
-          <div className="course-detail-section-heading">
-            <div>
-              <p className="course-detail-eyebrow">
-                Course fees
-              </p>
-
-              <h2>Choose the payment option that works for you.</h2>
-            </div>
-
-            <p>
-              Payment options shown are demonstration values and can
-              be configured for each provider and course.
-            </p>
-          </div>
-
-          <div className="course-payment-options">
-            <article className="course-payment-option">
-              <p className="course-payment-option__label">
-                Pay in full
-              </p>
-
-              <strong>
-                {formatCurrency(course.paymentPlan.totalFee)}
-              </strong>
-
-              <p>
-                Pay the complete course fee during enrolment.
-              </p>
-
-              <Link
-                href={`/providers/${provider.slug}/courses/${course.slug}/enrol?payment=full`}
-                className="button button--course-secondary"
-              >
-                Choose pay in full
-              </Link>
-            </article>
-
-            <article className="course-payment-option course-payment-option--featured">
-              <span className="course-payment-option__badge">
-                Flexible option
-              </span>
-
-              <p className="course-payment-option__label">
-                StudentPay payment plan
-              </p>
-
-              <strong>
-                {formatCurrency(
-                  course.paymentPlan.repaymentAmount,
-                )}{" "}
-                per {paymentFrequency}
-              </strong>
-
-              <p>
-                Start with a{" "}
-                {formatCurrency(
-                  course.paymentPlan.depositAmount,
-                )}{" "}
-                deposit and spread the remaining course fee over
-                regular payments.
-              </p>
-
-              <Link
-                href={`/providers/${provider.slug}/courses/${course.slug}/enrol?payment=plan`}
-                className="button button--course-primary"
-              >
-                Choose payment plan
-              </Link>
-            </article>
-          </div>
+      <section className="course-enrolment-section" id="enrolment">
+        <div className="page-shell course-enrolment-section__intro">
+          <p className="course-detail-eyebrow">Enrolment</p>
+          <h2>Complete your guided StudentPay enrolment.</h2>
+          <p>
+            This embedded wizard creates a real sandbox checkout and continues
+            to direct-debit setup — the same flow potential customers will use
+            via the StudentPay API.
+          </p>
         </div>
+
+        <EnrolmentWizard
+          provider={provider}
+          course={course}
+          initialPaymentOption={initialPaymentOption}
+          legalApiBaseUrl={config.apiBaseUrl}
+          studentPayProviderCode={config.providerCode}
+          embedded
+        />
       </section>
     </div>
   );
