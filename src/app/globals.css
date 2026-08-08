@@ -2065,15 +2065,15 @@ main {
 }
 
 .course-detail-content-section {
-  padding: 56px 0;
+  padding: 48px 0 40px;
   background: var(--course-cream);
 }
 
 .course-detail-content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 330px;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
   align-items: start;
-  gap: 80px;
+  gap: 40px;
 }
 
 .course-detail-main-content {
@@ -2169,15 +2169,6 @@ main {
   background: var(--colour-white);
 }
 
-.course-glance-section {
-  padding: 0 0 40px;
-  background: var(--course-cream);
-}
-
-.course-glance-section .course-detail-sidebar-card {
-  max-width: 720px;
-}
-
 .course-detail-sidebar-card--compact {
   padding: 16px 20px 14px;
 }
@@ -2253,7 +2244,7 @@ main {
 }
 
 .course-fees-section {
-  padding: 56px 0 88px;
+  padding: 40px 0 72px;
   background: var(--colour-white);
 }
 
@@ -2323,7 +2314,7 @@ main {
 }
 
 .course-detail-final-cta {
-  padding: 78px 0;
+  padding: 48px 0;
   background: linear-gradient(
     125deg,
     var(--course-primary),

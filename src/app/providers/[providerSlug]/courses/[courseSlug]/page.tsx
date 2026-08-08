@@ -167,59 +167,83 @@ export default async function CourseDetailPage({
       </section>
 
       <section className="course-detail-content-section">
-        <div className="page-shell">
-          <section className="course-detail-copy-block">
-            <p className="course-detail-eyebrow">Course overview</p>
+        <div className="page-shell course-detail-content-grid">
+          <div className="course-detail-main-content">
+            <section className="course-detail-copy-block">
+              <p className="course-detail-eyebrow">Course overview</p>
 
-            <h2>Build practical skills with flexible online study.</h2>
+              <h2>Build practical skills with flexible online study.</h2>
 
-            <p>{course.description}</p>
+              <p>{course.description}</p>
 
-            <p>
-              The course is designed to help students build confidence
-              progressively through practical learning, online resources and
-              provider support.
-            </p>
-          </section>
+              <p>
+                The course is designed to help students build confidence
+                progressively through practical learning, online resources and
+                provider support.
+              </p>
+            </section>
+          </div>
+
+          <aside className="course-detail-sidebar">
+            <div className="course-detail-sidebar-card course-detail-sidebar-card--compact">
+              <p className="course-detail-sidebar-card__label">
+                Course at a glance
+              </p>
+
+              <dl>
+                <div>
+                  <dt>Course</dt>
+                  <dd>{course.title}</dd>
+                </div>
+
+                <div>
+                  <dt>Category</dt>
+                  <dd>{course.category}</dd>
+                </div>
+
+                <div>
+                  <dt>Delivery</dt>
+                  <dd>{course.deliveryMode}</dd>
+                </div>
+
+                <div>
+                  <dt>Duration</dt>
+                  <dd>{course.duration}</dd>
+                </div>
+
+                {course.deliveryProvider ? (
+                  <div>
+                    <dt>Provider</dt>
+                    <dd>{course.deliveryProvider}</dd>
+                  </div>
+                ) : null}
+              </dl>
+            </div>
+          </aside>
         </div>
       </section>
 
-      <section className="course-glance-section">
-        <div className="page-shell">
-          <div className="course-detail-sidebar-card course-detail-sidebar-card--compact">
-            <p className="course-detail-sidebar-card__label">
-              Course at a glance
+      <section className="course-detail-final-cta">
+        <div className="page-shell course-detail-final-cta__inner">
+          <div>
+            <p className="course-detail-eyebrow">
+              Ready to get started?
             </p>
 
-            <dl>
-              <div>
-                <dt>Course</dt>
-                <dd>{course.title}</dd>
-              </div>
+            <h2>Begin your guided enrolment.</h2>
 
-              <div>
-                <dt>Category</dt>
-                <dd>{course.category}</dd>
-              </div>
-
-              <div>
-                <dt>Delivery</dt>
-                <dd>{course.deliveryMode}</dd>
-              </div>
-
-              <div>
-                <dt>Duration</dt>
-                <dd>{course.duration}</dd>
-              </div>
-
-              {course.deliveryProvider ? (
-                <div>
-                  <dt>Provider</dt>
-                  <dd>{course.deliveryProvider}</dd>
-                </div>
-              ) : null}
-            </dl>
+            <p>
+              Confirm the course, enter your details and choose your
+              preferred payment option.
+            </p>
           </div>
+
+          <Link
+            href={`/providers/${provider.slug}/courses/${course.slug}/enrol`}
+            className="button button--light"
+          >
+            Start enrolment
+          </Link>
         </div>
       </section>
 
@@ -298,30 +322,6 @@ export default async function CourseDetailPage({
               </Link>
             </article>
           </div>
-        </div>
-      </section>
-
-      <section className="course-detail-final-cta">
-        <div className="page-shell course-detail-final-cta__inner">
-          <div>
-            <p className="course-detail-eyebrow">
-              Ready to get started?
-            </p>
-
-            <h2>Begin your guided enrolment.</h2>
-
-            <p>
-              Confirm the course, enter your details and choose your
-              preferred payment option.
-            </p>
-          </div>
-
-          <Link
-            href={`/providers/${provider.slug}/courses/${course.slug}/enrol`}
-            className="button button--light"
-          >
-            Start enrolment
-          </Link>
         </div>
       </section>
     </div>
