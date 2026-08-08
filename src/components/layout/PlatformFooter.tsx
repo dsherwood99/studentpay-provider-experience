@@ -6,12 +6,14 @@ export function PlatformFooter() {
     <footer className="platform-footer">
       <div className="page-shell platform-footer__grid">
         <div className="platform-footer__brand">
-          <Link href="/" className="platform-footer__logo">
+          <Link href="/" className="platform-footer__logo" aria-label="Academy Australia home">
             <Image
               src="/providers/academy-australia/academy-australia-logo.png"
               alt="Academy Australia"
-              width={160}
-              height={52}
+              width={200}
+              height={65}
+              className="platform-footer__logo-image"
+              priority={false}
             />
           </Link>
 

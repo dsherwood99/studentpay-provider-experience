@@ -128,8 +128,8 @@ export default function HomePage() {
             <p className="aa-script">Support that makes a difference</p>
             <h2>Flexible payment plans built into enrolment.</h2>
             <p>
-              Choose weekly, fortnightly or monthly repayments — or pay in full
-              — during a guided online enrolment.
+              Choose how you want to pay during a guided online enrolment —
+              then set up your plan and get started.
             </p>
           </div>
 
@@ -137,25 +137,33 @@ export default function HomePage() {
             <article>
               <span className="aa-payment-banner__plan-index">01</span>
               <div>
-                <span className="aa-payment-banner__plan-label">Weekly</span>
-                <strong>From $25</strong>
-                <p>Best for tighter budgets</p>
+                <strong>
+                  Select from weekly, fortnightly or monthly instalments
+                </strong>
+                <p>Pick the repayment rhythm that fits your budget.</p>
               </div>
             </article>
             <article>
               <span className="aa-payment-banner__plan-index">02</span>
               <div>
-                <span className="aa-payment-banner__plan-label">Fortnightly</span>
-                <strong>Flexible</strong>
-                <p>Aligned to pay cycles</p>
+                <strong>Choose when to start</strong>
+                <p>Set a start date that works for you.</p>
               </div>
             </article>
             <article>
               <span className="aa-payment-banner__plan-index">03</span>
               <div>
-                <span className="aa-payment-banner__plan-label">Monthly</span>
-                <strong>Simple</strong>
-                <p>Easy to understand</p>
+                <strong>Set up your direct debit online</strong>
+                <p>Complete secure bank setup without leaving enrolment.</p>
+              </div>
+            </article>
+            <article>
+              <span className="aa-payment-banner__plan-index">04</span>
+              <div>
+                <strong>
+                  Approve your personalised payment plan and get started
+                </strong>
+                <p>Confirm the details, then begin your course.</p>
               </div>
             </article>
           </div>

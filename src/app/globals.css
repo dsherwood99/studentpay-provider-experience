@@ -335,19 +335,13 @@ main {
   align-items: flex-end;
   padding: 36px;
   overflow: hidden;
-  background: linear-gradient(
-    160deg,
-    #f7a04b,
-    #ef5865 58%,
-    #e94957
-  );
+  background: var(--colour-cream-100);
 }
 
 .aa-hero__visual-image {
   object-fit: cover;
   object-position: center;
-  opacity: 0.5;
-  mix-blend-mode: multiply;
+  opacity: 1;
 }
 
 .aa-hero__visual-plane::after {
@@ -356,10 +350,10 @@ main {
   inset: 0;
   z-index: 1;
   background: linear-gradient(
-    160deg,
-    rgba(247, 160, 75, 0.55),
-    rgba(239, 88, 101, 0.62) 55%,
-    rgba(233, 73, 87, 0.72)
+    180deg,
+    rgba(61, 61, 61, 0.05) 0%,
+    rgba(61, 61, 61, 0.18) 45%,
+    rgba(61, 61, 61, 0.55) 100%
   );
   pointer-events: none;
 }
@@ -369,6 +363,7 @@ main {
   z-index: 2;
   max-width: 22rem;
   color: var(--colour-white);
+  text-shadow: 0 1px 12px rgba(61, 61, 61, 0.35);
 }
 
 .aa-hero__visual-copy span {
@@ -483,13 +478,13 @@ main {
   height: 160px;
   border-radius: var(--radius-medium);
   overflow: hidden;
-  background: linear-gradient(145deg, #f7a04b, #ef5865 60%, #e94957);
+  background: var(--colour-cream-100);
 }
 
 .aa-course-area__image {
   object-fit: cover;
   object-position: center;
-  opacity: 0.5;
+  opacity: 1;
 }
 
 .aa-course-area__media::after {
@@ -498,10 +493,9 @@ main {
   inset: 0;
   z-index: 1;
   background: linear-gradient(
-    145deg,
-    rgba(247, 160, 75, 0.45),
-    rgba(239, 88, 101, 0.5) 55%,
-    rgba(233, 73, 87, 0.55)
+    180deg,
+    rgba(247, 160, 75, 0.08),
+    rgba(239, 88, 101, 0.12) 100%
   );
   pointer-events: none;
 }
@@ -549,7 +543,7 @@ main {
   font-size: clamp(1.8rem, 3.2vw, 2.4rem);
   line-height: 1.15;
   letter-spacing: -0.02em;
-  max-width: 16ch;
+  max-width: 18ch;
 }
 
 .aa-payment-banner__copy > p:not(.aa-script) {
@@ -571,11 +565,11 @@ main {
   gap: 14px;
   align-items: start;
   padding: 18px 18px 18px 16px;
-  border: 1px solid var(--colour-grey-300);
+  border: 1px solid rgba(239, 88, 101, 0.14);
   border-left: 3px solid var(--colour-coral-500);
   border-radius: var(--radius-medium);
-  background: #f3f4f5;
-  box-shadow: 0 8px 20px rgba(61, 61, 61, 0.04);
+  background: var(--colour-cream-100);
+  box-shadow: 0 8px 20px rgba(61, 61, 61, 0.03);
 }
 
 .aa-payment-banner__plan-index {
@@ -584,6 +578,7 @@ main {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   border-radius: 999px;
   background: rgba(239, 88, 101, 0.12);
   color: var(--colour-coral-500);
@@ -592,22 +587,13 @@ main {
   letter-spacing: 0.02em;
 }
 
-.aa-payment-banner__plan-label {
-  display: block;
-  margin-bottom: 4px;
-  color: var(--colour-grey-500);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
 .aa-payment-banner__plans strong {
   display: block;
   margin-bottom: 4px;
   color: var(--colour-charcoal-900);
-  font-size: 1.25rem;
-  letter-spacing: -0.02em;
+  font-size: 1.05rem;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
 }
 
 .aa-payment-banner__plans article p {
@@ -881,8 +867,9 @@ main {
 
 .platform-footer {
   padding: 56px 0 28px;
-  background: #3d3d3d;
-  color: rgba(255, 255, 255, 0.86);
+  background: var(--colour-white);
+  color: var(--colour-charcoal-700);
+  border-top: 1px solid var(--colour-grey-300);
 }
 
 .platform-footer__grid {
@@ -890,7 +877,7 @@ main {
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
   gap: 40px;
   padding-bottom: 36px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid var(--colour-grey-300);
 }
 
 .platform-footer__brand {
@@ -902,11 +889,11 @@ main {
   margin-bottom: 14px;
 }
 
-.platform-footer__logo img {
-  height: 48px;
+.platform-footer__logo img,
+.platform-footer__logo-image {
+  height: 56px;
   width: auto;
   object-fit: contain;
-  filter: brightness(0) invert(1);
 }
 
 .platform-footer__logo strong {
@@ -915,7 +902,7 @@ main {
 
 .platform-footer__brand p {
   margin: 0;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--colour-grey-500);
   line-height: 1.6;
 }
 
@@ -933,7 +920,7 @@ main {
 
 .platform-footer__heading {
   margin: 0 0 4px;
-  color: var(--colour-white);
+  color: var(--colour-charcoal-900);
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -942,19 +929,19 @@ main {
 
 .platform-footer__links a {
   width: fit-content;
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--colour-grey-500);
   font-size: 0.92rem;
   font-weight: 500;
 }
 
 .platform-footer__links a:hover {
-  color: var(--colour-white);
+  color: var(--colour-coral-500);
 }
 
 .platform-footer__note {
   max-width: 440px;
   margin: 0;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--colour-grey-500);
   font-size: 0.9rem;
 }
 
@@ -965,7 +952,7 @@ main {
   justify-content: space-between;
   gap: 10px;
   padding-top: 18px;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--colour-grey-500);
   font-size: 0.86rem;
 }
 
