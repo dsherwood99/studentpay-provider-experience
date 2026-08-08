@@ -122,9 +122,27 @@ export function SimpleEnrolmentCheckout({
     !formData.paymentTermsAccepted ||
     !formData.informationConfirmed ||
     !formData.privacyAccepted ||
+    (paymentChoice === "plan" && !directDebitAuthorised) ||
     submitting ||
     openingDda ||
     enrolmentConfirmed;
+
+  const cardDetailsComplete =
+    Boolean(cardDetails.cardholderName.trim()) &&
+    Boolean(cardDetails.cardNumber.trim()) &&
+    Boolean(cardDetails.expiry.trim()) &&
+    Boolean(cardDetails.cvc.trim());
+
+  const directDebitSetupBlocked =
+    paymentChoice !== "plan" ||
+    !formData.firstName.trim() ||
+    !formData.lastName.trim() ||
+    !formData.email.trim() ||
+    !formData.mobile.trim() ||
+    !formData.addressLine1.trim() ||
+    !cardDetailsComplete ||
+    openingDda ||
+    directDebitAuthorised;
 
   function updateField<K extends keyof EnrolmentFormData>(
     key: K,
@@ -250,6 +268,37 @@ export function SimpleEnrolmentCheckout({
     setStatusMessage("Enrolment confirmed. Your StudentPay plan is active.");
   }
 
+  async function openDirectDebitSetup() {
+    if (directDebitSetupBlocked) {
+      return;
+    }
+
+    setStatusError(null);
+    setStatusMessage(null);
+    setOpeningDda(true);
+
+    try {
+      const session = await createCheckoutSession();
+      const embeddedSession = {
+        ...session,
+        redirectUrl: toEmbeddedSetupUrl(session.redirectUrl),
+      };
+      setCheckoutSession(embeddedSession);
+      setShowEmbeddedDda(true);
+      setStatusMessage(
+        "Complete the secure direct debit setup to continue enrolment.",
+      );
+    } catch (error) {
+      setStatusError(
+        error instanceof Error
+          ? error.message
+          : "Unable to start StudentPay direct debit setup.",
+      );
+    } finally {
+      setOpeningDda(false);
+    }
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setStatusError(null);
@@ -262,12 +311,7 @@ export function SimpleEnrolmentCheckout({
       return;
     }
 
-    if (
-      !cardDetails.cardholderName.trim() ||
-      !cardDetails.cardNumber.trim() ||
-      !cardDetails.expiry.trim() ||
-      !cardDetails.cvc.trim()
-    ) {
+    if (!cardDetailsComplete) {
       setStatusError("Please complete the card payment fields.");
       return;
     }
@@ -288,29 +332,24 @@ export function SimpleEnrolmentCheckout({
       return;
     }
 
-    setSubmitting(true);
-    setOpeningDda(true);
-
-    try {
-      const session = await createCheckoutSession();
-      const embeddedSession = {
-        ...session,
-        redirectUrl: toEmbeddedSetupUrl(session.redirectUrl),
-      };
-      setCheckoutSession(embeddedSession);
-      setShowEmbeddedDda(true);
-      setStatusMessage(
-        "Deposit simulated. Complete direct debit setup to finish enrolment.",
+    if (!directDebitAuthorised || !checkoutSession) {
+      setStatusError(
+        "Please complete direct debit authority before confirming enrolment.",
       );
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await confirmEnrolment(checkoutSession);
     } catch (error) {
       setStatusError(
         error instanceof Error
           ? error.message
-          : "Unable to start StudentPay checkout.",
+          : "Unable to confirm enrolment.",
       );
     } finally {
       setSubmitting(false);
-      setOpeningDda(false);
     }
   }
 
@@ -321,19 +360,12 @@ export function SimpleEnrolmentCheckout({
           setupUrl={checkoutSession.redirectUrl}
           studentFirstName={formData.firstName}
           courseTitle={course.title}
-          onAuthorised={async () => {
+          onAuthorised={() => {
             setDirectDebitAuthorised(true);
             setShowEmbeddedDda(false);
-            setStatusMessage("Direct debit authorised. Confirming enrolment…");
-            try {
-              await confirmEnrolment(checkoutSession);
-            } catch (error) {
-              setStatusError(
-                error instanceof Error
-                  ? error.message
-                  : "Unable to confirm enrolment.",
-              );
-            }
+            setStatusMessage(
+              "Direct debit authorised. Accept the terms below to confirm enrolment.",
+            );
           }}
           onRestart={() => setShowEmbeddedDda(false)}
         />
@@ -655,8 +687,56 @@ export function SimpleEnrolmentCheckout({
           </div>
         </section>
 
+        {paymentChoice === "plan" ? (
+          <section className="simple-checkout__panel">
+            <span className="simple-checkout__step">4</span>
+            <div>
+              <h3>Direct debit authority</h3>
+              <p className="simple-checkout__muted">
+                Authorise StudentPay to collect scheduled payment-plan
+                instalments from your nominated bank account.
+              </p>
+
+              {directDebitAuthorised ? (
+                <div className="simple-checkout__dda-authorised">
+                  <div className="simple-checkout__dda-icon" aria-hidden="true">
+                    ✓
+                  </div>
+                  <div>
+                    <strong>Direct Debit Authorised</strong>
+                    <p>
+                      Your bank account has been successfully authorised for
+                      your StudentPay payment plan.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="simple-checkout__dda-setup">
+                  <p>
+                    Your payment plan is almost ready. The final step is to
+                    securely authorise your nominated bank account for your
+                    scheduled payments.
+                  </p>
+                  <button
+                    type="button"
+                    className="button button--course-primary"
+                    disabled={directDebitSetupBlocked}
+                    onClick={openDirectDebitSetup}
+                  >
+                    {openingDda
+                      ? "Preparing StudentPay…"
+                      : "Set Up Direct Debit"}
+                  </button>
+                </div>
+              )}
+            </div>
+          </section>
+        ) : null}
+
         <section className="simple-checkout__panel">
-          <span className="simple-checkout__step">4</span>
+          <span className="simple-checkout__step">
+            {paymentChoice === "plan" ? "5" : "4"}
+          </span>
           <div>
             <h3>Review &amp; Confirm</h3>
             <p className="simple-checkout__muted">
