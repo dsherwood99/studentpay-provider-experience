@@ -2841,6 +2841,22 @@ main {
   line-height: 1.4;
 }
 
+.simple-checkout__amount-due {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fde8df;
+  font-size: 0.8rem;
+}
+
+.simple-checkout__amount-due strong {
+  color: var(--colour-coral-500);
+  font-size: 1.1rem;
+}
+
 .simple-checkout__summary {
   display: flex;
   align-items: center;

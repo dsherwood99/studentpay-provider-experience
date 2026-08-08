@@ -21,6 +21,11 @@ type CreateCheckoutBody = {
   courseSlug?: string;
   formData?: EnrolmentFormData;
   providerOrderId?: string;
+  cardPayment?: {
+    token?: string;
+    amount_to_charge_now?: number;
+    payment_purpose?: "card" | "deposit";
+  };
 };
 
 function jsonError(
@@ -42,8 +47,35 @@ function jsonError(
   );
 }
 
+async function resolvePinchPublishableKey(
+  config: ReturnType<typeof getProviderExperienceConfig>,
+): Promise<string> {
+  if (config.pinchPublishableKey) {
+    return config.pinchPublishableKey;
+  }
+
+  try {
+    const response = await fetch(`${config.apiBaseUrl}/v1/environment`, {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return "";
+    }
+
+    const data = (await response.json()) as {
+      pinch_publishable_key?: string | null;
+    };
+
+    return data.pinch_publishable_key?.trim() || "";
+  } catch {
+    return "";
+  }
+}
+
 export async function GET() {
   const config = getProviderExperienceConfig();
+  const pinchPublishableKey = await resolvePinchPublishableKey(config);
 
   return Response.json({
     success: true,
@@ -53,6 +85,9 @@ export async function GET() {
     provider_code: config.providerCode,
     provider_account_id_configured: Boolean(config.providerAccountId),
     api_key_configured: Boolean(config.apiKey),
+    pinch_publishable_key_configured: Boolean(pinchPublishableKey),
+    // Publishable by design — used by Capture.js in the browser.
+    pinch_publishable_key: pinchPublishableKey || null,
     endpoints: {
       create_checkout: "POST /api/studentpay/provider-checkouts",
       confirm_checkout: "POST /api/studentpay/provider-checkout-confirm",
@@ -111,6 +146,26 @@ export async function POST(request: Request) {
     return jsonError(404, "COURSE_NOT_FOUND", "Course not found.");
   }
 
+  const isPlan = formData.paymentOption === "plan";
+  const isPayNow = formData.paymentOption === "full";
+  const cardToken = body.cardPayment?.token?.trim() || "";
+
+  if (!isPlan && !isPayNow) {
+    return jsonError(
+      400,
+      "UNSUPPORTED_PAYMENT_OPTION",
+      "Supported payment options are plan and full (Pay Now).",
+    );
+  }
+
+  if (isPayNow && !cardToken) {
+    return jsonError(
+      400,
+      "CARD_TOKEN_REQUIRED",
+      "Pay Now requires a Pinch Capture.js card_payment.token.",
+    );
+  }
+
   if (!formData.sscPassed) {
     return jsonError(
       400,
@@ -119,7 +174,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!formData.depositConfirmed) {
+  if (isPlan && !formData.depositConfirmed) {
     return jsonError(
       400,
       "DEPOSIT_REQUIRED",
@@ -127,25 +182,60 @@ export async function POST(request: Request) {
     );
   }
 
-  if (formData.paymentOption !== "plan") {
-    return jsonError(
-      400,
-      "PLAN_REQUIRED",
-      "Only the StudentPay payment plan path creates a Provider Checkout session.",
-    );
-  }
-
   const providerOrderId =
     body.providerOrderId || createId(`AA-${course.code}`);
+
+  const amountToCharge = isPayNow
+    ? Number(body.cardPayment?.amount_to_charge_now ?? course.paymentPlan.totalFee)
+    : Number(body.cardPayment?.amount_to_charge_now || 0);
 
   const payload = buildProviderCheckoutPayload({
     provider,
     course,
-    formData,
+    formData: {
+      ...formData,
+      // Pay Now does not use the provider deposit simulation checkbox.
+      depositConfirmed: isPlan ? formData.depositConfirmed : true,
+    },
     providerOrderId,
+    cardPayment: cardToken
+      ? {
+          token: cardToken,
+          amount_to_charge_now: amountToCharge,
+          payment_purpose: body.cardPayment?.payment_purpose || "card",
+        }
+      : undefined,
   });
 
   if (config.mockMode) {
+    if (isPayNow) {
+      return Response.json({
+        success: true,
+        mock: true,
+        provider_order_id: providerOrderId,
+        opportunity_id: `mock_opp_${providerOrderId}`,
+        checkout_id: `mock_checkout_${providerOrderId}`,
+        checkout_token: `mock_token_${providerOrderId}`,
+        card_payment: {
+          required: true,
+          success: true,
+          payer_id: `mock_payer_${providerOrderId}`,
+          payment_id: `mock_pay_${providerOrderId}`,
+          payment_status: "scheduled",
+          amount: amountToCharge,
+        },
+        checkout: {
+          payment_type: "upfront_payment",
+          requires_direct_debit: false,
+          checkout_id: `mock_checkout_${providerOrderId}`,
+          checkout_token: `mock_token_${providerOrderId}`,
+          opportunity_id: `mock_opp_${providerOrderId}`,
+          status: "payment_processing",
+        },
+        payload,
+      });
+    }
+
     const mockRedirect = `https://sandbox-api.studentpay.com.au/dda-setup?token=mock_${providerOrderId}&embed=1`;
 
     return Response.json({
@@ -200,6 +290,65 @@ export async function POST(request: Request) {
           upstream: upstreamJson,
         },
       );
+    }
+
+    if (isPayNow) {
+      const cardPayment = upstreamJson.card_payment;
+      const opportunityId =
+        upstreamJson.opportunity_id ||
+        upstreamJson.records?.opportunity_id ||
+        upstreamJson.checkout?.opportunity_id ||
+        "";
+      const checkoutId =
+        upstreamJson.checkout_id || upstreamJson.checkout?.checkout_id || "";
+
+      if (cardPayment && cardPayment.success === false) {
+        return jsonError(
+          502,
+          "CARD_PAYMENT_FAILED",
+          "StudentPay created the checkout but the card payment did not succeed.",
+          {
+            provider_order_id: providerOrderId,
+            upstream: upstreamJson,
+          },
+        );
+      }
+
+      if (cardToken && cardPayment?.required && !cardPayment.success) {
+        return jsonError(
+          502,
+          "CARD_PAYMENT_FAILED",
+          "Card token was sent but StudentPay did not report a successful charge.",
+          {
+            provider_order_id: providerOrderId,
+            upstream: upstreamJson,
+          },
+        );
+      }
+
+      return Response.json({
+        success: true,
+        provider_order_id: providerOrderId,
+        opportunity_id: opportunityId,
+        checkout_id: checkoutId,
+        checkout_token:
+          upstreamJson.checkout_token ||
+          upstreamJson.checkout?.checkout_token ||
+          "",
+        card_payment: cardPayment || {
+          required: true,
+          success: true,
+          amount: amountToCharge,
+        },
+        checkout: {
+          payment_type: "upfront_payment",
+          requires_direct_debit: false,
+          checkout_id: checkoutId,
+          opportunity_id: opportunityId,
+          status:
+            upstreamJson.checkout?.status || "payment_processing",
+        },
+      });
     }
 
     try {

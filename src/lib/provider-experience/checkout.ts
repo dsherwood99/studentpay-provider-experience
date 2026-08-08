@@ -81,6 +81,11 @@ export type ProviderCheckoutPayload = {
       relationship: string;
     };
   };
+  card_payment?: {
+    token: string;
+    amount_to_charge_now: number;
+    payment_purpose: "card" | "deposit";
+  };
 };
 
 export type ProviderCheckoutApiResult = {
@@ -94,6 +99,14 @@ export type ProviderCheckoutApiResult = {
   dda_id?: string;
   checkout_id?: string;
   provider_order_id?: string;
+  card_payment?: {
+    required?: boolean;
+    success?: boolean;
+    payer_id?: string | null;
+    payment_id?: string | null;
+    payment_status?: string | null;
+    amount?: number | null;
+  };
   records?: {
     contact_id?: string;
     opportunity_id?: string;
@@ -112,6 +125,9 @@ export type ProviderCheckoutApiResult = {
     opportunity_id?: string;
     dda_id?: string;
     checkout_id?: string;
+    status?: string;
+    requires_direct_debit?: boolean;
+    payment_type?: string;
     direct_debit?: {
       setup_url?: string;
     };
@@ -191,6 +207,12 @@ export function getProviderExperienceConfig() {
     mockModeEnv === "true" ||
     (mockModeEnv !== "false" && !(apiKey && providerAccountId));
 
+  const pinchPublishableKey =
+    process.env.NEXT_PUBLIC_PINCH_PUBLISHABLE_KEY ||
+    process.env.PINCH_PUBLISHABLE_KEY ||
+    process.env.SANDBOX_PINCH_PUBLISHABLE_KEY ||
+    "";
+
   return {
     apiBaseUrl,
     checkoutUrl,
@@ -198,6 +220,7 @@ export function getProviderExperienceConfig() {
     apiKey,
     providerCode,
     providerAccountId,
+    pinchPublishableKey,
     mockMode,
     configured: mockMode || Boolean(apiKey && providerAccountId),
   };
@@ -208,19 +231,26 @@ export function buildProviderCheckoutPayload({
   course,
   formData,
   providerOrderId,
+  cardPayment,
 }: {
   provider: Provider;
   course: Course;
   formData: EnrolmentFormData;
   providerOrderId: string;
+  cardPayment?: {
+    token: string;
+    amount_to_charge_now: number;
+    payment_purpose?: "card" | "deposit";
+  };
 }): ProviderCheckoutPayload {
   const config = getProviderExperienceConfig();
   const isPlan = formData.paymentOption === "plan";
   const totalFee = course.paymentPlan.totalFee;
   const depositAmount = isPlan ? course.paymentPlan.depositAmount : totalFee;
+  // StudentPay create validation requires amount_to_finance > 0 even for Pay Now.
   const amountToFinance = isPlan
-    ? Math.max(totalFee - depositAmount, 0)
-    : 0;
+    ? Math.max(totalFee - depositAmount, 0.01)
+    : totalFee;
   const numberOfInstalments = isPlan
     ? (course.paymentPlan.numberOfPayments ??
       Math.max(
@@ -240,7 +270,7 @@ export function buildProviderCheckoutPayload({
     formData.guardianEmail.trim() &&
     formData.guardianRelationship.trim();
 
-  return {
+  const payload: ProviderCheckoutPayload = {
     provider: {
       provider_code: config.providerCode,
       provider_name: provider.name,
@@ -330,6 +360,16 @@ export function buildProviderCheckoutPayload({
       },
     },
   };
+
+  if (cardPayment?.token) {
+    payload.card_payment = {
+      token: cardPayment.token,
+      amount_to_charge_now: cardPayment.amount_to_charge_now,
+      payment_purpose: cardPayment.payment_purpose || "card",
+    };
+  }
+
+  return payload;
 }
 
 function getString(value: unknown): string {

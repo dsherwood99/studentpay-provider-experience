@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useEffect,
   useState,
   type FormEvent,
 } from "react";
@@ -13,6 +14,7 @@ import {
   formatApiError,
   toEmbeddedSetupUrl,
 } from "@/lib/provider-experience/checkout";
+import { createPinchCardToken } from "@/lib/provider-experience/pinch-capture";
 import {
   createId,
   formatCurrency,
@@ -94,6 +96,7 @@ export function SimpleEnrolmentCheckout({
     expiry: "",
     cvc: "",
   });
+  const [pinchPublishableKey, setPinchPublishableKey] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [openingDda, setOpeningDda] = useState(false);
   const [showEmbeddedDda, setShowEmbeddedDda] = useState(false);
@@ -105,20 +108,48 @@ export function SimpleEnrolmentCheckout({
   const [statusError, setStatusError] = useState<string | null>(null);
   const [termsModal, setTermsModal] = useState<TermsModalType | null>(null);
 
-  const confirmBlocked =
-    !formData.paymentTermsAccepted ||
-    !formData.informationConfirmed ||
-    !formData.privacyAccepted ||
-    (paymentChoice === "plan" && !directDebitAuthorised) ||
-    submitting ||
-    openingDda ||
-    enrolmentConfirmed;
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPinchConfig() {
+      try {
+        const response = await fetch("/api/studentpay/provider-checkouts", {
+          cache: "no-store",
+        });
+        const data = (await response.json()) as {
+          pinch_publishable_key?: string | null;
+        };
+
+        if (!cancelled && data.pinch_publishable_key) {
+          setPinchPublishableKey(data.pinch_publishable_key);
+        }
+      } catch {
+        // Submit will surface a clearer error if the key is still missing.
+      }
+    }
+
+    void loadPinchConfig();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const cardDetailsComplete =
     Boolean(cardDetails.cardholderName.trim()) &&
     Boolean(cardDetails.cardNumber.trim()) &&
     Boolean(cardDetails.expiry.trim()) &&
     Boolean(cardDetails.cvc.trim());
+
+  const confirmBlocked =
+    !formData.paymentTermsAccepted ||
+    !formData.informationConfirmed ||
+    !formData.privacyAccepted ||
+    (paymentChoice === "plan" && !directDebitAuthorised) ||
+    (paymentChoice === "full" && !cardDetailsComplete) ||
+    submitting ||
+    openingDda ||
+    enrolmentConfirmed;
 
   const directDebitSetupBlocked =
     paymentChoice !== "plan" ||
@@ -210,6 +241,83 @@ export function SimpleEnrolmentCheckout({
     }
 
     return session;
+  }
+
+  async function submitPayNowCardPayment() {
+    const publishableKey = pinchPublishableKey;
+
+    if (!publishableKey) {
+      throw new Error(
+        "Pinch publishable key is not available. Set PINCH_PUBLISHABLE_KEY on this app, or ensure sandbox-api /v1/environment returns pinch_publishable_key.",
+      );
+    }
+
+    const token = await createPinchCardToken({
+      publishableKey,
+      cardholderName: cardDetails.cardholderName,
+      cardNumber: cardDetails.cardNumber,
+      expiry: cardDetails.expiry,
+      cvc: cardDetails.cvc,
+    });
+
+    const amountToCharge = course.paymentPlan.totalFee;
+    const providerOrderId = createId(`AA-${course.code}`);
+
+    const response = await fetch("/api/studentpay/provider-checkouts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        providerSlug: provider.slug,
+        courseSlug: course.slug,
+        formData: {
+          ...formData,
+          paymentOption: "full",
+          sscPassed: true,
+          depositConfirmed: true,
+          paymentTermsAccepted: true,
+          informationConfirmed: true,
+          privacyAccepted: true,
+        },
+        providerOrderId,
+        cardPayment: {
+          token,
+          amount_to_charge_now: amountToCharge,
+          payment_purpose: "card",
+        },
+      }),
+    });
+
+    const data = (await response.json()) as {
+      success?: boolean;
+      error?: { message?: string } | string;
+      opportunity_id?: string;
+      checkout_id?: string;
+      card_payment?: {
+        success?: boolean;
+        payment_id?: string | null;
+        amount?: number | null;
+      };
+    };
+
+    if (!response.ok || data.success === false) {
+      throw new Error(
+        (typeof data.error === "object" ? data.error?.message : data.error) ||
+          formatApiError(data, "Unable to process card payment."),
+      );
+    }
+
+    if (data.card_payment && data.card_payment.success === false) {
+      throw new Error("Card payment was not successful.");
+    }
+
+    setEnrolmentConfirmed(true);
+    setStatusMessage(
+      `Payment of ${formatCurrency(
+        data.card_payment?.amount ?? amountToCharge,
+      )} submitted via StudentPay / Pinch${
+        data.opportunity_id ? ` (Opportunity ${data.opportunity_id})` : ""
+      }.`,
+    );
   }
 
   async function confirmEnrolment(session: CheckoutSession) {
@@ -305,12 +413,12 @@ export function SimpleEnrolmentCheckout({
     if (paymentChoice === "full") {
       setSubmitting(true);
       try {
-        await new Promise((resolve) => setTimeout(resolve, 700));
-        setEnrolmentConfirmed(true);
-        setStatusMessage(
-          `Sandbox demo: full card payment of ${formatCurrency(
-            course.paymentPlan.totalFee,
-          )} simulated successfully. No card data was sent.`,
+        await submitPayNowCardPayment();
+      } catch (error) {
+        setStatusError(
+          error instanceof Error
+            ? error.message
+            : "Unable to process card payment.",
         );
       } finally {
         setSubmitting(false);
@@ -363,14 +471,14 @@ export function SimpleEnrolmentCheckout({
     return (
       <aside className="simple-checkout" id="studentpay-checkout">
         <div className="simple-checkout__success">
-          <p className="aa-script">You're in</p>
+          <p className="aa-script">You&apos;re in</p>
           <h2>Enrolment complete</h2>
           <p>
             Thanks, {formData.firstName}. Your {course.title} enrolment is
             ready
             {paymentChoice === "plan"
               ? " with a StudentPay payment plan"
-              : ""}
+              : " with full card payment"}
             .
           </p>
           {directDebitAuthorised ? (
@@ -390,7 +498,9 @@ export function SimpleEnrolmentCheckout({
               setDirectDebitAuthorised(false);
               setStatusMessage(null);
               setStatusError(null);
-              setFormData(createFormData(paymentChoice === "plan" ? "plan" : "full"));
+              setFormData(
+                createFormData(paymentChoice === "plan" ? "plan" : "full"),
+              );
             }}
           >
             Start another enrolment
@@ -577,8 +687,9 @@ export function SimpleEnrolmentCheckout({
             <div>
               <h3>Card details: full payment</h3>
               <p className="simple-checkout__muted">
-                Card fields are for demo UX only in this sandbox. Card data is
-                not tokenised or stored.
+                Card details are tokenised in-browser with Pinch Capture.js.
+                Only the token is sent to StudentPay — the card number never
+                touches our servers.
               </p>
               <div className="simple-checkout__grid">
                 <label className="simple-checkout__full">
@@ -591,6 +702,7 @@ export function SimpleEnrolmentCheckout({
                         cardholderName: event.target.value,
                       }))
                     }
+                    autoComplete="cc-name"
                     required
                   />
                 </label>
@@ -604,6 +716,8 @@ export function SimpleEnrolmentCheckout({
                         cardNumber: event.target.value,
                       }))
                     }
+                    inputMode="numeric"
+                    autoComplete="cc-number"
                     placeholder="•••• •••• •••• ••••"
                     required
                   />
@@ -618,6 +732,8 @@ export function SimpleEnrolmentCheckout({
                         expiry: event.target.value,
                       }))
                     }
+                    inputMode="numeric"
+                    autoComplete="cc-exp"
                     placeholder="MM / YY"
                     required
                   />
@@ -632,10 +748,16 @@ export function SimpleEnrolmentCheckout({
                         cvc: event.target.value,
                       }))
                     }
+                    inputMode="numeric"
+                    autoComplete="cc-csc"
                     placeholder="123"
                     required
                   />
                 </label>
+              </div>
+              <div className="simple-checkout__amount-due">
+                <span>Amount payable today</span>
+                <strong>{formatCurrency(course.paymentPlan.totalFee)}</strong>
               </div>
             </div>
           </section>
@@ -768,7 +890,8 @@ export function SimpleEnrolmentCheckout({
                 <span>
                   I confirm that the information I have supplied is true and
                   complete, and I authorise {termsProviderName} and StudentPay to
-                  use my information to establish and administer my payment plan.
+                  use my information to establish and administer my payment
+                  plan.
                 </span>
               </label>
             </div>
@@ -781,10 +904,12 @@ export function SimpleEnrolmentCheckout({
               {enrolmentConfirmed
                 ? "✓ Enrolment Confirmed"
                 : submitting || openingDda
-                  ? "Confirming enrolment…"
+                  ? paymentChoice === "full"
+                    ? "Processing card payment…"
+                    : "Confirming enrolment…"
                   : paymentChoice === "plan"
                     ? "Confirm Enrolment & Activate Payment Plan"
-                    : "Confirm Enrolment"}
+                    : `Pay ${formatCurrency(course.paymentPlan.totalFee)} & Enrol`}
             </button>
 
             {statusError ? (
