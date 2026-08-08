@@ -66,8 +66,8 @@ export default async function ProviderPage({
 
             <div className="provider-hero__trust">
               <span>Flexible study</span>
-              <span>Provider-supported</span>
-              <span>StudentPay payment options</span>
+              <span>Tutor support</span>
+              <span>Flexible payment plans</span>
             </div>
           </div>
 

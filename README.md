@@ -1,6 +1,7 @@
-# StudentPay Provider Experience
+# Academy Australia Provider Experience
 
-Provider-branded course discovery and enrolment for education providers, built with Next.js.
+Academy Australia course discovery and enrolment experience, built with Next.js
+and powered by StudentPay for flexible payment plans.
 
 ## Getting started
 
