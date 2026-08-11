@@ -27,6 +27,27 @@ const courseAreas = [
   },
 ] as const;
 
+const nzCourseAreas = [
+  {
+    title: "Photography",
+    description:
+      "Build creative camera, lighting and editing skills for a career change into photography.",
+    image: "/providers/academy-australia/imagery/photography.jpg",
+  },
+  {
+    title: "Play Therapy",
+    description:
+      "Explore supportive play-based approaches for working with children and families.",
+    image: "/providers/academy-australia/imagery/play-therapy.jpg",
+  },
+  {
+    title: "Intro to AI",
+    description:
+      "Get started with practical AI tools and concepts for modern workplace pathways.",
+    image: "/providers/academy-australia/imagery/intro-to-ai.jpg",
+  },
+] as const;
+
 export default function HomePage() {
   const criminalPsychology = courses.find(
     (course) => course.slug === "criminal-psychology",
@@ -117,6 +138,38 @@ export default function HomePage() {
                 <p>{area.description}</p>
                 <span className="aa-course-area__cta">Learn more →</span>
               </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="aa-course-areas aa-course-areas--nz" id="nz-courses">
+        <div className="page-shell">
+          <div className="aa-section-heading">
+            <p className="aa-script">We also work with educators in NZ</p>
+            <h2>Interested in a Career Change</h2>
+            <p>
+              Explore upcoming New Zealand course options designed for people
+              ready to build practical skills and start something new.
+            </p>
+          </div>
+
+          <div className="aa-course-areas__grid">
+            {nzCourseAreas.map((area) => (
+              <article key={area.title} className="aa-course-area">
+                <span className="aa-course-area__media" aria-hidden="true">
+                  <Image
+                    src={area.image}
+                    alt=""
+                    fill
+                    className="aa-course-area__image"
+                    sizes="(max-width: 980px) 100vw, 33vw"
+                  />
+                </span>
+                <strong>{area.title}</strong>
+                <p>{area.description}</p>
+                <span className="aa-course-area__cta">Coming soon →</span>
+              </article>
             ))}
           </div>
         </div>

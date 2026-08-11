@@ -428,6 +428,20 @@ main {
   background: var(--colour-cream-50);
 }
 
+.aa-course-areas--nz {
+  padding-top: 24px;
+  border-top: 1px solid rgba(36, 40, 46, 0.06);
+}
+
+.aa-course-areas--nz .aa-course-area {
+  cursor: default;
+}
+
+.aa-course-areas--nz .aa-course-area:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 .aa-section-heading {
   max-width: 40rem;
   margin-bottom: 36px;
