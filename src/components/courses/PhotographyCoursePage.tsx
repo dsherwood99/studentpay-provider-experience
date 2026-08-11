@@ -1,10 +1,10 @@
 import { SimpleEnrolmentCoursePage } from "@/components/courses/SimpleEnrolmentCoursePage";
-import { fullStackCourseContent } from "@/config/simple-course-content";
+import { photographyCourseContent } from "@/config/simple-course-content";
 import type { Course } from "@/types/course";
 import type { EnrolmentPaymentOption } from "@/types/enrolment";
 import type { Provider } from "@/types/provider";
 
-type FullStackCoursePageProps = {
+type PhotographyCoursePageProps = {
   provider: Provider;
   course: Course;
   initialPaymentOption: EnrolmentPaymentOption;
@@ -12,18 +12,18 @@ type FullStackCoursePageProps = {
   legalApiBaseUrl?: string;
 };
 
-export function FullStackCoursePage({
+export function PhotographyCoursePage({
   provider,
   course,
   initialPaymentOption,
   studentPayProviderCode,
   legalApiBaseUrl,
-}: FullStackCoursePageProps) {
+}: PhotographyCoursePageProps) {
   return (
     <SimpleEnrolmentCoursePage
       provider={provider}
       course={course}
-      content={fullStackCourseContent}
+      content={photographyCourseContent}
       initialPaymentOption={initialPaymentOption}
       studentPayProviderCode={studentPayProviderCode}
       legalApiBaseUrl={legalApiBaseUrl}

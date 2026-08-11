@@ -32,6 +32,7 @@ const nzCourseAreas = [
     title: "Photography",
     description:
       "Build creative camera, lighting and editing skills for a career change into photography.",
+    href: "/providers/academy-australia/courses/professional-photography",
     image: "/providers/academy-australia/imagery/photography.jpg",
   },
   {
@@ -155,22 +156,44 @@ export default function HomePage() {
           </div>
 
           <div className="aa-course-areas__grid">
-            {nzCourseAreas.map((area) => (
-              <article key={area.title} className="aa-course-area">
-                <span className="aa-course-area__media" aria-hidden="true">
-                  <Image
-                    src={area.image}
-                    alt=""
-                    fill
-                    className="aa-course-area__image"
-                    sizes="(max-width: 980px) 100vw, 33vw"
-                  />
-                </span>
-                <strong>{area.title}</strong>
-                <p>{area.description}</p>
-                <span className="aa-course-area__cta">Coming soon →</span>
-              </article>
-            ))}
+            {nzCourseAreas.map((area) => {
+              const media = (
+                <>
+                  <span className="aa-course-area__media" aria-hidden="true">
+                    <Image
+                      src={area.image}
+                      alt=""
+                      fill
+                      className="aa-course-area__image"
+                      sizes="(max-width: 980px) 100vw, 33vw"
+                    />
+                  </span>
+                  <strong>{area.title}</strong>
+                  <p>{area.description}</p>
+                  <span className="aa-course-area__cta">
+                    {"href" in area ? "Learn more →" : "Coming soon →"}
+                  </span>
+                </>
+              );
+
+              if ("href" in area) {
+                return (
+                  <Link
+                    key={area.title}
+                    href={area.href}
+                    className="aa-course-area"
+                  >
+                    {media}
+                  </Link>
+                );
+              }
+
+              return (
+                <article key={area.title} className="aa-course-area">
+                  {media}
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>

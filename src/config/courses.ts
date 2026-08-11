@@ -90,6 +90,35 @@ export const courses: Course[] = [
     visualTone: "technology",
   },
   {
+    code: "PROFESSIONAL_PHOTOGRAPHY",
+    slug: "professional-photography",
+    providerCode: "ACADEMY_AUSTRALIA",
+    deliveryProvider: "Careers Collectiv",
+    title: "Professional Photography Certificate",
+    category: "Photography",
+    shortDescription:
+      "Build creative camera, lighting and editing skills for a career change into photography.",
+    description:
+      "A practical online photography course designed to take students from beginner to competent photographer, covering digital cameras, exposure, composition and editing — with 24/7 tutor support and flexible payment options.",
+    duration: "Self-paced · ~300 hours",
+    deliveryMode: "100% online",
+    badges: ["5 modules", "Online learning", "Tutor support"],
+    outcomes: [
+      "Get started with digital cameras and essential photography equipment",
+      "Understand ISO, aperture and shutter speed for confident exposure",
+      "Apply composition techniques across portrait, travel and event work",
+      "Edit and refine images using professional digital workflows",
+    ],
+    paymentPlan: {
+      totalFee: 1499,
+      depositAmount: 25,
+      repaymentAmount: 25,
+      frequency: "weekly",
+      numberOfPayments: 57,
+    },
+    visualTone: "beauty",
+  },
+  {
     code: "VETERINARY_ASSISTANT",
     slug: "veterinary-assistant-animal-welfare",
     providerCode: "ACADEMY_AUSTRALIA",

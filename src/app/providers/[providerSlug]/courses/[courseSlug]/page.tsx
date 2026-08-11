@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FullStackCoursePage } from "@/components/courses/FullStackCoursePage";
+import { PhotographyCoursePage } from "@/components/courses/PhotographyCoursePage";
 import { EnrolmentWizard } from "@/components/enrolment/EnrolmentWizard";
 import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
@@ -54,6 +55,18 @@ export default async function CourseDetailPage({
   if (course.slug === "full-stack-developer") {
     return (
       <FullStackCoursePage
+        provider={provider}
+        course={course}
+        initialPaymentOption={initialPaymentOption}
+        studentPayProviderCode={config.providerCode}
+        legalApiBaseUrl={config.apiBaseUrl}
+      />
+    );
+  }
+
+  if (course.slug === "professional-photography") {
+    return (
+      <PhotographyCoursePage
         provider={provider}
         course={course}
         initialPaymentOption={initialPaymentOption}

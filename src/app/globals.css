@@ -437,9 +437,18 @@ main {
   cursor: default;
 }
 
+.aa-course-areas--nz a.aa-course-area {
+  cursor: pointer;
+}
+
 .aa-course-areas--nz .aa-course-area:hover {
   transform: none;
   box-shadow: none;
+}
+
+.aa-course-areas--nz a.aa-course-area:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-small);
 }
 
 .aa-section-heading {
@@ -2588,6 +2597,7 @@ main {
 }
 
 .simple-course-visual {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 230px;
@@ -2604,7 +2614,19 @@ main {
   box-shadow: var(--shadow-medium);
 }
 
+.simple-course-visual--photography {
+  background: linear-gradient(135deg, #2b1d18, #7a4a3a 55%, #ef5865);
+}
+
+.simple-course-visual__image {
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.42;
+}
+
 .simple-course-visual__copy {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -2624,13 +2646,19 @@ main {
   opacity: 0.95;
 }
 
-.simple-course-visual__code {
+.simple-course-visual__code,
+.simple-course-visual__panel {
+  position: relative;
+  z-index: 1;
   margin: 24px;
   padding: 18px;
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 14px;
   background: rgba(61, 61, 61, 0.28);
   color: var(--colour-cream-50);
+}
+
+.simple-course-visual__code {
   font-family: Consolas, Monaco, monospace;
   font-size: 0.78rem;
   line-height: 1.6;
@@ -2639,6 +2667,30 @@ main {
 .simple-course-visual__code em {
   color: var(--colour-peach-200);
   font-style: normal;
+}
+
+.simple-course-visual__panel span {
+  display: inline-block;
+  margin-bottom: 10px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.simple-course-visual__panel strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 1.15rem;
+  line-height: 1.2;
+}
+
+.simple-course-visual__panel p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.85rem;
+  line-height: 1.45;
 }
 
 .simple-course-highlights {
