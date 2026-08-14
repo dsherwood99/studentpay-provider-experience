@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en-NZ">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Enrol · Lash Business Bundle · Bela Beauty College NZ</title>
+    <meta
+      name="description"
+      content="Enrol in the Lash Business Bundle with Bela Beauty College. Pay in full or choose a StudentPay NZ weekly plan."
+    />
+    <link
+      rel="icon"
+      href="./assets/favicon.png"
+      type="image/png"
+      sizes="32x32"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="./assets/apple-touch-icon.png"
+      sizes="180x180"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="sandbox-banner" role="status">
+      <span>StudentPay NZ sandbox draft</span>
+      <span class="sandbox-banner__sep" aria-hidden="true">·</span>
+      <span>Connected to <code>sandbox-api.studentpay.co.nz</code></span>
+    </div>
+
+    <header class="site-header">
+      <div class="shell site-header__inner">
+        <a class="brand" href="#top" aria-label="Bela Beauty College">
+          <span class="brand__name">Bela Beauty College</span>
+          <span class="brand__market">New Zealand</span>
+        </a>
+        <nav class="site-nav" aria-label="Page">
+          <a href="#included">What’s included</a>
+          <a class="nav-cta" href="#enrol">Enrol now</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-label="Course hero">
+        <div class="hero__media" aria-hidden="true">
+          <img
+            src="./assets/hero.jpg"
+            alt=""
+            width="1600"
+            height="900"
+            fetchpriority="high"
+          />
+          <div class="hero__veil"></div>
+        </div>
+        <div class="shell hero__content">
+          <p class="hero__brand">Bela Beauty College</p>
+          <h1>Become the go-to lash expert.</h1>
+          <p class="hero__lead">
+            Enrol in the Lash Business Bundle and pay flexibly through StudentPay NZ.
+          </p>
+          <div class="hero__actions">
+            <a class="btn btn--primary" href="#enrol">Enrol now</a>
+            <a class="btn btn--ghost" href="#included">See what’s included</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="enrol" id="enrol">
+        <div class="shell shell--enrol enrol__layout">
+          <aside class="enrol-aside" id="included">
+            <p class="eyebrow">What’s included</p>
+            <h2>Five certificates. One complete lash business path.</h2>
+            <p class="enrol-aside__lead">
+              Classic, Hybrid &amp; Volume, Russian Volume, Mega Volume, Lash Lift
+              &amp; Tint, plus Social Media — course enrolment only (no kit
+              included), built for New Zealand students.
+            </p>
+
+            <figure class="enrol-aside__visual">
+              <img
+                src="./assets/bundle.png"
+                alt="Lash Business Bundle product artwork"
+                width="800"
+                height="800"
+                loading="lazy"
+              />
+            </figure>
+
+            <ul class="enrol-aside__list">
+              <li>Classic, Hybrid &amp; Volume Lash Course</li>
+              <li>Lash Lift &amp; Tint Course</li>
+              <li>Russian Volume Lash Course</li>
+              <li>Social Media Course</li>
+              <li>Mega Volume Lash Course</li>
+              <li>100% online · 2 years access</li>
+            </ul>
+          </aside>
+
+          <div class="checkout" id="checkout-panel">
+            <header class="checkout__header">
+              <p class="eyebrow">Lash Business Bundle</p>
+              <h2>Enrolment and payment</h2>
+              <p class="checkout__lead">
+                Complete the course enrolment and choose pay in full or an
+                interest-free StudentPay NZ weekly plan. Kit is not included.
+              </p>
+            </header>
+
+            <form id="enrol-form" novalidate>
+              <!-- 1. Payment option -->
+              <section class="checkout-block" aria-labelledby="block-1-title">
+                <h3 id="block-1-title" class="checkout-block__title">
+                  <span class="checkout-block__num" aria-hidden="true">1</span>
+                  Select your payment option
+                </h3>
+
+                <fieldset class="pay-grid">
+                  <legend class="visually-hidden">Payment option</legend>
+
+                  <label class="pay-card">
+                    <input type="radio" name="payment_choice" value="pay_in_full" />
+                    <span class="pay-card__body">
+                      <span class="pay-card__name">Pay Now</span>
+                      <span class="pay-card__desc"
+                        >Pay the full course fee today.</span
+                      >
+                      <span class="pay-card__price"
+                        ><span data-money="full">$2,800</span> today</span
+                      >
+                    </span>
+                  </label>
+
+                  <label class="pay-card">
+                    <input
+                      type="radio"
+                      name="payment_choice"
+                      value="weekly_plan"
+                      checked
+                    />
+                    <span class="pay-card__body">
+                      <span class="pay-card__name">Payment Plan</span>
+                      <span class="pay-card__desc"
+                        >0% interest weekly plan through StudentPay NZ. Includes
+                        a $10 account validation payment.</span
+                      >
+                      <span class="pay-card__price"
+                        ><span data-money="weekly">$15</span> / week ·
+                        <span data-money="weekly-total">$2,800</span> total</span
+                      >
+                    </span>
+                  </label>
+                </fieldset>
+              </section>
+
+              <!-- 2. Details -->
+              <section class="checkout-block" aria-labelledby="block-2-title">
+                <h3 id="block-2-title" class="checkout-block__title">
+                  <span class="checkout-block__num" aria-hidden="true">2</span>
+                  Enter your details
+                </h3>
+
+                <div class="field-grid">
+                  <label>
+                    First name <span class="req">*</span>
+                    <input name="first_name" autocomplete="given-name" required />
+                  </label>
+                  <label>
+                    Last name <span class="req">*</span>
+                    <input name="last_name" autocomplete="family-name" required />
+                  </label>
+                  <label>
+                    Email <span class="req">*</span>
+                    <input name="email" type="email" autocomplete="email" required />
+                  </label>
+                  <label>
+                    Phone <span class="req">*</span>
+                    <input
+                      name="mobile"
+                      type="tel"
+                      autocomplete="tel"
+                      placeholder="021 000 0000"
+                      required
+                    />
+                  </label>
+                  <label>
+                    Date of birth <span class="req">*</span>
+                    <input name="date_of_birth" type="date" required />
+                  </label>
+                  <label>
+                    Region <span class="req">*</span>
+                    <select name="region" required>
+                      <option value="">Select region</option>
+                      <option>Auckland</option>
+                      <option>Bay of Plenty</option>
+                      <option>Canterbury</option>
+                      <option>Gisborne</option>
+                      <option>Hawke’s Bay</option>
+                      <option>Manawatū-Whanganui</option>
+                      <option>Marlborough</option>
+                      <option>Nelson</option>
+                      <option>Northland</option>
+                      <option>Otago</option>
+                      <option>Southland</option>
+                      <option>Taranaki</option>
+                      <option>Tasman</option>
+                      <option>Waikato</option>
+                      <option>Wellington</option>
+                      <option>West Coast</option>
+                    </select>
+                  </label>
+                  <label class="span-2">
+                    Street address <span class="req">*</span>
+                    <input
+                      name="street_address"
+                      autocomplete="street-address"
+                      required
+                    />
+                  </label>
+                  <label>
+                    Suburb <span class="req">*</span>
+                    <input name="suburb" autocomplete="address-level3" required />
+                  </label>
+                  <label>
+                    Postcode <span class="req">*</span>
+                    <input
+                      name="postcode"
+                      autocomplete="postal-code"
+                      inputmode="numeric"
+                      required
+                    />
+                  </label>
+                  <input type="hidden" name="country" value="New Zealand" />
+                </div>
+              </section>
+
+              <!-- 3. Direct debit (plan only) -->
+              <section
+                class="checkout-block"
+                id="block-dda"
+                aria-labelledby="block-3-title"
+              >
+                <h3 id="block-3-title" class="checkout-block__title">
+                  <span class="checkout-block__num" aria-hidden="true">3</span>
+                  Direct debit authority
+                </h3>
+                <p class="checkout-block__lead">
+                  Authorise StudentPay NZ to collect your initial account
+                  validation payment and scheduled weekly instalments from your
+                  nominated bank account.
+                </p>
+
+                <div class="field-grid field-grid--narrow">
+                  <label>
+                    First payment date <span class="req">*</span>
+                    <input name="first_payment_date" type="date" required />
+                  </label>
+                </div>
+
+                <div class="dda-panel" id="dda-panel">
+                  <div class="dda-panel__row">
+                    <button
+                      type="button"
+                      class="btn btn--accent"
+                      id="setup-dda"
+                    >
+                      Set Up Direct Debit
+                    </button>
+                    <p class="dda-panel__copy">
+                      Your payment plan is almost ready. The final step is to
+                      securely authorise your nominated bank account for
+                      scheduled payments.
+                    </p>
+                  </div>
+                  <p class="dda-status" id="dda-status" hidden></p>
+                </div>
+
+                <p class="dda-validation-note">
+                  An initial $10 account validation payment will be collected
+                  within 24 hours of enrolment. This forms part of your total
+                  course fee. Your regular weekly payments will then begin on
+                  the scheduled first payment date.
+                </p>
+
+                <div class="dda-done" id="dda-done" hidden>
+                  <div class="dda-done__icon" aria-hidden="true">✓</div>
+                  <div>
+                    <strong id="dda-done-title">Direct Debit Authorised</strong>
+                    <p id="dda-done-body">
+                      Your bank account has been successfully authorised for your
+                      StudentPay NZ payment plan.
+                    </p>
+                  </div>
+                </div>
+              </section>
+
+              <!-- 3b. Pay now note -->
+              <section
+                class="checkout-block"
+                id="block-paynow"
+                hidden
+                aria-labelledby="block-paynow-title"
+              >
+                <h3 id="block-paynow-title" class="checkout-block__title">
+                  <span class="checkout-block__num" aria-hidden="true">3</span>
+                  Pay in full
+                </h3>
+                <p class="checkout-block__lead">
+                  You’ll confirm enrolment below. NZ card capture for upfront
+                  payments is still being finalised on the sandbox API — this draft
+                  creates the StudentPay checkout opportunity now.
+                </p>
+              </section>
+
+              <!-- 4. Review & confirm -->
+              <section class="checkout-block" aria-labelledby="block-4-title">
+                <h3 id="block-4-title" class="checkout-block__title">
+                  <span class="checkout-block__num" aria-hidden="true">4</span>
+                  Review &amp; Confirm
+                </h3>
+                <p class="checkout-block__lead">
+                  You’re almost done. Review your payment arrangement and accept the
+                  terms below to confirm your enrolment.
+                </p>
+
+                <dl class="review" id="review-panel"></dl>
+
+                <div class="declarations">
+                  <label class="check">
+                    <input type="checkbox" name="payment_plan_accepted" required />
+                    <span>
+                      I have read and agree to the
+                      <button type="button" class="terms-link" data-terms="provider">
+                        Bela Beauty College Terms &amp; Conditions</button
+                      >, the
+                      <button type="button" class="terms-link" data-terms="studentpay">
+                        StudentPay Payment Plan Agreement</button
+                      >, and the
+                      <button type="button" class="terms-link" data-terms="direct-debit">
+                        Direct Debit Service Agreement</button
+                      >.
+                    </span>
+                  </label>
+                  <label class="check">
+                    <input type="checkbox" name="information_confirmed" required />
+                    <span
+                      >I confirm my details are true and complete, and I authorise
+                      Bela Beauty College and StudentPay NZ to use them for this
+                      enrolment.</span
+                    >
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  class="btn btn--accent btn--block"
+                  id="submit-enrol"
+                  disabled
+                >
+                  Confirm Enrolment &amp; Activate Payment Plan
+                </button>
+              </section>
+            </form>
+
+            <section class="outcome" id="outcome" hidden>
+              <h3 id="outcome-title">Almost there</h3>
+              <div id="outcome-body" class="outcome-body"></div>
+              <div class="outcome-actions" id="outcome-actions"></div>
+              <details class="outcome-debug" id="outcome-debug-wrap" hidden>
+                <summary>Sandbox debug details</summary>
+                <pre class="debug" id="outcome-debug"></pre>
+              </details>
+            </section>
+
+            <p class="form-error" id="form-error" role="alert" hidden></p>
+            <p class="checkout__powered">
+              Payments by <strong>StudentPay NZ</strong> · sandbox v1
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div
+      class="terms-modal"
+      id="terms-modal"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="terms-modal-title"
+    >
+      <div class="terms-modal__backdrop" data-terms-close></div>
+      <section class="terms-modal__panel">
+        <header class="terms-modal__header">
+          <h2 id="terms-modal-title">Terms</h2>
+          <button
+            type="button"
+            class="terms-modal__close"
+            data-terms-close
+            aria-label="Close terms"
+          >
+            ×
+          </button>
+        </header>
+        <div class="terms-modal__body" id="terms-modal-body"></div>
+        <footer class="terms-modal__footer">
+          <button type="button" class="btn btn--accent" data-terms-close>Close</button>
+        </footer>
+      </section>
+    </div>
+
+    <footer class="site-footer">
+      <div class="shell site-footer__inner">
+        <p>
+          Draft enrolment experience for Bela Beauty College · powered by StudentPay NZ
+          sandbox
+        </p>
+        <p>
+          <a
+            href="https://belabeautycollege.com/products/the-ultimate-lash-business-bundle"
+            rel="noopener"
+            target="_blank"
+            >View original course page</a
+          >
+        </p>
+      </div>
+    </footer>
+
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>

@@ -34,6 +34,16 @@ APIs:
 
 Legacy alias route `/enrol/[providerSlug]/[courseSlug]` uses the same wizard.
 
+## Bela Beauty College NZ enrolment
+
+Static provider-branded landing (NZ sandbox):
+
+- [/enrol/bela-beauty/](/enrol/bela-beauty/)
+
+Demo proxies under `/api/demos/bela-beauty/*` forward to StudentPay NZ with
+`PROVIDER_API_KEY_BELA_NZ`. Direct debit setup and legal pages stay on
+`https://sandbox-api.studentpay.co.nz`. See `public/enrol/bela-beauty/README.md`.
+
 ## StudentPay env
 
 ```bash
@@ -42,9 +52,13 @@ STUDENTPAY_PROVIDER_API_KEY=         # sandbox API key
 STUDENTPAY_PROVIDER_CODE=SANDBOX_DEMO
 STUDENTPAY_PROVIDER_ACCOUNT_ID=0018r0000165S4mAAE
 # HARNESS_MOCK_MODE=true             # optional local mock; unset/false uses sandbox when credentials are set
+
+# Bela Beauty NZ (separate from AU wizard credentials)
+STUDENTPAY_NZ_API_BASE_URL=https://sandbox-api.studentpay.co.nz
+PROVIDER_API_KEY_BELA_NZ=
 ```
 
-Never expose `STUDENTPAY_PROVIDER_API_KEY` with a `NEXT_PUBLIC_` prefix.
+Never expose `STUDENTPAY_PROVIDER_API_KEY` or `PROVIDER_API_KEY_BELA_NZ` with a `NEXT_PUBLIC_` prefix.
 
 ```bash
 curl http://localhost:3000/api/studentpay/provider-checkouts

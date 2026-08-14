@@ -22,6 +22,7 @@ export function PlatformFooter() {
             <Link href="/">Overview</Link>
             <Link href="/providers/academy-australia">Provider demo</Link>
             <Link href="/providers/academy-australia/courses">Courses</Link>
+            <Link href="/enrol/bela-beauty/">Bela Beauty NZ enrol</Link>
           </div>
 
           <div>
