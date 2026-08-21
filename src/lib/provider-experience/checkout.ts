@@ -1,5 +1,9 @@
 import type { Course } from "@/types/course";
-import type { CheckoutSession, EnrolmentFormData } from "@/types/enrolment";
+import type {
+  CheckoutSession,
+  EnrolmentFormData,
+  StudentAgreementConfig,
+} from "@/types/enrolment";
 import type { Provider } from "@/types/provider";
 
 export type ProviderCheckoutPayload = {
@@ -129,6 +133,7 @@ export type ProviderCheckoutApiResult = {
       dda_id?: string;
     };
   };
+  student_agreement?: StudentAgreementConfig;
   [key: string]: unknown;
 };
 
@@ -146,7 +151,15 @@ function mapPaymentFrequencyLabel(
   return "Weekly";
 }
 
-export function getProviderExperienceConfig() {
+export function getProviderExperienceConfig(options?: {
+  providerSlug?: string;
+  providerCode?: string;
+}) {
+  const slug = options?.providerSlug?.trim().toLowerCase() || "";
+  const requestedCode = options?.providerCode?.trim().toUpperCase() || "";
+  const isBelaSandbox =
+    slug === "bela-beauty-sandbox" || requestedCode === "BELA_BEAUTY_SANDBOX";
+
   const apiBaseUrl =
     process.env.STUDENTPAY_API_BASE_URL?.replace(/\/$/, "") ||
     process.env.PROVIDER_CHECKOUT_API_URL?.replace(/\/api\/provider-checkout$/, "") ||
@@ -168,21 +181,24 @@ export function getProviderExperienceConfig() {
     ? `${apiBaseUrl}/api/provider-checkout-confirm`
     : configuredConfirmUrl;
 
-  const apiKey =
-    process.env.ACADEMY_API_KEY ||
-    process.env.STUDENTPAY_PROVIDER_API_KEY ||
-    process.env.ONFIT_API_KEY ||
-    "";
+  const apiKey = isBelaSandbox
+    ? process.env.BELA_BEAUTY_SANDBOX_API_KEY || ""
+    : process.env.ACADEMY_API_KEY ||
+      process.env.STUDENTPAY_PROVIDER_API_KEY ||
+      process.env.ONFIT_API_KEY ||
+      "";
 
-  const providerCode =
-    process.env.ACADEMY_PROVIDER_CODE ||
-    process.env.STUDENTPAY_PROVIDER_CODE ||
-    "ACADEMY_AUSTRALIA";
+  const providerCode = isBelaSandbox
+    ? "BELA_BEAUTY_SANDBOX"
+    : process.env.ACADEMY_PROVIDER_CODE ||
+      process.env.STUDENTPAY_PROVIDER_CODE ||
+      "ACADEMY_AUSTRALIA";
 
-  const providerAccountId =
-    process.env.ACADEMY_PROVIDER_ACCOUNT_ID ||
-    process.env.STUDENTPAY_PROVIDER_ACCOUNT_ID ||
-    "";
+  const providerAccountId = isBelaSandbox
+    ? process.env.BELA_BEAUTY_SANDBOX_PROVIDER_ACCOUNT_ID || ""
+    : process.env.ACADEMY_PROVIDER_ACCOUNT_ID ||
+      process.env.STUDENTPAY_PROVIDER_ACCOUNT_ID ||
+      "";
 
   // Default off in deployed environments with credentials so sandbox E2E hits
   // StudentPay. Opt in explicitly for local harness work without an API key.
@@ -214,7 +230,10 @@ export function buildProviderCheckoutPayload({
   formData: EnrolmentFormData;
   providerOrderId: string;
 }): ProviderCheckoutPayload {
-  const config = getProviderExperienceConfig();
+  const config = getProviderExperienceConfig({
+    providerSlug: provider.slug,
+    providerCode: provider.code,
+  });
   const isPlan = formData.paymentOption === "plan";
   const totalFee = course.paymentPlan.totalFee;
   const depositAmount = isPlan ? course.paymentPlan.depositAmount : totalFee;
@@ -336,6 +355,26 @@ function getString(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function resolveStudentAgreement(
+  data: ProviderCheckoutApiResult,
+): StudentAgreementConfig | null {
+  const value = data.student_agreement;
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  return {
+    enabled: Boolean(value.enabled),
+    required: Boolean(value.required),
+    title: typeof value.title === "string" ? value.title : null,
+    version: typeof value.version === "string" ? value.version : null,
+    acceptance_text:
+      typeof value.acceptance_text === "string" ? value.acceptance_text : null,
+    document_url:
+      typeof value.document_url === "string" ? value.document_url : null,
+  };
+}
+
 export function resolveCheckoutSession(
   data: ProviderCheckoutApiResult,
   providerOrderId: string,
@@ -399,6 +438,7 @@ export function resolveCheckoutSession(
     checkoutId,
     providerOrderId,
     redirectUrl,
+    studentAgreement: resolveStudentAgreement(data),
   };
 }
 

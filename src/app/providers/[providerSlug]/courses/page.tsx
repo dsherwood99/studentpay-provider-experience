@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { ProviderBrand } from "@/components/providers/ProviderBrand";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CourseCard } from "@/components/courses/CourseCard";
@@ -32,7 +32,7 @@ export default async function CourseCataloguePage({
               href={`/providers/${provider.slug}`}
               className="provider-back-link"
             >
-              ← Academy Australia
+              ← {provider.name}
             </Link>
 
             <p className="provider-eyebrow">Course catalogue</p>
@@ -46,9 +46,8 @@ export default async function CourseCataloguePage({
             </p>
           </div>
 
-          <Image
-            src={provider.logoPath}
-            alt={`${provider.name} logo`}
+          <ProviderBrand
+            provider={provider}
             width={235}
             height={90}
           />

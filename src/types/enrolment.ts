@@ -34,6 +34,15 @@ export type EnrolmentFieldErrors = Partial<
   Record<keyof EnrolmentFormData, string>
 >;
 
+export type StudentAgreementConfig = {
+  enabled: boolean;
+  required: boolean;
+  title: string | null;
+  version: string | null;
+  acceptance_text: string | null;
+  document_url: string | null;
+};
+
 export type CheckoutSession = {
   checkoutToken: string;
   opportunityId: string;
@@ -41,4 +50,5 @@ export type CheckoutSession = {
   checkoutId: string;
   providerOrderId: string;
   redirectUrl: string;
+  studentAgreement?: StudentAgreementConfig | null;
 };

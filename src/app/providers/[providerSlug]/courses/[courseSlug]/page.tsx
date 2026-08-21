@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { ProviderBrand } from "@/components/providers/ProviderBrand";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCourseBySlug } from "@/config/courses";
@@ -50,9 +50,8 @@ export default async function CourseDetailPage({
               ← Back to courses
             </Link>
 
-            <Image
-              src={provider.logoPath}
-              alt={`${provider.name} logo`}
+            <ProviderBrand
+              provider={provider}
               width={190}
               height={72}
               className="course-detail-hero__logo"

@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { ProviderBrand } from "@/components/providers/ProviderBrand";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CourseCard } from "@/components/courses/CourseCard";
@@ -30,9 +30,8 @@ export default async function ProviderPage({
           <div className="provider-hero__content">
             <p className="provider-eyebrow">Flexible online learning</p>
 
-            <Image
-              src={provider.logoPath}
-              alt={`${provider.name} logo`}
+            <ProviderBrand
+              provider={provider}
               width={260}
               height={105}
               className="provider-hero__logo"

@@ -66,21 +66,16 @@ export async function GET() {
         course: criminalPsychology.slug,
         path: `/providers/${academyAustralia.slug}/courses/${criminalPsychology.slug}/enrol`,
       },
+      {
+        provider: "bela-beauty-sandbox",
+        course: "makeup-artistry",
+        path: "/providers/bela-beauty-sandbox/courses/makeup-artistry/enrol",
+      },
     ],
   });
 }
 
 export async function POST(request: Request) {
-  const config = getProviderExperienceConfig();
-
-  if (!config.configured) {
-    return jsonError(
-      503,
-      "NOT_CONFIGURED",
-      "StudentPay Provider Experience checkout is not configured. Set API credentials or leave HARNESS_MOCK_MODE=true.",
-    );
-  }
-
   let body: CreateCheckoutBody;
 
   try {
@@ -90,6 +85,15 @@ export async function POST(request: Request) {
   }
 
   const { providerSlug, courseSlug, formData } = body;
+  const config = getProviderExperienceConfig({ providerSlug });
+
+  if (!config.configured) {
+    return jsonError(
+      503,
+      "NOT_CONFIGURED",
+      "StudentPay Provider Experience checkout is not configured. Set API credentials or leave HARNESS_MOCK_MODE=true.",
+    );
+  }
 
   if (!providerSlug || !courseSlug || !formData) {
     return jsonError(
@@ -136,7 +140,7 @@ export async function POST(request: Request) {
   }
 
   const providerOrderId =
-    body.providerOrderId || createId(`AA-${course.code}`);
+    body.providerOrderId || createId(`${provider.slug}-${course.code}`);
 
   const payload = buildProviderCheckoutPayload({
     provider,
@@ -164,6 +168,14 @@ export async function POST(request: Request) {
         dda_id: `mock_dda_${providerOrderId}`,
         checkout_id: `mock_checkout_${providerOrderId}`,
         redirect_url: mockRedirect,
+      },
+      student_agreement: {
+        enabled: false,
+        required: false,
+        title: null,
+        version: null,
+        acceptance_text: null,
+        document_url: null,
       },
       payload,
     });
@@ -221,6 +233,7 @@ export async function POST(request: Request) {
           checkout_id: session.checkoutId,
           redirect_url: session.redirectUrl,
         },
+        student_agreement: session.studentAgreement,
       });
     } catch (error) {
       return jsonError(
