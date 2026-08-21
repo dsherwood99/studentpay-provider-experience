@@ -33,12 +33,16 @@ const ALLOWED_PROVIDER_CODES = new Set([
   "ACADEMY_AUSTRALIA",
   "SANDBOX_DEMO",
   "ONFIT",
+  "BELA_BEAUTY_SANDBOX",
 ]);
 
 export async function POST(request: Request) {
   try {
     const payload = (await request.json()) as ConfirmationRequest;
-    const config = getProviderExperienceConfig();
+    const requestedProviderCode = payload.provider?.provider_code || "";
+    const config = getProviderExperienceConfig({
+      providerCode: requestedProviderCode,
+    });
 
     console.log(
       "Provider Experience confirmation payload:",
@@ -148,12 +152,24 @@ export async function POST(request: Request) {
       config.confirmUrl,
     );
 
+    const incomingUserAgent = request.headers.get("user-agent") || "";
+    const incomingForwardedFor =
+      request.headers.get("x-forwarded-for") ||
+      request.headers.get("x-real-ip") ||
+      "";
+
     const upstreamResponse = await fetch(config.confirmUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${config.apiKey}`,
         "x-api-key": config.apiKey,
+        ...(incomingUserAgent
+          ? { "x-original-user-agent": incomingUserAgent }
+          : {}),
+        ...(incomingForwardedFor
+          ? { "x-forwarded-for": incomingForwardedFor }
+          : {}),
       },
       body: JSON.stringify(upstreamPayload),
       cache: "no-store",

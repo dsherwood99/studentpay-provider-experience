@@ -1,5 +1,7 @@
 "use client";
 
+import type { StudentAgreementConfig } from "@/types/enrolment";
+
 type TermsModalType = "provider" | "studentpay" | "direct-debit";
 
 type TermsModalProps = {
@@ -9,6 +11,7 @@ type TermsModalProps = {
   providerCode: string;
   /** Must match the API that signed the checkout token (sandbox vs production). */
   legalApiBaseUrl: string;
+  studentAgreement?: StudentAgreementConfig | null;
   onClose: () => void;
 };
 
@@ -18,31 +21,49 @@ export function TermsModal({
   providerName,
   providerCode,
   legalApiBaseUrl,
+  studentAgreement,
   onClose,
 }: TermsModalProps) {
   const apiBase = legalApiBaseUrl.replace(/\/$/, "");
+  const providerDocumentUrl =
+    studentAgreement?.document_url ||
+    (checkoutToken
+      ? `${apiBase}/legal/provider-student-agreement?token=${encodeURIComponent(
+          checkoutToken,
+        )}`
+      : "");
+  const providerTitle =
+    studentAgreement?.title || `${providerName} Terms & Conditions`;
 
   const content = {
     provider: {
-      title: `${providerName} Terms & Conditions`,
-      body: (
-        <>
-          <p>
-            These are placeholder {providerName} enrolment terms for the
-            Provider Experience test environment.
-          </p>
-          <p>
-            The production version will contain the provider&apos;s approved
-            enrolment, course, cancellation, refund and student-obligation
-            terms.
-          </p>
-          <h4>Placeholder topics</h4>
-          <p>
-            Course enrolment, fees, deposit arrangements, cancellation rights,
-            course delivery and student responsibilities.
-          </p>
-        </>
-      ),
+      title: providerTitle,
+      body:
+        studentAgreement?.enabled && providerDocumentUrl ? (
+          <iframe
+            className="legalTermsFrame"
+            src={providerDocumentUrl}
+            title={providerTitle}
+            loading="lazy"
+          />
+        ) : (
+          <>
+            <p>
+              These are placeholder {providerName} enrolment terms for the
+              Provider Experience test environment.
+            </p>
+            <p>
+              The production version will contain the provider&apos;s approved
+              enrolment, course, cancellation, refund and student-obligation
+              terms.
+            </p>
+            <h4>Placeholder topics</h4>
+            <p>
+              Course enrolment, fees, deposit arrangements, cancellation rights,
+              course delivery and student responsibilities.
+            </p>
+          </>
+        ),
     },
     studentpay: {
       title: "Student Payment Plan Agreement",
@@ -81,6 +102,10 @@ export function TermsModal({
   } as const;
 
   const selected = content[type];
+  const useLegalFrame =
+    type === "direct-debit" ||
+    type === "studentpay" ||
+    (type === "provider" && Boolean(studentAgreement?.enabled));
 
   return (
     <div
@@ -109,9 +134,7 @@ export function TermsModal({
 
         <div
           className={
-            type === "direct-debit" || type === "studentpay"
-              ? "termsModalBody legalTermsModalBody"
-              : "termsModalBody"
+            useLegalFrame ? "termsModalBody legalTermsModalBody" : "termsModalBody"
           }
         >
           {selected.body}

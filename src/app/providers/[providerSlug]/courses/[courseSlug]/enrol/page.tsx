@@ -43,7 +43,7 @@ export default async function SandboxEnrolPage({
 }: SandboxEnrolPageProps) {
   const { providerSlug, courseSlug } = await params;
   const { payment } = await searchParams;
-  const config = getProviderExperienceConfig();
+  const config = getProviderExperienceConfig({ providerSlug });
 
   const provider = getProviderBySlug(providerSlug);
 

@@ -117,6 +117,36 @@ export const courses: Course[] = [
     visualTone: "animal",
     featured: true,
   },
+  {
+    code: "MAKEUP_ARTISTRY",
+    slug: "makeup-artistry",
+    providerCode: "BELA_BEAUTY_SANDBOX",
+    deliveryProvider: "Bela Beauty College",
+    title: "Makeup Artistry Course Bundle + Kit",
+    category: "Beauty",
+    shortDescription:
+      "Develop practical makeup artistry skills through flexible online study, demonstrations and mentor support.",
+    description:
+      "A practical online course designed to introduce students to professional makeup techniques, client preparation and industry-ready application skills.",
+    duration: "Self-paced",
+    deliveryMode: "100% online",
+    badges: ["8 modules", "Mentor support", "Kit included"],
+    outcomes: [
+      "Develop foundation, contouring and colour-matching techniques",
+      "Create makeup looks for different clients and occasions",
+      "Understand hygiene, preparation and professional practice",
+      "Build confidence working with clients",
+    ],
+    paymentPlan: {
+      totalFee: 1499,
+      depositAmount: 25,
+      repaymentAmount: 25,
+      frequency: "weekly",
+      numberOfPayments: 57,
+    },
+    visualTone: "beauty",
+    featured: true,
+  },
 ];
 
 export function getCoursesByProvider(providerCode: string): Course[] {

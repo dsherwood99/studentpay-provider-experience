@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { ProviderBrand } from "@/components/providers/ProviderBrand";
 import Link from "next/link";
 import {
   useEffect,
@@ -427,7 +427,7 @@ export function EnrolmentWizard({
         providerSlug: provider.slug,
         courseSlug: course.slug,
         formData,
-        providerOrderId: createId(`AA-${course.code}`),
+        providerOrderId: createId(`${provider.slug}-${course.code}`),
       }),
     });
 
@@ -449,6 +449,7 @@ export function EnrolmentWizard({
       checkoutId: data.checkout_id || data.checkout?.checkout_id || "",
       providerOrderId: data.provider_order_id,
       redirectUrl: data.setup_url || data.redirect_url || "",
+      studentAgreement: data.student_agreement || null,
     };
 
     if (!session.redirectUrl) {
@@ -597,7 +598,22 @@ export function EnrolmentWizard({
               payment_plan_accepted: formData.paymentTermsAccepted,
               information_confirmed: formData.informationConfirmed,
               privacy_consent_accepted: formData.privacyAccepted,
+              ...(checkoutSession.studentAgreement?.enabled
+                ? {
+                    provider_student_agreement_accepted:
+                      formData.paymentTermsAccepted,
+                  }
+                : {}),
             },
+            ...(checkoutSession.studentAgreement?.enabled
+              ? {
+                  agreements: {
+                    provider_student: {
+                      version: checkoutSession.studentAgreement.version,
+                    },
+                  },
+                }
+              : {}),
             confirmed_at: new Date().toISOString(),
           }),
         },
@@ -697,7 +713,7 @@ export function EnrolmentWizard({
           </div>
           <p className="enrolment-wizard__eyebrow">Enrolment confirmed</p>
           <h1>
-            Thanks, {formData.firstName}. Your Criminal Psychology enrolment
+            Thanks, {formData.firstName}. Your {course.title} enrolment
             is confirmed.
           </h1>
           <p className="enrolment-complete__lead">
@@ -749,9 +765,8 @@ export function EnrolmentWizard({
             ← Return to harness
           </Link>
 
-          <Image
-            src={provider.logoPath}
-            alt={`${provider.name} logo`}
+          <ProviderBrand
+            provider={provider}
             width={185}
             height={70}
             className="enrolment-wizard__logo"
@@ -810,7 +825,7 @@ export function EnrolmentWizard({
             {currentStep === "course" ? (
               <section className="wizard-step">
                 <p className="enrolment-wizard__eyebrow">Course confirmation</p>
-                <h1>Confirm your Criminal Psychology enrolment.</h1>
+                <h1>Confirm your {course.title} enrolment.</h1>
                 <p className="wizard-step__lead">
                   This Provider Experience checkout uses the full OnFit
                   enrolment wizard flow: screening, study skills, dossier and
@@ -1404,7 +1419,10 @@ export function EnrolmentWizard({
                                 setTermsModal("provider");
                               }}
                             >
-                              {provider.name} Terms &amp; Conditions
+                              {checkoutSession?.studentAgreement?.enabled
+                                ? checkoutSession.studentAgreement.title ||
+                                  `${provider.name} Student Agreement`
+                                : `${provider.name} Terms & Conditions`}
                             </button>
                             , the{" "}
                             <button
@@ -1416,8 +1434,8 @@ export function EnrolmentWizard({
                               }}
                             >
                               StudentPay Payment Plan Agreement
-                            </button>{" "}
-                            and the{" "}
+                            </button>
+                            , and the{" "}
                             <button
                               type="button"
                               className="termsLink"
@@ -1604,6 +1622,7 @@ export function EnrolmentWizard({
           providerName={provider.name}
           providerCode={apiProviderCode}
           legalApiBaseUrl={legalApiBaseUrl}
+          studentAgreement={checkoutSession?.studentAgreement || null}
           onClose={() => setTermsModal(null)}
         />
       ) : null}

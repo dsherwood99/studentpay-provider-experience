@@ -20,6 +20,25 @@ export const providers: Provider[] = [
   mutedTextColour: "#666A71",
 },
   },
+  {
+    code: "BELA_BEAUTY_SANDBOX",
+    slug: "bela-beauty-sandbox",
+    name: "Bela Beauty College",
+    shortName: "Bela Beauty",
+    description:
+      "AU sandbox enrolment for the draft Bela Beauty College Student Agreement. Synthetic students only.",
+    logoPath: "",
+    supportEmail: "support@belabeautycollege.com",
+    theme: {
+      primaryColour: "#C45C7A",
+      secondaryColour: "#111111",
+      accentColour: "#C45C7A",
+      backgroundColour: "#FFF7FA",
+      surfaceColour: "#FFFFFF",
+      textColour: "#1A1A1A",
+      mutedTextColour: "#5C5458",
+    },
+  },
 ];
 
 export function getProviderBySlug(slug: string): Provider | undefined {
