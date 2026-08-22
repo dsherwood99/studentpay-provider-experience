@@ -17,9 +17,8 @@ export function StudentPayFooter() {
             />
           </Link>
           <p>
-            Reusable enrolment and payment experiences for education providers.
-            Demonstrations and integration capabilities for the StudentPay product
-            team.
+            A reusable product environment for demonstrating StudentPay
+            enrolment, payment-plan and integration capabilities.
           </p>
         </div>
 

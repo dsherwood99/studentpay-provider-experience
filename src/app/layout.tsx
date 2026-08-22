@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Caveat, Plus_Jakarta_Sans } from "next/font/google";
+import { Caveat, Inter, Plus_Jakarta_Sans, Poppins } from "next/font/google";
 import { PlatformFooter } from "@/components/layout/PlatformFooter";
 import { PlatformHeader } from "@/components/layout/PlatformHeader";
 import { getPlatformBrand } from "@/lib/provider-experience/branding";
@@ -15,6 +15,18 @@ const caveat = Caveat({
   variable: "--font-academy-script",
   subsets: ["latin"],
   weight: ["500", "600", "700"],
+});
+
+const poppins = Poppins({
+  variable: "--font-studentpay-heading",
+  subsets: ["latin"],
+  weight: ["500", "600", "700", "900"],
+});
+
+const inter = Inter({
+  variable: "--font-studentpay-body",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export function generateMetadata(): Metadata {
@@ -37,7 +49,7 @@ export function generateMetadata(): Metadata {
       template: "%s | StudentPay Provider Experience",
     },
     description:
-      "Reusable enrolment and payment experiences for education providers. Explore provider demos, StudentPay Enrolment Checkout and integration capabilities.",
+      "A reusable product environment for demonstrating and deploying StudentPay-powered enrolment and payment experiences.",
   };
 }
 
@@ -50,7 +62,7 @@ export default function RootLayout({
   const bodyClassName =
     brand === "academy-australia"
       ? `${plusJakarta.variable} ${caveat.variable} platform--academy-australia`
-      : `${plusJakarta.variable} platform--studentpay`;
+      : `${poppins.variable} ${inter.variable} platform--studentpay`;
 
   return (
     <html lang="en">
