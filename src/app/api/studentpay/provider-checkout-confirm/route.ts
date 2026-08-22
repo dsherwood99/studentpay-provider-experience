@@ -30,6 +30,7 @@ type ConfirmationRequest = {
 };
 
 const ALLOWED_PROVIDER_CODES = new Set([
+  "ACADEMYAU",
   "ACADEMY_AUSTRALIA",
   "SANDBOX_DEMO",
   "ONFIT",
@@ -38,7 +39,26 @@ const ALLOWED_PROVIDER_CODES = new Set([
 export async function POST(request: Request) {
   try {
     const payload = (await request.json()) as ConfirmationRequest;
-    const config = getProviderExperienceConfig();
+    const requestedProviderCode = payload.provider?.provider_code || "";
+    const config = getProviderExperienceConfig({
+      providerCode: requestedProviderCode,
+    });
+
+    if (
+      config.academyProductionDemo &&
+      requestedProviderCode &&
+      requestedProviderCode !== "ACADEMYAU" &&
+      // Catalogue may still send the branded code; upstream is rewritten to ACADEMYAU.
+      requestedProviderCode !== "ACADEMY_AUSTRALIA"
+    ) {
+      return Response.json(
+        {
+          success: false,
+          error: "This Academy Australia production demo is bound to ACADEMYAU only.",
+        },
+        { status: 403 },
+      );
+    }
 
     console.log(
       "Provider Experience confirmation payload:",
@@ -148,12 +168,26 @@ export async function POST(request: Request) {
       config.confirmUrl,
     );
 
+    const incomingUserAgent = request.headers.get("user-agent") || "";
+    // Prefer Vercel’s trusted client IP. Do not copy client-supplied
+    // x-forwarded-for (spoofable) into the upstream original-forwarded header.
+    const incomingForwardedFor =
+      request.headers.get("x-vercel-forwarded-for") ||
+      request.headers.get("x-real-ip") ||
+      "";
+
     const upstreamResponse = await fetch(config.confirmUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${config.apiKey}`,
         "x-api-key": config.apiKey,
+        ...(incomingUserAgent
+          ? { "x-original-user-agent": incomingUserAgent }
+          : {}),
+        ...(incomingForwardedFor
+          ? { "x-original-forwarded-for": incomingForwardedFor }
+          : {}),
       },
       body: JSON.stringify(upstreamPayload),
       cache: "no-store",
