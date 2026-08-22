@@ -132,7 +132,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const config = getProviderExperienceConfig({ providerSlug });
+  const config = getProviderExperienceConfig();
 
   if (!config.configured) {
     return jsonError(

@@ -188,10 +188,7 @@ function isProductionStudentPayApi(apiBaseUrl: string) {
   }
 }
 
-export function getProviderExperienceConfig(_options?: {
-  providerSlug?: string;
-  providerCode?: string;
-}) {
+export function getProviderExperienceConfig() {
   const academyProductionDemo = isAcademyProductionDemo();
 
   const apiBaseUrl =
@@ -293,10 +290,7 @@ export function buildProviderCheckoutPayload({
     payment_purpose?: "card" | "deposit";
   };
 }): ProviderCheckoutPayload {
-  const config = getProviderExperienceConfig({
-    providerSlug: provider.slug,
-    providerCode: provider.code,
-  });
+  const config = getProviderExperienceConfig();
   const isPlan = formData.paymentOption === "plan";
   const totalFee = course.paymentPlan.totalFee;
   const depositAmount = isPlan ? course.paymentPlan.depositAmount : totalFee;

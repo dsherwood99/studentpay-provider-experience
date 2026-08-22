@@ -40,9 +40,7 @@ export async function POST(request: Request) {
   try {
     const payload = (await request.json()) as ConfirmationRequest;
     const requestedProviderCode = payload.provider?.provider_code || "";
-    const config = getProviderExperienceConfig({
-      providerCode: requestedProviderCode,
-    });
+    const config = getProviderExperienceConfig();
 
     if (
       config.academyProductionDemo &&
