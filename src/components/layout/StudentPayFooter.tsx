@@ -3,47 +3,45 @@ import Link from "next/link";
 
 export function StudentPayFooter() {
   return (
-    <footer className="sp-platform-footer">
-      <div className="page-shell sp-platform-footer__grid">
-        <div className="sp-platform-footer__brand">
-          <Link href="/" className="sp-platform-footer__logo" aria-label="StudentPay home">
+    <footer className="sp-site-footer">
+      <div className="sp-shell sp-site-footer__top">
+        <div className="sp-site-footer__brand">
+          <Link href="/" aria-label="StudentPay home">
             <Image
               src="/studentpay/studentpay-logo.png"
               alt="StudentPay"
-              width={160}
-              height={42}
-              className="sp-platform-footer__logo-image"
-              priority={false}
+              width={140}
+              height={38}
+              className="sp-site-footer__logo"
             />
           </Link>
           <p>
             A reusable product environment for demonstrating StudentPay
-            enrolment, payment-plan and integration capabilities.
+            enrolment, payment and integration capabilities.
           </p>
         </div>
 
-        <div className="sp-platform-footer__links">
+        <div className="sp-site-footer__links">
           <div>
-            <p className="sp-platform-footer__heading">Explore</p>
+            <p className="sp-site-footer__heading">Product</p>
             <Link href="/#provider-demos">Provider demos</Link>
             <Link href="/#enrolment-checkout">Enrolment checkout</Link>
-            <Link href="/#integration-capabilities">Integration capabilities</Link>
+            <Link href="/#integrations">Integrations</Link>
           </div>
 
           <div>
-            <p className="sp-platform-footer__heading">Demo provider</p>
+            <p className="sp-site-footer__heading">Demonstration</p>
             <Link href="/providers/academy-australia">Academy Australia</Link>
-            <Link href="/providers/academy-australia/courses">Course catalogue</Link>
-            <Link href="/providers/academy-australia/courses/criminal-psychology/enrol">
-              Sample enrolment
+            <Link href="/providers/academy-australia/courses">
+              Course catalogue
             </Link>
           </div>
         </div>
       </div>
 
-      <div className="page-shell sp-platform-footer__bottom">
+      <div className="sp-shell sp-site-footer__bottom">
         <span>© {new Date().getFullYear()} StudentPay</span>
-        <span>StudentPay Product Environment — not an education provider</span>
+        <span>Product environment — not an education provider</span>
       </div>
     </footer>
   );

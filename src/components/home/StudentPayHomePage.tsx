@@ -2,188 +2,68 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
-  BookOpen,
-  Building2,
-  CheckCircle2,
+  Check,
   Code2,
   CreditCard,
-  FileCheck2,
   FileText,
-  Layers3,
   Plug,
   Settings2,
   ShieldCheck,
-  UserRound,
-  Wallet,
 } from "lucide-react";
+import { EnrolmentCheckoutMock } from "@/components/studentpay/EnrolmentCheckoutMock";
+import { ProductBrowserFrame } from "@/components/studentpay/ProductBrowserFrame";
+import { StudentPayButton } from "@/components/studentpay/StudentPayButton";
 import { providers } from "@/config/providers";
 
-type CapabilityStatus = "available" | "demo" | "in-development";
+const checkoutFeatures = [
+  "Course and student details",
+  "Payment-plan calculation",
+  "Deposit handling",
+  "Direct debit authorisation",
+  "Payment Plan Agreement",
+  "Provider Student Agreement",
+  "Electronic acceptance",
+  "Checkout confirmation",
+] as const;
 
-type Capability = {
-  title: string;
-  description: string;
-  status: CapabilityStatus;
-  icon: React.ComponentType<{ size?: number; "aria-hidden"?: boolean }>;
-};
-
-const checkoutCapabilities: Capability[] = [
-  {
-    title: "Provider-branded enrolment",
-    description:
-      "Course pages and checkout inherit each provider's logo, colours and content.",
-    status: "available",
-    icon: Building2,
-  },
-  {
-    title: "Course and student information",
-    description:
-      "Structured capture of course selection, student identity, address and supporting details.",
-    status: "available",
-    icon: UserRound,
-  },
-  {
-    title: "Payment-plan calculation",
-    description:
-      "Deposit, instalment amounts, frequency and start-date configuration from course pricing.",
-    status: "available",
-    icon: Wallet,
-  },
-  {
-    title: "Deposit handling",
-    description:
-      "Upfront and deposit-plus-plan payment paths with card tokenisation via Pinch.",
-    status: "available",
-    icon: CreditCard,
-  },
-  {
-    title: "Direct debit authorisation",
-    description:
-      "Embedded and popup direct debit setup connected to StudentPay checkout sessions.",
-    status: "available",
-    icon: ShieldCheck,
-  },
-  {
-    title: "StudentPay Payment Plan Agreement",
-    description:
-      "Personalised agreement content from StudentPay legal endpoints after checkout creation.",
-    status: "available",
-    icon: FileText,
-  },
-  {
-    title: "Provider Student Agreement",
-    description:
-      "Provider enrolment terms presented where enabled in the checkout flow.",
-    status: "available",
-    icon: FileCheck2,
-  },
-  {
-    title: "Electronic acceptance",
-    description:
-      "Checkbox consents and timestamped acceptance before enrolment confirmation.",
-    status: "available",
-    icon: CheckCircle2,
-  },
-  {
-    title: "Checkout creation and confirmation",
-    description:
-      "Create and confirm enrolments through the StudentPay Provider Checkout API.",
-    status: "available",
-    icon: Plug,
-  },
-];
-
-const integrationCapabilities: Capability[] = [
+const integrationFeatures = [
   {
     title: "StudentPay API",
     description:
-      "REST endpoints for checkout creation, direct debit setup and enrolment confirmation.",
-    status: "available",
+      "Create checkouts, direct debit setup URLs and confirm enrolments through REST endpoints.",
     icon: Code2,
   },
   {
     title: "Provider configuration",
     description:
       "Per-provider themes, catalogue content and API binding without forking the application.",
-    status: "available",
     icon: Settings2,
   },
   {
-    title: "Enrolment Checkout",
+    title: "Checkout creation",
     description:
-      "Reusable checkout components that embed into a provider's existing enrolment journey.",
-    status: "available",
-    icon: Layers3,
+      "Initiate enrolment sessions from a provider's existing systems or embedded flows.",
+    icon: Plug,
   },
   {
-    title: "Agreements",
+    title: "Checkout confirmation",
     description:
-      "Payment plan, direct debit and provider terms loaded from StudentPay legal services.",
-    status: "available",
-    icon: FileText,
+      "Confirm enrolment outcomes after payment authorisation and agreement acceptance.",
+    icon: ShieldCheck,
   },
   {
     title: "Payment authorisation",
     description:
       "Card tokenisation and direct debit authorisation through Pinch and StudentPay.",
-    status: "available",
     icon: CreditCard,
   },
   {
-    title: "Production provider binding",
+    title: "Agreement generation",
     description:
-      "Environment-scoped hard binding for dedicated provider production demonstrations.",
-    status: "demo",
-    icon: ShieldCheck,
+      "Payment plan, direct debit and provider terms from StudentPay legal services.",
+    icon: FileText,
   },
-  {
-    title: "Web/API integration",
-    description:
-      "Patterns for provider systems to initiate checkouts and receive confirmation outcomes.",
-    status: "in-development",
-    icon: Plug,
-  },
-  {
-    title: "Developer Hub",
-    description:
-      "Structured documentation, reference material and integration guides for providers.",
-    status: "in-development",
-    icon: BookOpen,
-  },
-];
-
-function statusLabel(status: CapabilityStatus): string {
-  if (status === "available") {
-    return "Available";
-  }
-
-  if (status === "demo") {
-    return "Demo";
-  }
-
-  return "In development";
-}
-
-function CapabilityCard({ capability }: { capability: Capability }) {
-  const Icon = capability.icon;
-
-  return (
-    <article className="sp-capability-card">
-      <div className="sp-capability-card__header">
-        <span className="sp-capability-card__icon" aria-hidden="true">
-          <Icon size={18} />
-        </span>
-        <span
-          className={`sp-status-badge sp-status-badge--${capability.status}`}
-        >
-          {statusLabel(capability.status)}
-        </span>
-      </div>
-      <h3>{capability.title}</h3>
-      <p>{capability.description}</p>
-    </article>
-  );
-}
+] as const;
 
 export function StudentPayHomePage() {
   const academyAustralia = providers.find(
@@ -192,214 +72,224 @@ export function StudentPayHomePage() {
 
   return (
     <>
-      <section className="sp-hero">
-        <div className="page-shell sp-hero__grid">
-          <div className="sp-hero__content">
-            <p className="sp-hero__descriptor">StudentPay Product Environment</p>
-
-            <p className="sp-hero__eyebrow">StudentPay</p>
-            <h1>StudentPay Provider Experience</h1>
-
-            <p className="sp-hero__lead">
-              A reusable product environment for demonstrating and deploying
-              StudentPay-powered enrolment and payment experiences.
+      <section className="sp-marketing-hero">
+        <div className="sp-shell sp-marketing-hero__grid">
+          <div className="sp-marketing-hero__copy">
+            <p className="sp-eyebrow">StudentPay product environment</p>
+            <h1>
+              StudentPay payment experiences,
+              <br />
+              built for education.
+            </h1>
+            <p className="sp-lead">
+              Explore reusable StudentPay enrolment, payment and agreement
+              experiences — then see them operating inside a demonstration
+              education provider.
             </p>
 
-            <p className="sp-hero__supporting">
-              StudentPay is a specialist education payment-plan provider. We
-              administer payment plans, course fee collection, arrears
-              management, settlement and reporting — and the provider and student
-              payment experiences that support them. This environment shows how
-              that capability can be embedded into an education provider&apos;s
-              enrolment journey while the provider retains their own brand.
-            </p>
-
-            <div className="sp-hero__actions">
-              <Link href="/#provider-demos" className="sp-button sp-button--primary">
-                Explore provider demos
-                <ArrowRight size={18} aria-hidden="true" />
-              </Link>
-              <Link
-                href="/#integration-capabilities"
-                className="sp-button sp-button--secondary"
+            <div className="sp-marketing-hero__actions">
+              <StudentPayButton
+                href="/#enrolment-checkout"
+                variant="primary"
+                showArrow
               >
-                View integration capabilities
-              </Link>
+                Explore Enrolment Checkout
+              </StudentPayButton>
+              <StudentPayButton
+                href="/#provider-demos"
+                variant="secondary"
+                showArrow
+              >
+                View Provider Demo
+              </StudentPayButton>
             </div>
           </div>
 
-          <aside className="sp-relationship-panel" aria-label="Product relationship">
-            <div className="sp-relationship-panel__layer sp-relationship-panel__layer--product">
-              <span className="sp-relationship-panel__label">StudentPay</span>
+          <ProductBrowserFrame>
+            <EnrolmentCheckoutMock />
+          </ProductBrowserFrame>
+        </div>
+      </section>
+
+      <section className="sp-architecture-band">
+        <div className="sp-shell sp-architecture-band__inner">
+          <div className="sp-architecture-band__copy">
+            <p className="sp-eyebrow sp-eyebrow--on-dark">
+              Built for education providers
+            </p>
+            <h2>StudentPay powers the payment experience. Your brand stays front and centre.</h2>
+            <p>
+              StudentPay is a specialist education payment-plan provider. We
+              administer payment plans, course fee collection and the enrolment
+              checkout experiences that support them — without becoming the
+              education provider.
+            </p>
+          </div>
+
+          <div className="sp-architecture-flow" aria-label="Product architecture">
+            <div className="sp-architecture-flow__step">
+              <span className="sp-architecture-flow__label">StudentPay</span>
               <p>Reusable payment and enrolment technology</p>
             </div>
-            <div className="sp-relationship-panel__connector" aria-hidden="true" />
-            <div className="sp-relationship-panel__layer sp-relationship-panel__layer--provider">
-              <span className="sp-relationship-panel__label">Academy Australia</span>
-              <p>Demonstration education provider using StudentPay</p>
+            <ArrowRight className="sp-architecture-flow__arrow" aria-hidden="true" />
+            <div className="sp-architecture-flow__step">
+              <span className="sp-architecture-flow__label">Enrolment Checkout</span>
+              <p>Configurable provider-facing enrolment flow</p>
             </div>
-          </aside>
+            <ArrowRight className="sp-architecture-flow__arrow" aria-hidden="true" />
+            <div className="sp-architecture-flow__step sp-architecture-flow__step--muted">
+              <span className="sp-architecture-flow__label">Academy Australia</span>
+              <p>Demonstration education provider</p>
+            </div>
+          </div>
         </div>
       </section>
 
       <section className="sp-section" id="provider-demos">
-        <div className="page-shell">
-          <div className="sp-section-heading">
-            <h2>Provider demonstrations</h2>
+        <div className="sp-shell">
+          <div className="sp-section-intro">
+            <p className="sp-eyebrow">Provider demonstration</p>
+            <h2>See StudentPay inside a complete provider journey</h2>
             <p>
-              Each demonstration provider shows how StudentPay enrolment and
-              payment capabilities can be presented within a provider&apos;s own
-              brand and course catalogue. StudentPay is not the education
-              provider.
+              Academy Australia is a demonstration education provider — not
+              StudentPay itself. It shows how enrolment checkout, payment plans
+              and agreements can live inside a provider&apos;s own brand.
             </p>
           </div>
 
           {academyAustralia ? (
-            <article className="sp-provider-demo-feature">
-              <div className="sp-provider-demo-feature__content">
-                <div className="sp-provider-demo-feature__brand">
+            <article className="sp-demo-card">
+              <div className="sp-demo-card__main">
+                <div className="sp-demo-card__logo-wrap">
                   <Image
                     src={academyAustralia.logoPath}
                     alt={`${academyAustralia.name} logo`}
                     width={220}
-                    height={80}
-                    className="sp-provider-demo-feature__logo"
+                    height={76}
+                    className="sp-demo-card__logo"
                   />
                 </div>
-
-                <p className="sp-provider-demo-feature__label">
-                  Demo education provider
-                </p>
+                <p className="sp-demo-card__tag">Demo provider</p>
                 <h3>{academyAustralia.name}</h3>
                 <p>
-                  Flexible online education example demonstrating a
-                  StudentPay-powered enrolment and payment-plan journey with a
-                  full course catalogue and live checkout flow.
+                  See StudentPay Enrolment Checkout operating inside a complete
+                  education provider enrolment journey — course catalogue, course
+                  pages and live checkout on Criminal Psychology.
                 </p>
-
-                <div className="sp-provider-demo-feature__actions">
-                  <Link
-                    href={`/providers/${academyAustralia.slug}`}
-                    className="sp-button sp-button--primary"
-                  >
-                    View Academy Australia demo
-                    <ArrowRight size={18} aria-hidden="true" />
-                  </Link>
-                  <Link
-                    href={`/providers/${academyAustralia.slug}/courses`}
-                    className="sp-button sp-button--ghost"
-                  >
-                    Explore courses
-                  </Link>
-                </div>
+                <StudentPayButton
+                  href={`/providers/${academyAustralia.slug}`}
+                  variant="primary"
+                  showArrow
+                >
+                  View Academy Australia
+                </StudentPayButton>
               </div>
 
-              <div className="sp-provider-demo-feature__proof">
-                <p className="sp-provider-demo-feature__proof-label">
-                  Included in this demo
-                </p>
+              <div className="sp-demo-card__aside">
+                <p className="sp-demo-card__aside-label">Included in this demo</p>
                 <ul>
                   <li>Provider-branded course catalogue and detail pages</li>
-                  <li>StudentPay Enrolment Checkout on Criminal Psychology</li>
-                  <li>Payment-plan, deposit and direct debit authorisation</li>
+                  <li>StudentPay Enrolment Checkout with payment-plan selection</li>
+                  <li>Direct debit authorisation and agreement acceptance</li>
                 </ul>
+                <Link
+                  href={`/providers/${academyAustralia.slug}/courses`}
+                  className="sp-text-link"
+                >
+                  Explore courses
+                  <ArrowRight size={16} aria-hidden="true" />
+                </Link>
               </div>
             </article>
           ) : null}
         </div>
       </section>
 
-      <section className="sp-section sp-section--feature" id="enrolment-checkout">
-        <div className="page-shell">
-          <div className="sp-section-heading sp-section-heading--on-dark">
-            <h2>StudentPay Enrolment Checkout</h2>
+      <section className="sp-section sp-section--soft" id="enrolment-checkout">
+        <div className="sp-shell sp-checkout-section">
+          <ProductBrowserFrame label="Academy Australia · Criminal Psychology">
+            <EnrolmentCheckoutMock />
+          </ProductBrowserFrame>
+
+          <div className="sp-checkout-section__copy">
+            <p className="sp-eyebrow">StudentPay Enrolment Checkout</p>
+            <h2>Integrate payment into the enrolment journey</h2>
             <p>
-              A configurable enrolment and payment experience that can be
-              embedded into an education provider&apos;s existing enrolment
-              journey.
+              Providers can embed StudentPay into their existing enrolment
+              experience rather than sending students into a separate payment
+              flow. The demonstration below uses the live Criminal Psychology
+              checkout as product proof.
             </p>
-          </div>
 
-          <div className="sp-checkout-showcase">
-            <div className="sp-checkout-showcase__copy">
-              <p>
-                The Academy Australia Criminal Psychology demonstration uses the
-                full checkout flow as product proof — provider branding, student
-                details, payment-plan selection, agreement acceptance and API
-                confirmation.
-              </p>
-              <Link
-                href="/providers/academy-australia/courses/criminal-psychology/enrol"
-                className="sp-button sp-button--lime"
-              >
-                Open sample enrolment checkout
-                <ArrowRight size={18} aria-hidden="true" />
-              </Link>
-            </div>
+            <ul className="sp-feature-list">
+              {checkoutFeatures.map((feature) => (
+                <li key={feature}>
+                  <Check size={18} aria-hidden="true" />
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
 
-            <div className="sp-checkout-showcase__frame" aria-hidden="true">
-              <div className="sp-checkout-showcase__frame-bar">
-                <span />
-                <span />
-                <span />
-              </div>
-              <div className="sp-checkout-showcase__frame-body">
-                <p className="sp-checkout-showcase__frame-title">
-                  StudentPay Enrolment Checkout
-                </p>
-                <ol>
-                  <li>Course confirmation</li>
-                  <li>Student screening and details</li>
-                  <li>Payment plan and deposit</li>
-                  <li>Direct debit authorisation</li>
-                  <li>Agreement acceptance and confirm</li>
-                </ol>
-              </div>
-            </div>
-          </div>
-
-          <div className="sp-capability-grid">
-            {checkoutCapabilities.map((capability) => (
-              <CapabilityCard key={capability.title} capability={capability} />
-            ))}
+            <StudentPayButton
+              href="/providers/academy-australia/courses/criminal-psychology/enrol"
+              variant="primary"
+              showArrow
+            >
+              Open sample enrolment checkout
+            </StudentPayButton>
           </div>
         </div>
       </section>
 
-      <section className="sp-section" id="integration-capabilities">
-        <div className="page-shell">
-          <div className="sp-section-heading">
-            <h2>Integration capabilities</h2>
+      <section className="sp-section" id="integrations">
+        <div className="sp-shell">
+          <div className="sp-section-intro sp-section-intro--center">
+            <p className="sp-eyebrow">Developer platform</p>
+            <h2>Built to integrate</h2>
             <p>
-              The foundation for a StudentPay developer and product platform —
-              APIs, configuration patterns and checkout flows that provider
-              implementations can build on.
+              Providers can integrate StudentPay using hosted checkout
+              experiences, reusable components and API capabilities — the
+              foundation for a future StudentPay Developer Hub.
             </p>
           </div>
 
-          <div className="sp-capability-grid sp-capability-grid--compact">
-            {integrationCapabilities.map((capability) => (
-              <CapabilityCard key={capability.title} capability={capability} />
-            ))}
+          <div className="sp-integration-grid">
+            {integrationFeatures.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <article key={feature.title} className="sp-integration-item">
+                  <span className="sp-integration-item__icon" aria-hidden="true">
+                    <Icon size={20} />
+                  </span>
+                  <div>
+                    <h3>{feature.title}</h3>
+                    <p>{feature.description}</p>
+                  </div>
+                </article>
+              );
+            })}
           </div>
 
-          <div className="sp-roadmap-note">
+          <div className="sp-api-panel">
+            <div>
+              <p className="sp-api-panel__label">Provider Checkout API</p>
+              <code>POST /v1/provider-checkouts</code>
+              <code>POST /api/provider-checkout-confirm</code>
+            </div>
             <p>
-              Future routes such as <code>/enrolment-checkout</code>,{" "}
-              <code>/provider-demos</code>, <code>/integrations</code>,{" "}
-              <code>/developers</code> and <code>/docs</code> will extend this
-              environment as the product surface matures.
+              Sandbox and mock modes are available in this environment for
+              development without production credentials.
             </p>
           </div>
         </div>
       </section>
 
-      <section className="sp-tagline-band">
-        <div className="page-shell sp-tagline-band__inner">
-          <p className="sp-tagline-band__quote">
+      <section className="sp-closing-band">
+        <div className="sp-shell sp-closing-band__inner">
+          <blockquote>
             You focus on education. We&apos;ll handle the rest.
-          </p>
-          <p className="sp-tagline-band__note">
+          </blockquote>
+          <p>
             StudentPay administers payment plans and course fee collection for
             education providers. We are not a course provider and we are not
             positioned as a lender.

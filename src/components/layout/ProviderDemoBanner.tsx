@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FlaskConical } from "lucide-react";
+import { ArrowRight, FlaskConical } from "lucide-react";
 import { getPlatformBrand } from "@/lib/provider-experience/branding";
 
 export function ProviderDemoBanner() {
@@ -9,15 +9,15 @@ export function ProviderDemoBanner() {
 
   return (
     <div className="sp-demo-banner" role="note">
-      <div className="page-shell sp-demo-banner__inner">
+      <div className="sp-shell sp-demo-banner__inner">
         <FlaskConical size={16} aria-hidden="true" />
         <span>
-          <strong>StudentPay Provider Demo</strong>
-          <span className="sp-demo-banner__separator">·</span>
-          Demonstration environment — provider branding below is illustrative
+          <strong>Demonstration environment</strong> — provider branding below
+          is illustrative, not StudentPay
         </span>
-        <Link href="/#provider-demos" className="sp-demo-banner__link">
+        <Link href="/" className="sp-demo-banner__link">
           Back to product home
+          <ArrowRight size={14} aria-hidden="true" />
         </Link>
       </div>
     </div>

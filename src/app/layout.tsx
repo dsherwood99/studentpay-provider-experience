@@ -4,6 +4,7 @@ import { PlatformFooter } from "@/components/layout/PlatformFooter";
 import { PlatformHeader } from "@/components/layout/PlatformHeader";
 import { getPlatformBrand } from "@/lib/provider-experience/branding";
 import "./globals.css";
+import "../styles/studentpay-platform.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-academy-sans",
