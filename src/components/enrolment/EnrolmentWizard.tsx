@@ -778,7 +778,7 @@ export function EnrolmentWizard({
             />
 
             <span className="enrolment-wizard__powered-by">
-              Provider Experience · OnFit wizard parity
+              StudentPay Enrolment Checkout
             </span>
           </div>
         </header>
@@ -833,7 +833,7 @@ export function EnrolmentWizard({
                 <h1>Confirm your {course.title} enrolment.</h1>
                 <p className="wizard-step__lead">
                   This Provider Experience checkout uses the full StudentPay
-                  enrolment wizard flow: screening, study skills, student
+                  Enrolment Checkout flow: screening, study skills, student
                   details and confirm-and-pay.
                 </p>
 
@@ -880,7 +880,7 @@ export function EnrolmentWizard({
                 </div>
 
                 <div className="wizard-notice">
-                  <strong>StudentPay wizard flow</strong>
+                  <strong>StudentPay Enrolment Checkout</strong>
                   <span>
                     Course → Screening → Study skills → Details → Confirm and
                     Pay, including deposit simulation, direct debit authority,
@@ -1510,7 +1510,7 @@ export function EnrolmentWizard({
                       <span>
                         Only the StudentPay payment plan uses the Provider
                         Checkout API, direct debit authority and dual
-                        confirmation flow from the OnFit wizard.
+                        confirmation flow from StudentPay Enrolment Checkout.
                       </span>
                     </div>
                   </div>
