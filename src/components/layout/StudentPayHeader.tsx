@@ -36,6 +36,7 @@ export function StudentPayHeader() {
           <StudentPayButton
             href="/providers/academy-australia/courses/criminal-psychology/enrol"
             showArrow
+            className="sp-btn--compact"
           >
             View demo
           </StudentPayButton>

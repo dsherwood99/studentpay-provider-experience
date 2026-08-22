@@ -18,10 +18,10 @@
   --sp-text: #161b1a;
   --sp-text-secondary: #4f5f59;
   --sp-text-muted: #6f7d77;
-  --sp-shadow-sm: 0 7px 20px rgba(31, 85, 70, 0.07);
-  --sp-shadow-md: 0 16px 42px rgba(31, 85, 70, 0.1);
-  --sp-shadow-lg: 0 28px 80px rgba(16, 37, 31, 0.14);
-  --sp-shadow-purple: 0 10px 28px rgba(139, 121, 241, 0.28);
+  --sp-shadow-sm: 0 4px 16px rgba(31, 85, 70, 0.05);
+  --sp-shadow-md: 0 12px 32px rgba(31, 85, 70, 0.08);
+  --sp-shadow-lg: 0 20px 56px rgba(16, 37, 31, 0.1);
+  --sp-shadow-purple: 0 6px 20px rgba(139, 121, 241, 0.22);
   --sp-shell-width: 1200px;
   --sp-header-height: 76px;
 
@@ -68,12 +68,12 @@
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 32px;
+  gap: 24px;
 }
 
 .sp-site-header__logo {
   width: auto;
-  height: 42px;
+  height: 40px;
   object-fit: contain;
 }
 
@@ -81,16 +81,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 2px;
   flex-wrap: wrap;
 }
 
 .sp-site-header__nav a {
-  padding: 10px 14px;
+  padding: 8px 12px;
   border-radius: 999px;
   color: var(--sp-text-secondary);
-  font-size: 0.92rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 500;
   transition: color 0.15s ease, background 0.15s ease;
 }
 
@@ -139,6 +139,13 @@
 
 .sp-btn--primary:hover {
   background: var(--sp-purple-deep);
+}
+
+.sp-btn--compact {
+  min-height: 44px;
+  padding: 0 20px;
+  font-size: 0.875rem;
+  gap: 8px;
 }
 
 .sp-btn--secondary {
@@ -205,12 +212,12 @@
 /* Typography helpers */
 
 .sp-eyebrow {
-  margin: 0 0 16px;
+  margin: 0 0 12px;
   color: var(--sp-dark-green);
   font-family: var(--font-studentpay-body), Inter, sans-serif;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
@@ -220,36 +227,38 @@
 
 .sp-lead {
   margin: 0;
-  max-width: 52ch;
+  max-width: 48ch;
   color: var(--sp-text-secondary);
-  font-size: 1.08rem;
+  font-size: 1.05rem;
+  line-height: 1.7;
 }
 
 /* Hero */
 
 .sp-marketing-hero {
-  padding: 72px 0 88px;
+  padding: 64px 0 72px;
   background: var(--sp-white);
 }
 
 .sp-marketing-hero__grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.95fr);
-  gap: 56px;
+  grid-template-columns: minmax(0, 1.05fr) minmax(300px, 0.88fr);
+  gap: 48px;
   align-items: center;
 }
 
 .sp-marketing-hero h1 {
-  margin: 0 0 20px;
-  font-size: clamp(2.35rem, 4.5vw, 3.55rem);
+  margin: 0 0 18px;
+  font-size: clamp(2.1rem, 3.8vw, 3.1rem);
   font-weight: 700;
+  line-height: 1.08;
 }
 
 .sp-marketing-hero__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 32px;
+  margin-top: 28px;
 }
 
 /* Product frame */
@@ -260,13 +269,13 @@
 
 .sp-product-frame__glow {
   position: absolute;
-  inset: 12% 8% -8%;
+  inset: 14% 10% -6%;
   background: radial-gradient(
     circle at 50% 50%,
-    rgba(113, 223, 120, 0.28),
-    transparent 68%
+    rgba(113, 223, 120, 0.16),
+    transparent 70%
   );
-  filter: blur(18px);
+  filter: blur(20px);
   pointer-events: none;
 }
 
@@ -274,9 +283,9 @@
   position: relative;
   overflow: hidden;
   border: 1px solid var(--sp-border);
-  border-radius: 20px;
+  border-radius: 18px;
   background: var(--sp-white);
-  box-shadow: var(--sp-shadow-lg);
+  box-shadow: var(--sp-shadow-md);
 }
 
 .sp-product-frame__chrome {
@@ -468,7 +477,7 @@
 /* Architecture band */
 
 .sp-architecture-band {
-  padding: 72px 0;
+  padding: 64px 0;
   background: var(--sp-dark-green);
   color: rgba(255, 255, 255, 0.9);
 }
@@ -513,9 +522,13 @@
 .sp-architecture-flow__label {
   display: block;
   margin-bottom: 4px;
-  color: var(--sp-lime);
+  color: rgba(255, 255, 255, 0.95);
   font-size: 0.92rem;
   font-weight: 700;
+}
+
+.sp-architecture-flow__step:first-child .sp-architecture-flow__label {
+  color: var(--sp-lime);
 }
 
 .sp-architecture-flow__step p {
@@ -531,17 +544,17 @@
 /* Sections */
 
 .sp-section {
-  padding: 88px 0;
+  padding: 80px 0;
   background: var(--sp-white);
 }
 
 .sp-section--soft {
-  background: var(--sp-surface-soft);
+  background: var(--sp-white);
 }
 
 .sp-section-intro {
   max-width: 680px;
-  margin-bottom: 40px;
+  margin-bottom: 36px;
 }
 
 .sp-section-intro--center {
@@ -569,13 +582,12 @@
   gap: 0;
   overflow: hidden;
   border: 1px solid var(--sp-border);
-  border-radius: 24px;
+  border-radius: 20px;
   background: var(--sp-white);
-  box-shadow: var(--sp-shadow-sm);
 }
 
 .sp-demo-card__main {
-  padding: 36px;
+  padding: 32px;
 }
 
 .sp-demo-card__logo {
@@ -609,9 +621,9 @@
 }
 
 .sp-demo-card__aside {
-  padding: 36px;
+  padding: 32px;
   border-left: 1px solid var(--sp-border);
-  background: var(--sp-surface-soft);
+  background: var(--sp-white);
 }
 
 .sp-demo-card__aside-label {
@@ -687,9 +699,9 @@
 .sp-integration-item {
   display: flex;
   gap: 16px;
-  padding: 22px;
+  padding: 20px;
   border: 1px solid var(--sp-border);
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--sp-white);
 }
 
@@ -724,8 +736,8 @@
   gap: 20px;
   padding: 24px 28px;
   border: 1px solid var(--sp-border);
-  border-radius: 18px;
-  background: var(--sp-surface-soft);
+  border-radius: 16px;
+  background: var(--sp-white);
 }
 
 .sp-api-panel__label {
@@ -753,7 +765,7 @@
 /* Closing band */
 
 .sp-closing-band {
-  padding: 72px 0 88px;
+  padding: 64px 0 80px;
   background: var(--sp-white);
   border-top: 1px solid var(--sp-border);
 }
@@ -889,11 +901,21 @@
     display: none;
   }
 
-  .sp-marketing-hero,
+  .sp-marketing-hero {
+    padding-block: 48px;
+  }
+
   .sp-section,
-  .sp-architecture-band,
   .sp-closing-band {
     padding-block: 56px;
+  }
+
+  .sp-architecture-band {
+    padding-block: 44px;
+  }
+
+  .sp-marketing-hero h1 {
+    font-size: clamp(1.9rem, 7vw, 2.35rem);
   }
 
   .sp-marketing-hero h1 br {
@@ -925,6 +947,10 @@
     width: min(var(--sp-shell-width), calc(100% - 24px));
   }
 
+  .sp-marketing-hero h1 {
+    font-size: clamp(1.75rem, 8.5vw, 2.1rem);
+  }
+
   .sp-marketing-hero__actions {
     flex-direction: column;
     align-items: stretch;
@@ -932,5 +958,14 @@
 
   .sp-btn {
     width: 100%;
+  }
+
+  .sp-demo-card__main,
+  .sp-demo-card__aside {
+    padding: 24px;
+  }
+
+  .sp-integration-item {
+    padding: 18px;
   }
 }
