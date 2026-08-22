@@ -1,36 +1,13 @@
-import Image from "next/image";
-import Link from "next/link";
+import { AcademyAustraliaHeader } from "@/components/layout/AcademyAustraliaHeader";
+import { StudentPayHeader } from "@/components/layout/StudentPayHeader";
+import { getPlatformBrand } from "@/lib/provider-experience/branding";
 
 export function PlatformHeader() {
-  return (
-    <header className="platform-header">
-      <div className="page-shell platform-header__inner">
-        <Link href="/" className="platform-brand" aria-label="Academy Australia home">
-          <Image
-            src="/providers/academy-australia/academy-australia-logo.png"
-            alt="Academy Australia"
-            width={240}
-            height={78}
-            className="platform-brand__logo"
-            priority
-          />
-        </Link>
+  const brand = getPlatformBrand();
 
-        <nav className="platform-nav" aria-label="Main navigation">
-          <Link href="/providers/academy-australia/courses">Courses</Link>
-          <a href="/#payment-options">Payment options</a>
-          <Link
-            href="/providers/academy-australia/courses/criminal-psychology/enrol"
-            className="platform-nav__enrol"
-          >
-            Enrol now
-          </Link>
-        </nav>
+  if (brand === "academy-australia") {
+    return <AcademyAustraliaHeader />;
+  }
 
-        <a href="tel:1300000000" className="platform-header__phone">
-          1300 000 000
-        </a>
-      </div>
-    </header>
-  );
+  return <StudentPayHeader />;
 }

@@ -159,7 +159,7 @@ export default async function CourseDetailPage({
                 href="#enrolment"
                 className="course-detail-payment-card__secondary"
               >
-                Continue to enrolment wizard
+                Continue to StudentPay Enrolment Checkout
               </a>
 
               <div className="course-detail-payment-card__note">

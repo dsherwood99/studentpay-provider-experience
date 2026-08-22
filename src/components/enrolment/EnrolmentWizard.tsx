@@ -6,6 +6,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type ChangeEvent,
   type FormEvent,
@@ -112,7 +113,80 @@ function validatePostcode(value: string): boolean {
   return /^\d{4}$/.test(value);
 }
 
-export function EnrolmentWizard({
+function readSavedEnrolmentState(
+  storageKey: string,
+  initialPaymentOption: EnrolmentPaymentOption,
+): { currentStep: StepId; formData: EnrolmentFormData } {
+  const defaults = {
+    currentStep: "course" as StepId,
+    formData: createInitialFormData(initialPaymentOption),
+  };
+
+  if (typeof window === "undefined") {
+    return defaults;
+  }
+
+  try {
+    const saved = window.localStorage.getItem(storageKey);
+    if (!saved) {
+      return defaults;
+    }
+
+    const parsed = JSON.parse(saved) as {
+      currentStep?: StepId;
+      formData?: EnrolmentFormData;
+    };
+
+    return {
+      currentStep: parsed.currentStep ?? defaults.currentStep,
+      formData: parsed.formData
+        ? {
+            ...defaults.formData,
+            ...parsed.formData,
+            paymentOption:
+              parsed.formData.paymentOption ?? initialPaymentOption,
+          }
+        : defaults.formData,
+    };
+  } catch {
+    window.localStorage.removeItem(storageKey);
+    return defaults;
+  }
+}
+
+function useIsClient() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+}
+
+export function EnrolmentWizard(props: EnrolmentWizardProps) {
+  const isClient = useIsClient();
+
+  if (!isClient) {
+    return (
+      <div
+        className={
+          props.embedded
+            ? "enrolment-wizard enrolment-wizard--embedded"
+            : "enrolment-wizard"
+        }
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <div className="page-shell enrolment-wizard__loading">
+          <p>Preparing enrolment checkout…</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <EnrolmentWizardClient {...props} />;
+}
+
+function EnrolmentWizardClient({
   provider,
   course,
   initialPaymentOption = "plan",
@@ -122,16 +196,19 @@ export function EnrolmentWizard({
 }: EnrolmentWizardProps) {
   const apiProviderCode = studentPayProviderCode || provider.code;
   const storageKey = `studentpay-px-enrolment:${provider.slug}:${course.slug}`;
+  const savedEnrolment = readSavedEnrolmentState(storageKey, initialPaymentOption);
   const paymentFrequency = formatPaymentFrequency(
     course.paymentPlan.frequency,
   );
 
-  const [currentStep, setCurrentStep] = useState<StepId>("course");
-  const [formData, setFormData] = useState<EnrolmentFormData>(() =>
-    createInitialFormData(initialPaymentOption),
+  const [currentStep, setCurrentStep] = useState<StepId>(
+    savedEnrolment.currentStep,
+  );
+  const [formData, setFormData] = useState<EnrolmentFormData>(
+    savedEnrolment.formData,
   );
   const [errors, setErrors] = useState<EnrolmentFieldErrors>({});
-  const [hasLoadedSavedData, setHasLoadedSavedData] = useState(false);
+  const [hasLoadedSavedData] = useState(true);
   const [openingDda, setOpeningDda] = useState(false);
   const [showEmbeddedDda, setShowEmbeddedDda] = useState(false);
   const [directDebitAuthorised, setDirectDebitAuthorised] = useState(false);
@@ -167,33 +244,6 @@ export function EnrolmentWizard({
       Math.round(planBalance / course.paymentPlan.repaymentAmount),
       1,
     );
-
-  useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved) as {
-          currentStep?: StepId;
-          formData?: EnrolmentFormData;
-        };
-        if (parsed.formData) {
-          setFormData({
-            ...createInitialFormData(initialPaymentOption),
-            ...parsed.formData,
-            paymentOption:
-              parsed.formData.paymentOption ?? initialPaymentOption,
-          });
-        }
-        if (parsed.currentStep) {
-          setCurrentStep(parsed.currentStep);
-        }
-      }
-    } catch {
-      window.localStorage.removeItem(storageKey);
-    } finally {
-      setHasLoadedSavedData(true);
-    }
-  }, [initialPaymentOption, storageKey]);
 
   useEffect(() => {
     if (!hasLoadedSavedData || enrolmentConfirmed) {
@@ -778,7 +828,7 @@ export function EnrolmentWizard({
             />
 
             <span className="enrolment-wizard__powered-by">
-              Provider Experience · OnFit wizard parity
+              StudentPay Enrolment Checkout
             </span>
           </div>
         </header>
@@ -833,7 +883,7 @@ export function EnrolmentWizard({
                 <h1>Confirm your {course.title} enrolment.</h1>
                 <p className="wizard-step__lead">
                   This Provider Experience checkout uses the full StudentPay
-                  enrolment wizard flow: screening, study skills, student
+                  Enrolment Checkout flow: screening, study skills, student
                   details and confirm-and-pay.
                 </p>
 
@@ -880,7 +930,7 @@ export function EnrolmentWizard({
                 </div>
 
                 <div className="wizard-notice">
-                  <strong>StudentPay wizard flow</strong>
+                  <strong>StudentPay Enrolment Checkout</strong>
                   <span>
                     Course → Screening → Study skills → Details → Confirm and
                     Pay, including deposit simulation, direct debit authority,
@@ -1510,7 +1560,7 @@ export function EnrolmentWizard({
                       <span>
                         Only the StudentPay payment plan uses the Provider
                         Checkout API, direct debit authority and dual
-                        confirmation flow from the OnFit wizard.
+                        confirmation flow from StudentPay Enrolment Checkout.
                       </span>
                     </div>
                   </div>
