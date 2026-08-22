@@ -11,13 +11,13 @@ export const providers: Provider[] = [
     logoPath: "/providers/academy-australia/academy-australia-logo.png",
     supportEmail: "enrolments@academyaustralia.com",
     theme: {
-  primaryColour: "#F45F68",
-  secondaryColour: "#FF9A4D",
+  primaryColour: "#EF5865",
+  secondaryColour: "#F7A04B",
   accentColour: "#FFD8BD",
-  backgroundColour: "#FFF9F4",
+  backgroundColour: "#FEF8F4",
   surfaceColour: "#FFFFFF",
-  textColour: "#43464B",
-  mutedTextColour: "#666A71",
+  textColour: "#3D3D3D",
+  mutedTextColour: "#6B6B6B",
 },
   },
 ];

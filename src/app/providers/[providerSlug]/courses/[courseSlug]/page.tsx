@@ -1,24 +1,35 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FullStackCoursePage } from "@/components/courses/FullStackCoursePage";
+import { PhotographyCoursePage } from "@/components/courses/PhotographyCoursePage";
+import { EnrolmentWizard } from "@/components/enrolment/EnrolmentWizard";
 import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
 import {
   formatCurrency,
   formatPaymentFrequency,
 } from "@/lib/format";
+import { getProviderExperienceConfig } from "@/lib/provider-experience/checkout";
+import type { EnrolmentPaymentOption } from "@/types/enrolment";
 
 type CourseDetailPageProps = {
   params: Promise<{
     providerSlug: string;
     courseSlug: string;
   }>;
+  searchParams: Promise<{
+    payment?: string;
+  }>;
 };
 
 export default async function CourseDetailPage({
   params,
+  searchParams,
 }: CourseDetailPageProps) {
   const { providerSlug, courseSlug } = await params;
+  const { payment } = await searchParams;
+  const config = getProviderExperienceConfig();
 
   const provider = getProviderBySlug(providerSlug);
 
@@ -35,6 +46,35 @@ export default async function CourseDetailPage({
   const paymentFrequency = formatPaymentFrequency(
     course.paymentPlan.frequency,
   );
+
+  const initialPaymentOption: EnrolmentPaymentOption =
+    payment === "full" || payment === "afterpay" || payment === "plan"
+      ? payment
+      : "plan";
+
+  if (course.slug === "full-stack-developer") {
+    return (
+      <FullStackCoursePage
+        provider={provider}
+        course={course}
+        initialPaymentOption={initialPaymentOption}
+        studentPayProviderCode={config.providerCode}
+        legalApiBaseUrl={config.apiBaseUrl}
+      />
+    );
+  }
+
+  if (course.slug === "professional-photography") {
+    return (
+      <PhotographyCoursePage
+        provider={provider}
+        course={course}
+        initialPaymentOption={initialPaymentOption}
+        studentPayProviderCode={config.providerCode}
+        legalApiBaseUrl={config.apiBaseUrl}
+      />
+    );
+  }
 
   return (
     <div className="course-detail-page">
@@ -53,8 +93,8 @@ export default async function CourseDetailPage({
             <Image
               src={provider.logoPath}
               alt={`${provider.name} logo`}
-              width={190}
-              height={72}
+              width={140}
+              height={44}
               className="course-detail-hero__logo"
               priority
             />
@@ -108,19 +148,19 @@ export default async function CourseDetailPage({
                 plan during enrolment.
               </p>
 
-              <Link
-                href={`/providers/${provider.slug}/courses/${course.slug}/enrol`}
+              <a
+                href="#enrolment"
                 className="button button--course-primary"
               >
                 Start enrolment
-              </Link>
+              </a>
 
-              <Link
-                href="#course-fees"
+              <a
+                href="#enrolment"
                 className="course-detail-payment-card__secondary"
               >
-                View all payment options
-              </Link>
+                Continue to enrolment wizard
+              </a>
 
               <div className="course-detail-payment-card__note">
                 <strong>StudentPay sandbox</strong>
@@ -170,77 +210,22 @@ export default async function CourseDetailPage({
         <div className="page-shell course-detail-content-grid">
           <div className="course-detail-main-content">
             <section className="course-detail-copy-block">
-              <p className="course-detail-eyebrow">
-                Course overview
-              </p>
+              <p className="course-detail-eyebrow">Course overview</p>
 
               <h2>Build practical skills with flexible online study.</h2>
 
               <p>{course.description}</p>
 
               <p>
-                The course is designed to help students build
-                confidence progressively through practical learning,
-                online resources and provider support.
+                The course is designed to help students build confidence
+                progressively through practical learning, online resources and
+                provider support.
               </p>
-            </section>
-
-            <section className="course-detail-copy-block">
-              <p className="course-detail-eyebrow">
-                What you will learn
-              </p>
-
-              <h2>Skills and outcomes</h2>
-
-              <div className="course-outcomes-grid">
-                {course.outcomes.map((outcome, index) => (
-                  <article key={outcome}>
-                    <span>
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-                    <p>{outcome}</p>
-                  </article>
-                ))}
-              </div>
-            </section>
-
-            <section className="course-detail-copy-block">
-              <p className="course-detail-eyebrow">
-                Study experience
-              </p>
-
-              <h2>Designed to fit around real life.</h2>
-
-              <div className="course-study-grid">
-                <article>
-                  <h3>Flexible access</h3>
-                  <p>
-                    Study online and work through the course around
-                    your existing commitments.
-                  </p>
-                </article>
-
-                <article>
-                  <h3>Practical learning</h3>
-                  <p>
-                    Build your knowledge through clear modules,
-                    demonstrations and applied activities.
-                  </p>
-                </article>
-
-                <article>
-                  <h3>Provider support</h3>
-                  <p>
-                    Access course guidance and support from the
-                    education provider throughout your study.
-                  </p>
-                </article>
-              </div>
             </section>
           </div>
 
           <aside className="course-detail-sidebar">
-            <div className="course-detail-sidebar-card">
+            <div className="course-detail-sidebar-card course-detail-sidebar-card--compact">
               <p className="course-detail-sidebar-card__label">
                 Course at a glance
               </p>
@@ -274,109 +259,11 @@ export default async function CourseDetailPage({
                 ) : null}
               </dl>
             </div>
-
-            <div className="course-detail-support-card">
-              <p className="course-detail-sidebar-card__label">
-                Need help deciding?
-              </p>
-
-              <h3>Talk to the enrolment team.</h3>
-
-              <p>
-                Ask questions about the course, study options or
-                payment arrangements before starting.
-              </p>
-
-              <a
-                href={`mailto:${provider.supportEmail ?? "enrolments@academyaustralia.com"}`}
-                className="course-detail-text-link"
-              >
-                Contact Academy Australia →
-              </a>
-            </div>
           </aside>
         </div>
       </section>
 
-      <section
-        className="course-fees-section"
-        id="course-fees"
-      >
-        <div className="page-shell">
-          <div className="course-detail-section-heading">
-            <div>
-              <p className="course-detail-eyebrow">
-                Course fees
-              </p>
-
-              <h2>Choose the payment option that works for you.</h2>
-            </div>
-
-            <p>
-              Payment options shown are demonstration values and can
-              be configured for each provider and course.
-            </p>
-          </div>
-
-          <div className="course-payment-options">
-            <article className="course-payment-option">
-              <p className="course-payment-option__label">
-                Pay in full
-              </p>
-
-              <strong>
-                {formatCurrency(course.paymentPlan.totalFee)}
-              </strong>
-
-              <p>
-                Pay the complete course fee during enrolment.
-              </p>
-
-              <Link
-                href={`/providers/${provider.slug}/courses/${course.slug}/enrol?payment=full`}
-                className="button button--course-secondary"
-              >
-                Choose pay in full
-              </Link>
-            </article>
-
-            <article className="course-payment-option course-payment-option--featured">
-              <span className="course-payment-option__badge">
-                Flexible option
-              </span>
-
-              <p className="course-payment-option__label">
-                StudentPay payment plan
-              </p>
-
-              <strong>
-                {formatCurrency(
-                  course.paymentPlan.repaymentAmount,
-                )}{" "}
-                per {paymentFrequency}
-              </strong>
-
-              <p>
-                Start with a{" "}
-                {formatCurrency(
-                  course.paymentPlan.depositAmount,
-                )}{" "}
-                deposit and spread the remaining course fee over
-                regular payments.
-              </p>
-
-              <Link
-                href={`/providers/${provider.slug}/courses/${course.slug}/enrol?payment=plan`}
-                className="button button--course-primary"
-              >
-                Choose payment plan
-              </Link>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section className="course-detail-final-cta">
+      <section className="course-detail-final-cta" id="ready-to-start">
         <div className="page-shell course-detail-final-cta__inner">
           <div>
             <p className="course-detail-eyebrow">
@@ -391,13 +278,31 @@ export default async function CourseDetailPage({
             </p>
           </div>
 
-          <Link
-            href={`/providers/${provider.slug}/courses/${course.slug}/enrol`}
-            className="button button--light"
-          >
+          <a href="#enrolment" className="button button--light">
             Start enrolment
-          </Link>
+          </a>
         </div>
+      </section>
+
+      <section className="course-enrolment-section" id="enrolment">
+        <div className="page-shell course-enrolment-section__intro">
+          <p className="course-detail-eyebrow">Enrolment</p>
+          <h2>Complete your guided StudentPay enrolment.</h2>
+          <p>
+            This embedded wizard creates a real sandbox checkout and continues
+            to direct-debit setup — the same flow potential customers will use
+            via the StudentPay API.
+          </p>
+        </div>
+
+        <EnrolmentWizard
+          provider={provider}
+          course={course}
+          initialPaymentOption={initialPaymentOption}
+          legalApiBaseUrl={config.apiBaseUrl}
+          studentPayProviderCode={config.providerCode}
+          embedded
+        />
       </section>
     </div>
   );

@@ -1,26 +1,28 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Caveat, Plus_Jakarta_Sans } from "next/font/google";
 import { PlatformFooter } from "@/components/layout/PlatformFooter";
 import { PlatformHeader } from "@/components/layout/PlatformHeader";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const plusJakarta = Plus_Jakarta_Sans({
+  variable: "--font-academy-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const caveat = Caveat({
+  variable: "--font-academy-script",
   subsets: ["latin"],
+  weight: ["500", "600", "700"],
 });
 
 export const metadata: Metadata = {
   title: {
-    default: "StudentPay Enrolment",
-    template: "%s | StudentPay Enrolment",
+    default: "Academy Australia | Flexible Online Courses",
+    template: "%s | Academy Australia",
   },
   description:
-    "Modern, provider-branded course discovery, enrolment and payment experiences for education providers.",
+    "Job-ready online courses with tutor support and flexible weekly, fortnightly or monthly payment options.",
 };
 
 export default function RootLayout({
@@ -30,7 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className={`${plusJakarta.variable} ${caveat.variable}`}>
         <div className="site-frame">
           <PlatformHeader />
           <main>{children}</main>

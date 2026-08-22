@@ -43,6 +43,8 @@ type EnrolmentWizardProps = {
   legalApiBaseUrl?: string;
   /** Provider code sent to StudentPay APIs (e.g. SANDBOX_DEMO), not the catalogue brand code. */
   studentPayProviderCode?: string;
+  /** When true, hide the standalone harness chrome for in-page embedding. */
+  embedded?: boolean;
 };
 
 const STEPS = [
@@ -54,6 +56,14 @@ const STEPS = [
 ] as const;
 
 type StepId = (typeof STEPS)[number]["id"];
+
+const COURSE_VISUALS: Record<Course["visualTone"], string> = {
+  beauty: "/providers/academy-australia/imagery/beauty-makeup.jpg",
+  psychology: "/providers/academy-australia/imagery/psychology-study.jpg",
+  technology: "/providers/academy-australia/imagery/technology-laptop.jpg",
+  animal: "/providers/academy-australia/imagery/hero-students.jpg",
+  business: "/providers/academy-australia/imagery/hero-students.jpg",
+};
 
 function createInitialFormData(
   paymentOption: EnrolmentPaymentOption,
@@ -108,6 +118,7 @@ export function EnrolmentWizard({
   initialPaymentOption = "plan",
   legalApiBaseUrl = "https://sandbox-api.studentpay.com.au",
   studentPayProviderCode,
+  embedded = false,
 }: EnrolmentWizardProps) {
   const apiProviderCode = studentPayProviderCode || provider.code;
   const storageKey = `studentpay-px-enrolment:${provider.slug}:${course.slug}`;
@@ -697,12 +708,12 @@ export function EnrolmentWizard({
           </div>
           <p className="enrolment-wizard__eyebrow">Enrolment confirmed</p>
           <h1>
-            Thanks, {formData.firstName}. Your Criminal Psychology enrolment
-            is confirmed.
+            Thanks, {formData.firstName}. Your {course.title} enrolment is
+            confirmed.
           </h1>
           <p className="enrolment-complete__lead">
-            Your StudentPay payment plan has been activated using the same
-            confirm-and-pay flow developed in the OnFit enrolment wizard.
+            Your StudentPay payment plan has been activated through the
+            confirm-and-pay enrolment flow.
           </p>
           <div className="enrolment-complete__summary">
             <div>
@@ -742,27 +753,36 @@ export function EnrolmentWizard({
   }
 
   return (
-    <div className="enrolment-wizard" style={themeStyle}>
-      <header className="enrolment-wizard__header">
-        <div className="page-shell enrolment-wizard__header-inner">
-          <Link href="/" className="enrolment-wizard__back-link">
-            ← Return to harness
-          </Link>
+    <div
+      className={
+        embedded
+          ? "enrolment-wizard enrolment-wizard--embedded"
+          : "enrolment-wizard"
+      }
+      style={themeStyle}
+    >
+      {embedded ? null : (
+        <header className="enrolment-wizard__header">
+          <div className="page-shell enrolment-wizard__header-inner">
+            <Link href="/" className="enrolment-wizard__back-link">
+              ← Return to harness
+            </Link>
 
-          <Image
-            src={provider.logoPath}
-            alt={`${provider.name} logo`}
-            width={185}
-            height={70}
-            className="enrolment-wizard__logo"
-            priority
-          />
+            <Image
+              src={provider.logoPath}
+              alt={`${provider.name} logo`}
+              width={185}
+              height={70}
+              className="enrolment-wizard__logo"
+              priority
+            />
 
-          <span className="enrolment-wizard__powered-by">
-            Provider Experience · OnFit wizard parity
-          </span>
-        </div>
-      </header>
+            <span className="enrolment-wizard__powered-by">
+              Provider Experience · OnFit wizard parity
+            </span>
+          </div>
+        </header>
+      )}
 
       <div className="enrolment-wizard__progress">
         <div className="page-shell">
@@ -810,17 +830,27 @@ export function EnrolmentWizard({
             {currentStep === "course" ? (
               <section className="wizard-step">
                 <p className="enrolment-wizard__eyebrow">Course confirmation</p>
-                <h1>Confirm your Criminal Psychology enrolment.</h1>
+                <h1>Confirm your {course.title} enrolment.</h1>
                 <p className="wizard-step__lead">
-                  This Provider Experience checkout uses the full OnFit
-                  enrolment wizard flow: screening, study skills, dossier and
-                  StudentPay confirm-and-pay.
+                  This Provider Experience checkout uses the full StudentPay
+                  enrolment wizard flow: screening, study skills, student
+                  details and confirm-and-pay.
                 </p>
 
                 <div className="wizard-course-confirmation">
                   <div
                     className={`wizard-course-confirmation__visual wizard-course-confirmation__visual--${course.visualTone}`}
                   >
+                    {COURSE_VISUALS[course.visualTone] ? (
+                      <Image
+                        src={COURSE_VISUALS[course.visualTone]}
+                        alt=""
+                        fill
+                        className="wizard-course-confirmation__image"
+                        sizes="230px"
+                        priority
+                      />
+                    ) : null}
                     <span>{course.category}</span>
                   </div>
                   <div className="wizard-course-confirmation__content">
@@ -850,7 +880,7 @@ export function EnrolmentWizard({
                 </div>
 
                 <div className="wizard-notice">
-                  <strong>OnFit wizard parity</strong>
+                  <strong>StudentPay wizard flow</strong>
                   <span>
                     Course → Screening → Study skills → Details → Confirm and
                     Pay, including deposit simulation, direct debit authority,
