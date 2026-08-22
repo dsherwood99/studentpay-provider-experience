@@ -47,6 +47,17 @@ STUDENTPAY_PROVIDER_ACCOUNT_ID=0018r0000165S4mAAE
 
 Never expose `STUDENTPAY_PROVIDER_API_KEY` with a `NEXT_PUBLIC_` prefix.
 
+## Academy Australia production demo
+
+A dedicated Vercel project (not this sandbox harness) binds to AU production:
+
+- API: `https://api.studentpay.com.au`
+- Provider code: `ACADEMYAU`
+- Account: `001Mp00000tiKOOIA2`
+- Key: `ACADEMYAU_API_KEY`
+
+Do not set those production values on `studentpay-provider-experience`.
+
 ```bash
 curl http://localhost:3000/api/studentpay/provider-checkouts
 ```

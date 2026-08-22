@@ -7,6 +7,7 @@ import {
 import {
   buildProviderCheckoutPayload,
   getProviderExperienceConfig,
+  isAcademyProductionDemo,
   resolveCheckoutSession,
   toEmbeddedSetupUrl,
   type ProviderCheckoutApiResult,
@@ -76,11 +77,13 @@ async function resolvePinchPublishableKey(
 export async function GET() {
   const config = getProviderExperienceConfig();
   const pinchPublishableKey = await resolvePinchPublishableKey(config);
+  const academyProductionDemo = isAcademyProductionDemo();
 
   return Response.json({
     success: true,
     configured: config.configured,
     mock_mode: config.mockMode,
+    academy_production_demo: academyProductionDemo,
     api_base_url: config.apiBaseUrl,
     provider_code: config.providerCode,
     provider_account_id_configured: Boolean(config.providerAccountId),
@@ -106,16 +109,6 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const config = getProviderExperienceConfig();
-
-  if (!config.configured) {
-    return jsonError(
-      503,
-      "NOT_CONFIGURED",
-      "StudentPay Provider Experience checkout is not configured. Set API credentials or leave HARNESS_MOCK_MODE=true.",
-    );
-  }
-
   let body: CreateCheckoutBody;
 
   try {
@@ -125,6 +118,29 @@ export async function POST(request: Request) {
   }
 
   const { providerSlug, courseSlug, formData } = body;
+  const academyProductionDemo = isAcademyProductionDemo();
+
+  if (
+    academyProductionDemo &&
+    providerSlug &&
+    providerSlug !== academyAustralia.slug
+  ) {
+    return jsonError(
+      403,
+      "PROVIDER_NOT_ALLOWED",
+      "This Academy Australia production demo is bound to Academy Australia only.",
+    );
+  }
+
+  const config = getProviderExperienceConfig();
+
+  if (!config.configured) {
+    return jsonError(
+      503,
+      "NOT_CONFIGURED",
+      "StudentPay Provider Experience checkout is not configured. Set API credentials or leave HARNESS_MOCK_MODE=true.",
+    );
+  }
 
   if (!providerSlug || !courseSlug || !formData) {
     return jsonError(

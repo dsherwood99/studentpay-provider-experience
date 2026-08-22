@@ -162,7 +162,35 @@ function mapPaymentFrequencyLabel(
   return "Weekly";
 }
 
+const ACADEMY_PRODUCTION_ACCOUNT_ID = "001Mp00000tiKOOIA2";
+const ACADEMY_PRODUCTION_API_HOST = "api.studentpay.com.au";
+
+function configuredProviderCode() {
+  return (
+    process.env.ACADEMY_PROVIDER_CODE ||
+    process.env.STUDENTPAY_PROVIDER_CODE ||
+    ""
+  )
+    .trim()
+    .toUpperCase();
+}
+
+export function isAcademyProductionDemo() {
+  return configuredProviderCode() === "ACADEMYAU";
+}
+
+function isProductionStudentPayApi(apiBaseUrl: string) {
+  try {
+    const host = new URL(apiBaseUrl).hostname.toLowerCase();
+    return host === ACADEMY_PRODUCTION_API_HOST;
+  } catch {
+    return false;
+  }
+}
+
 export function getProviderExperienceConfig() {
+  const academyProductionDemo = isAcademyProductionDemo();
+
   const apiBaseUrl =
     process.env.STUDENTPAY_API_BASE_URL?.replace(/\/$/, "") ||
     process.env.PROVIDER_CHECKOUT_API_URL?.replace(/\/api\/provider-checkout$/, "") ||
@@ -184,6 +212,32 @@ export function getProviderExperienceConfig() {
     ? `${apiBaseUrl}/api/provider-checkout-confirm`
     : configuredConfirmUrl;
 
+  const pinchPublishableKey =
+    process.env.NEXT_PUBLIC_PINCH_PUBLISHABLE_KEY ||
+    process.env.PINCH_PUBLISHABLE_KEY ||
+    process.env.SANDBOX_PINCH_PUBLISHABLE_KEY ||
+    "";
+
+  if (academyProductionDemo) {
+    const bound =
+      isProductionStudentPayApi(apiBaseUrl) &&
+      Boolean(process.env.ACADEMYAU_API_KEY);
+
+    return {
+      apiBaseUrl,
+      checkoutUrl,
+      confirmUrl,
+      apiKey: process.env.ACADEMYAU_API_KEY || "",
+      providerCode: "ACADEMYAU",
+      providerAccountId: ACADEMY_PRODUCTION_ACCOUNT_ID,
+      pinchPublishableKey,
+      mockMode: false,
+      academyProductionDemo: true,
+      configured: bound,
+    };
+  }
+
+  // Generic / sandbox Provider Experience path (unchanged when not ACADEMYAU).
   const apiKey =
     process.env.ACADEMY_API_KEY ||
     process.env.STUDENTPAY_PROVIDER_API_KEY ||
@@ -191,9 +245,7 @@ export function getProviderExperienceConfig() {
     "";
 
   const providerCode =
-    process.env.ACADEMY_PROVIDER_CODE ||
-    process.env.STUDENTPAY_PROVIDER_CODE ||
-    "ACADEMY_AUSTRALIA";
+    configuredProviderCode() || "ACADEMY_AUSTRALIA";
 
   const providerAccountId =
     process.env.ACADEMY_PROVIDER_ACCOUNT_ID ||
@@ -207,12 +259,6 @@ export function getProviderExperienceConfig() {
     mockModeEnv === "true" ||
     (mockModeEnv !== "false" && !(apiKey && providerAccountId));
 
-  const pinchPublishableKey =
-    process.env.NEXT_PUBLIC_PINCH_PUBLISHABLE_KEY ||
-    process.env.PINCH_PUBLISHABLE_KEY ||
-    process.env.SANDBOX_PINCH_PUBLISHABLE_KEY ||
-    "";
-
   return {
     apiBaseUrl,
     checkoutUrl,
@@ -222,6 +268,7 @@ export function getProviderExperienceConfig() {
     providerAccountId,
     pinchPublishableKey,
     mockMode,
+    academyProductionDemo: false,
     configured: mockMode || Boolean(apiKey && providerAccountId),
   };
 }

@@ -1,6 +1,7 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
+import { isAcademyProductionDemo } from "@/lib/provider-experience/checkout";
 
 type SandboxEnrolPageProps = {
   params: Promise<{
@@ -18,6 +19,10 @@ export default async function SandboxEnrolPage({
 }: SandboxEnrolPageProps) {
   const { providerSlug, courseSlug } = await params;
   const { payment } = await searchParams;
+
+  if (isAcademyProductionDemo() && providerSlug !== "academy-australia") {
+    notFound();
+  }
 
   const provider = getProviderBySlug(providerSlug);
   const course = provider
