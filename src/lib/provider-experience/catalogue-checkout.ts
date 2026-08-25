@@ -1,7 +1,7 @@
 import type { CatalogueCourseView } from "@/types/catalogue";
 import type { Provider } from "@/types/provider";
 import type { ProviderCheckoutPayload } from "@/lib/provider-experience/checkout";
-import { resolveCatalogueBinding } from "@/lib/provider-experience/provider-bindings";
+import { resolveCatalogueBinding } from "./provider-bindings.ts";
 
 function catalogueFirstPaymentDate() {
   const date = new Date();

@@ -1,4 +1,4 @@
-import { getCatalogueBindingByCode } from "@/lib/provider-experience/provider-bindings";
+import { getCatalogueBindingByCode } from "./provider-bindings.ts";
 
 export type CatalogueDdaRecord = {
   dda_id?: string | null;

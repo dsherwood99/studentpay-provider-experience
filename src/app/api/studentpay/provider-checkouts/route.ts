@@ -22,6 +22,7 @@ import {
 } from "@/lib/provider-experience/checkout";
 import { createId } from "@/lib/provider-experience/format";
 import type { EnrolmentFormData } from "@/types/enrolment";
+import type { Provider } from "@/types/provider";
 import { isProviderSlugBlockedByDeployment } from "@/lib/provider-experience/provider-bindings";
 
 export const runtime = "nodejs";

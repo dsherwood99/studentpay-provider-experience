@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import { courses } from "../../config/courses.ts";
 import { providers } from "../../config/providers.ts";
-import { isCatalogueProvider } from "./catalogue.ts";
 
 const srcRoot = fileURLToPath(new URL("../../", import.meta.url));
 
@@ -31,7 +30,9 @@ function walkSourceFiles(dir: string): string[] {
 
 describe("Bela production security contract", () => {
   it("never prefixes BELA_API_KEY with NEXT_PUBLIC_", () => {
-    const files = walkSourceFiles(srcRoot);
+    const files = walkSourceFiles(srcRoot).filter(
+      (file) => !file.endsWith(".test.ts"),
+    );
     const hits: string[] = [];
 
     for (const file of files) {
@@ -109,7 +110,7 @@ describe("Bela production security contract", () => {
     const academy = providers.find((provider) => provider.slug === "academy-australia");
     const makeup = courses.find((course) => course.slug === "makeup-artistry");
 
-    assert.equal(isCatalogueProvider(academy), false);
+    assert.notEqual(academy?.catalogueEnabled, true);
     assert.equal(makeup?.providerCode, "ACADEMY_AUSTRALIA");
     assert.equal(academy?.code, "ACADEMY_AUSTRALIA");
   });

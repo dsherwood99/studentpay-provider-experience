@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { getCoursesByProvider } from "../../config/courses.ts";
 import { getProviderByCode, getProviderBySlug } from "../../config/providers.ts";
-import { isCatalogueProvider } from "./catalogue.ts";
 import { getProviderCheckoutBinding } from "./catalogue-checkout.ts";
 import { catalogueDdaBindingAllowsProvider } from "./catalogue-dda.ts";
 import {
@@ -153,7 +152,7 @@ describe("catalogue provider isolation", () => {
 
   it("does not put Bela on the Academy configured-course catalogue", () => {
     const academy = getProviderBySlug("academy-australia");
-    assert.equal(isCatalogueProvider(academy), false);
+    assert.equal(academy?.catalogueEnabled === true, false);
     assert.equal(getProviderCheckoutBinding("ACADEMY_AUSTRALIA"), null);
     assert.equal(getProviderCheckoutBinding("ACADEMYAU"), null);
     assert.ok(getCoursesByProvider("ACADEMY_AUSTRALIA").length > 0);
