@@ -112,6 +112,32 @@ export type ProviderCheckoutApiResult = {
     opportunity_id?: string;
     dda_id?: string;
   };
+  student_agreement?: {
+    enabled?: boolean;
+    required?: boolean;
+    title?: string | null;
+    version?: string | null;
+    acceptance_text?: string | null;
+    document_url?: string | null;
+  };
+  payment_plan_agreement?: {
+    enabled?: boolean;
+    required?: boolean;
+    title?: string | null;
+    version?: string | null;
+    document_url?: string | null;
+    status?: string | null;
+  };
+  commercial?: {
+    enrolment_source?: string;
+    course_id?: string;
+    price_version_id?: string;
+    course_price_cents?: number;
+    operational_upfront_cents?: number;
+    recurring_amount_cents?: number;
+    recurring_instalment_count?: number;
+    amount_to_finance_cents?: number;
+  };
   direct_debit?: {
     dda_id?: string;
     setup_url?: string;

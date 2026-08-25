@@ -1,6 +1,9 @@
 import { notFound, redirect } from "next/navigation";
+import { CatalogueEnrolmentForm } from "@/components/enrolment/CatalogueEnrolmentForm";
 import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
+import { isCatalogueProvider } from "@/lib/provider-experience/catalogue";
+import { getCatalogueCourse } from "@/lib/provider-experience/catalogue-server";
 import { isAcademyProductionDemo } from "@/lib/provider-experience/checkout";
 
 type SandboxEnrolPageProps = {
@@ -25,6 +28,19 @@ export default async function SandboxEnrolPage({
   }
 
   const provider = getProviderBySlug(providerSlug);
+
+  if (isCatalogueProvider(provider)) {
+    const catalogueCourse = await getCatalogueCourse(provider, courseSlug);
+
+    if (!catalogueCourse) {
+      notFound();
+    }
+
+    return (
+      <CatalogueEnrolmentForm provider={provider} course={catalogueCourse} />
+    );
+  }
+
   const course = provider
     ? getCourseBySlug(provider.code, courseSlug)
     : undefined;

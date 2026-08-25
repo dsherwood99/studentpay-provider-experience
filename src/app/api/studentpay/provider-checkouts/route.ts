@@ -3,9 +3,17 @@ import {
   criminalPsychology,
   getCourseBySlug,
   getProviderBySlug,
+  isCatalogueProvider,
 } from "@/lib/provider-experience/catalogue";
 import {
+  buildCatalogueCheckoutPayload,
+  getProviderCheckoutBinding,
+  type CatalogueStudentDetails,
+} from "@/lib/provider-experience/catalogue-checkout";
+import { getCatalogueCourse } from "@/lib/provider-experience/catalogue-server";
+import {
   buildProviderCheckoutPayload,
+  formatApiError,
   getProviderExperienceConfig,
   isAcademyProductionDemo,
   resolveCheckoutSession,
@@ -14,6 +22,7 @@ import {
 } from "@/lib/provider-experience/checkout";
 import { createId } from "@/lib/provider-experience/format";
 import type { EnrolmentFormData } from "@/types/enrolment";
+import type { Provider } from "@/types/provider";
 
 export const runtime = "nodejs";
 
@@ -21,6 +30,7 @@ type CreateCheckoutBody = {
   providerSlug?: string;
   courseSlug?: string;
   formData?: EnrolmentFormData;
+  catalogueStudent?: CatalogueStudentDetails;
   providerOrderId?: string;
   cardPayment?: {
     token?: string;
@@ -46,6 +56,166 @@ function jsonError(
     },
     { status },
   );
+}
+
+async function createCatalogueCheckout({
+  provider,
+  courseSlug,
+  catalogueStudent,
+  providerOrderId: requestedOrderId,
+}: {
+  provider: Provider;
+  courseSlug: string;
+  catalogueStudent?: CatalogueStudentDetails;
+  providerOrderId?: string;
+}) {
+  if (
+    !catalogueStudent?.firstName?.trim() ||
+    !catalogueStudent.lastName?.trim() ||
+    !catalogueStudent.email?.trim()
+  ) {
+    return jsonError(
+      400,
+      "MISSING_FIELDS",
+      "Student first name, last name and email are required.",
+    );
+  }
+
+  const course = await getCatalogueCourse(provider, courseSlug);
+
+  if (!course) {
+    return jsonError(
+      404,
+      "COURSE_NOT_FOUND",
+      "Course not found for this provider.",
+    );
+  }
+
+  const binding = getProviderCheckoutBinding(provider.code);
+
+  if (!binding?.apiKey) {
+    return jsonError(
+      503,
+      "NOT_CONFIGURED",
+      "Bela catalogue checkout is not configured. Set BELA_BEAUTY_SANDBOX_API_KEY.",
+    );
+  }
+
+  const config = getProviderExperienceConfig();
+  const providerOrderId =
+    requestedOrderId || createId(`BELA-${course.code}`);
+  // Commercial fields from the browser are ignored. The payload identifies
+  // the course by code; dummy prices prove the API overlay is authoritative.
+  const payload = buildCatalogueCheckoutPayload({
+    provider,
+    course,
+    student: catalogueStudent,
+    providerOrderId,
+    binding,
+  });
+
+  try {
+    const upstreamResponse = await fetch(
+      `${config.apiBaseUrl}/v1/provider-checkouts`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${binding.apiKey}`,
+          "Idempotency-Key": providerOrderId,
+        },
+        body: JSON.stringify(payload),
+        cache: "no-store",
+      },
+    );
+
+    const rawBody = await upstreamResponse.text();
+    let upstreamJson: ProviderCheckoutApiResult;
+
+    try {
+      upstreamJson = JSON.parse(rawBody) as ProviderCheckoutApiResult;
+    } catch {
+      return jsonError(
+        502,
+        "UPSTREAM_ERROR",
+        "Catalogue checkout API did not return JSON.",
+        {
+          provider_order_id: providerOrderId,
+          upstream_status: upstreamResponse.status,
+        },
+      );
+    }
+
+    if (!upstreamResponse.ok || upstreamJson.success === false) {
+      const message = formatApiError(
+        upstreamJson.error || upstreamJson,
+        "Unable to create catalogue checkout.",
+      );
+
+      return jsonError(
+        upstreamResponse.status || 502,
+        "CHECKOUT_FAILED",
+        message,
+        {
+          provider_order_id: providerOrderId,
+          upstream: upstreamJson,
+        },
+      );
+    }
+
+    const opportunityId =
+      upstreamJson.opportunity_id ||
+      upstreamJson.records?.opportunity_id ||
+      upstreamJson.checkout?.opportunity_id ||
+      "";
+    const checkoutId =
+      upstreamJson.checkout_id ||
+      upstreamJson.checkout?.checkout_id ||
+      "";
+    const contactId = upstreamJson.records?.contact_id || "";
+    const checkoutToken =
+      upstreamJson.direct_debit?.token ||
+      upstreamJson.checkout_token ||
+      upstreamJson.checkout?.checkout_token ||
+      "";
+
+    if (!checkoutToken) {
+      return jsonError(
+        502,
+        "MISSING_CHECKOUT_TOKEN",
+        "Checkout was created but no agreement token was returned.",
+        {
+          provider_order_id: providerOrderId,
+          checkout_id: checkoutId,
+          opportunity_id: opportunityId,
+        },
+      );
+    }
+
+    return Response.json({
+      success: true,
+      provider_order_id: providerOrderId,
+      checkout_id: checkoutId,
+      opportunity_id: opportunityId,
+      contact_id: contactId,
+      checkout_token: checkoutToken,
+      status: "agreements_required",
+      student_agreement: upstreamJson.student_agreement || null,
+      payment_plan_agreement: upstreamJson.payment_plan_agreement || null,
+      commercial: upstreamJson.commercial || null,
+    });
+  } catch (error) {
+    return jsonError(
+      502,
+      "UPSTREAM_ERROR",
+      error instanceof Error
+        ? error.message
+        : "Failed to reach StudentPay Provider Checkout API.",
+      {
+        provider_order_id: providerOrderId,
+      },
+    );
+  }
 }
 
 async function resolvePinchPublishableKey(
@@ -117,7 +287,7 @@ export async function POST(request: Request) {
     return jsonError(400, "INVALID_JSON", "Request body must be JSON.");
   }
 
-  const { providerSlug, courseSlug, formData } = body;
+  const { providerSlug, courseSlug, formData, catalogueStudent } = body;
   const academyProductionDemo = isAcademyProductionDemo();
 
   if (
@@ -132,6 +302,37 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!providerSlug || !courseSlug) {
+    return jsonError(
+      400,
+      "MISSING_FIELDS",
+      "providerSlug and courseSlug are required.",
+    );
+  }
+
+  const provider = getProviderBySlug(providerSlug);
+
+  if (!provider) {
+    return jsonError(404, "PROVIDER_NOT_FOUND", "Provider not found.");
+  }
+
+  if (isCatalogueProvider(provider)) {
+    return createCatalogueCheckout({
+      provider,
+      courseSlug,
+      catalogueStudent,
+      providerOrderId: body.providerOrderId,
+    });
+  }
+
+  if (!formData) {
+    return jsonError(
+      400,
+      "MISSING_FIELDS",
+      "providerSlug, courseSlug and formData are required.",
+    );
+  }
+
   const config = getProviderExperienceConfig();
 
   if (!config.configured) {
@@ -140,20 +341,6 @@ export async function POST(request: Request) {
       "NOT_CONFIGURED",
       "StudentPay Provider Experience checkout is not configured. Set API credentials or leave HARNESS_MOCK_MODE=true.",
     );
-  }
-
-  if (!providerSlug || !courseSlug || !formData) {
-    return jsonError(
-      400,
-      "MISSING_FIELDS",
-      "providerSlug, courseSlug and formData are required.",
-    );
-  }
-
-  const provider = getProviderBySlug(providerSlug);
-
-  if (!provider) {
-    return jsonError(404, "PROVIDER_NOT_FOUND", "Provider not found.");
   }
 
   const course = getCourseBySlug(provider.code, courseSlug);
