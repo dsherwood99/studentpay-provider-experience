@@ -4927,3 +4927,160 @@ select {
     padding: 52px 0;
   }
 }
+
+.provider-wordmark {
+  margin: 0;
+  color: inherit;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.catalogue-pricing {
+  margin-bottom: 16px;
+}
+
+.catalogue-pricing__label {
+  margin: 0 0 4px;
+  color: var(--course-primary, #c45c7a);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.catalogue-pricing__price {
+  margin: 0 0 14px;
+  color: var(--course-heading, #1a1a1a);
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.catalogue-pricing__plan {
+  margin: 0 0 18px;
+  color: var(--course-body, #43464b);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.catalogue-kit-disclosure {
+  margin: 12px 0 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.catalogue-enrol-page {
+  padding: 32px 0 64px;
+}
+
+.catalogue-enrol-page__inner,
+.catalogue-enrol-page__grid {
+  display: grid;
+  gap: 28px;
+}
+
+.catalogue-enrol-page__grid {
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  align-items: start;
+}
+
+.catalogue-enrol-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.catalogue-enrol-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.catalogue-enrol-form input {
+  padding: 10px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 10px;
+  font-size: 1rem;
+}
+
+.catalogue-enrol-form__error {
+  color: #b42318;
+  font-weight: 700;
+}
+
+.catalogue-enrol-result {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0 28px;
+}
+
+.catalogue-enrol-result dt {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.catalogue-review {
+  display: grid;
+  gap: 16px;
+  margin: 20px 0 28px;
+}
+
+.catalogue-review dt {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.catalogue-review dd {
+  margin: 4px 0 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--colour-charcoal-900);
+}
+
+.catalogue-agreements {
+  display: grid;
+  gap: 22px;
+  padding: 32px 0 64px;
+}
+
+.catalogue-agreement-card {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.catalogue-agreement-meta {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86rem;
+}
+
+.catalogue-agreement-frame {
+  width: 100%;
+  min-height: 420px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.catalogue-agreement-accept {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-weight: 700;
+}
+
+@media (max-width: 860px) {
+  .catalogue-enrol-page__grid {
+    grid-template-columns: 1fr;
+  }
+}

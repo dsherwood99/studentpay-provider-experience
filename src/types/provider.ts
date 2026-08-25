@@ -18,4 +18,6 @@ export type Provider = {
   website?: string;
   supportEmail?: string;
   theme: ProviderTheme;
+  /** When true, course list/detail pricing is loaded from the AU catalogue API. */
+  catalogueEnabled?: boolean;
 };

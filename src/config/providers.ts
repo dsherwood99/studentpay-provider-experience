@@ -17,8 +17,28 @@ export const providers: Provider[] = [
   backgroundColour: "#FEF8F4",
   surfaceColour: "#FFFFFF",
   textColour: "#3D3D3D",
-  mutedTextColour: "#6B6B6B",
+    mutedTextColour: "#6B6B6B",
 },
+  },
+  {
+    code: "BELA_BEAUTY_SANDBOX",
+    slug: "bela-beauty-sandbox",
+    name: "Bela Beauty College",
+    shortName: "Bela Beauty",
+    description:
+      "AU sandbox catalogue for Bela Beauty College. Course prices come from the StudentPay catalogue API.",
+    logoPath: "",
+    supportEmail: "support@belabeautycollege.com",
+    catalogueEnabled: true,
+    theme: {
+      primaryColour: "#C45C7A",
+      secondaryColour: "#111111",
+      accentColour: "#C45C7A",
+      backgroundColour: "#FFF7FA",
+      surfaceColour: "#FFFFFF",
+      textColour: "#1A1A1A",
+      mutedTextColour: "#5C5458",
+    },
   },
 ];
 

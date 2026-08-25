@@ -1,9 +1,12 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CatalogueCourseCard } from "@/components/courses/CatalogueCourseCard";
 import { CourseCard } from "@/components/courses/CourseCard";
+import { ProviderIdentity } from "@/components/providers/ProviderIdentity";
 import { getCoursesByProvider } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
+import { isCatalogueProvider } from "@/lib/provider-experience/catalogue";
+import { listCatalogueCourses } from "@/lib/provider-experience/catalogue-server";
 
 type CourseCataloguePageProps = {
   params: Promise<{
@@ -21,7 +24,16 @@ export default async function CourseCataloguePage({
     notFound();
   }
 
-  const providerCourses = getCoursesByProvider(provider.code);
+  const catalogueMode = isCatalogueProvider(provider);
+  const catalogueCourses = catalogueMode
+    ? await listCatalogueCourses(provider)
+    : [];
+  const legacyCourses = catalogueMode
+    ? []
+    : getCoursesByProvider(provider.code);
+  const courseCount = catalogueMode
+    ? catalogueCourses.length
+    : legacyCourses.length;
 
   return (
     <div className="course-catalogue-page">
@@ -32,7 +44,7 @@ export default async function CourseCataloguePage({
               href={`/providers/${provider.slug}`}
               className="provider-back-link"
             >
-              ← Academy Australia
+              ← {provider.name}
             </Link>
 
             <p className="provider-eyebrow">Course catalogue</p>
@@ -40,18 +52,13 @@ export default async function CourseCataloguePage({
             <h1>Find the right course for your future.</h1>
 
             <p>
-              Explore flexible online courses across beauty, psychology,
-              technology and animal care, with upfront and payment-plan options
-              available.
+              {catalogueMode
+                ? `Explore current ${provider.name} courses and payment plans.`
+                : "Explore flexible online courses across beauty, psychology, technology and animal care, with upfront and payment-plan options available."}
             </p>
           </div>
 
-          <Image
-            src={provider.logoPath}
-            alt={`${provider.name} logo`}
-            width={235}
-            height={90}
-          />
+          <ProviderIdentity provider={provider} width={235} height={90} />
         </div>
       </section>
 
@@ -59,27 +66,33 @@ export default async function CourseCataloguePage({
         <div className="page-shell">
           <div className="course-catalogue-toolbar">
             <div>
-              <strong>{providerCourses.length} demo courses</strong>
-              <span>More provider courses can be added through configuration.</span>
-            </div>
-
-            <div className="course-catalogue-filters" aria-label="Course filters">
-              <button type="button" className="is-active">
-                All courses
-              </button>
-              <button type="button">Online</button>
-              <button type="button">Payment plans</button>
+              <strong>
+                {courseCount} {catalogueMode ? "courses" : "demo courses"}
+              </strong>
+              <span>
+                {catalogueMode
+                  ? "Prices are loaded from the StudentPay catalogue."
+                  : "More provider courses can be added through configuration."}
+              </span>
             </div>
           </div>
 
           <div className="course-grid">
-            {providerCourses.map((course) => (
-              <CourseCard
-                key={course.code}
-                course={course}
-                providerSlug={provider.slug}
-              />
-            ))}
+            {catalogueMode
+              ? catalogueCourses.map((course) => (
+                  <CatalogueCourseCard
+                    key={course.code}
+                    course={course}
+                    providerSlug={provider.slug}
+                  />
+                ))
+              : legacyCourses.map((course) => (
+                  <CourseCard
+                    key={course.code}
+                    course={course}
+                    providerSlug={provider.slug}
+                  />
+                ))}
           </div>
         </div>
       </section>

@@ -21,3 +21,9 @@ export function getCourseBySlug(
 ): Course | undefined {
   return getConfiguredCourseBySlug(providerCode, courseSlug);
 }
+
+export function isCatalogueProvider(
+  provider: Provider | undefined,
+): provider is Provider & { catalogueEnabled: true } {
+  return provider?.catalogueEnabled === true;
+}
