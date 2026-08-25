@@ -23,6 +23,7 @@ import {
 import { createId } from "@/lib/provider-experience/format";
 import type { EnrolmentFormData } from "@/types/enrolment";
 import type { Provider } from "@/types/provider";
+import { dedicatedHostHidesGenericDemoChrome } from "@/lib/provider-experience/host-isolation";
 import { isProviderSlugBlockedByDeployment } from "@/lib/provider-experience/provider-bindings";
 
 export const runtime = "nodejs";
@@ -273,13 +274,15 @@ export async function GET() {
       upstream_confirm: config.confirmUrl,
       legal_payment_plan_terms: `${config.apiBaseUrl}/api/legal/payment-plan-terms`,
     },
-    courses: [
-      {
-        provider: academyAustralia.slug,
-        course: criminalPsychology.slug,
-        path: `/providers/${academyAustralia.slug}/courses/${criminalPsychology.slug}/enrol`,
-      },
-    ],
+    courses: dedicatedHostHidesGenericDemoChrome()
+      ? []
+      : [
+          {
+            provider: academyAustralia.slug,
+            course: criminalPsychology.slug,
+            path: `/providers/${academyAustralia.slug}/courses/${criminalPsychology.slug}/enrol`,
+          },
+        ],
   });
 }
 

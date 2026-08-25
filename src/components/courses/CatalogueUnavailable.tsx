@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ProviderIdentity } from "@/components/providers/ProviderIdentity";
 import { catalogueUnavailableCopy } from "@/lib/provider-experience/catalogue-availability";
+import { dedicatedHostHidesGenericDemoChrome } from "@/lib/provider-experience/host-isolation";
 import type { Provider } from "@/types/provider";
 
 type CatalogueUnavailableProps = {
@@ -23,11 +24,13 @@ export function CatalogueUnavailable({
             <ProviderIdentity provider={provider} width={235} height={90} />
             <h1>{copy.title}</h1>
             <p>{copy.body}</p>
-            <p>
-              <Link href="/" className="provider-back-link">
-                ← Back to StudentPay
-              </Link>
-            </p>
+            {dedicatedHostHidesGenericDemoChrome() ? null : (
+              <p>
+                <Link href="/" className="provider-back-link">
+                  ← Back to StudentPay
+                </Link>
+              </p>
+            )}
           </div>
         </div>
       </section>

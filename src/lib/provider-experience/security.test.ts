@@ -106,6 +106,29 @@ describe("Bela production security contract", () => {
     assert.deepEqual(hits, []);
   });
 
+  it("keeps dedicated Bela chrome free of Academy, sandbox and generic PE demo paths", () => {
+    const header = fs.readFileSync(
+      path.join(srcRoot, "components/layout/BelaBeautyHeader.tsx"),
+      "utf8",
+    );
+    const footer = fs.readFileSync(
+      path.join(srcRoot, "components/layout/BelaBeautyFooter.tsx"),
+      "utf8",
+    );
+    const isolation = fs.readFileSync(
+      path.join(srcRoot, "lib/provider-experience/host-isolation.ts"),
+      "utf8",
+    );
+    const combined = `${header}\n${footer}\n${isolation}`;
+
+    assert.doesNotMatch(combined, /academy-australia/);
+    assert.doesNotMatch(combined, /criminal-psychology/);
+    assert.doesNotMatch(combined, /bela-beauty-sandbox/);
+    assert.doesNotMatch(combined, /makeup-artistry/);
+    assert.doesNotMatch(combined, /Provider demos/);
+    assert.doesNotMatch(combined, /StudentPayHomePage/);
+  });
+
   it("keeps Academy on configured courses rather than Bela catalogue mode", () => {
     const academy = providers.find((provider) => provider.slug === "academy-australia");
     const makeup = courses.find((course) => course.slug === "makeup-artistry");
