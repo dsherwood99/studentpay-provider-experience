@@ -34,6 +34,8 @@ const ALLOWED_PROVIDER_CODES = new Set([
   "ACADEMY_AUSTRALIA",
   "SANDBOX_DEMO",
   "ONFIT",
+  "BELA",
+  "BELA_BEAUTY_SANDBOX",
 ]);
 
 export async function POST(request: Request) {

@@ -1,6 +1,7 @@
 import type { CatalogueCourseView } from "@/types/catalogue";
 import type { Provider } from "@/types/provider";
 import type { ProviderCheckoutPayload } from "@/lib/provider-experience/checkout";
+import { resolveCatalogueBinding } from "@/lib/provider-experience/provider-bindings";
 
 function catalogueFirstPaymentDate() {
   const date = new Date();
@@ -50,21 +51,9 @@ export function getProviderCheckoutBinding(providerCode: string): {
   apiKey: string;
   providerCode: string;
   providerAccountId: string;
+  apiBaseUrl: string;
 } | null {
-  if (providerCode !== "BELA_BEAUTY_SANDBOX") {
-    return null;
-  }
-
-  const apiKey = process.env.BELA_BEAUTY_SANDBOX_API_KEY?.trim() || "";
-  const providerAccountId =
-    process.env.BELA_BEAUTY_SANDBOX_PROVIDER_ACCOUNT_ID?.trim() ||
-    "0018r000017BAHFAA4";
-
-  return {
-    apiKey,
-    providerCode,
-    providerAccountId,
-  };
+  return resolveCatalogueBinding(providerCode);
 }
 
 export function buildCatalogueCheckoutPayload({
@@ -91,7 +80,7 @@ export function buildCatalogueCheckoutPayload({
       education_provider_title: provider.name,
       sales_agent_name: "Provider Experience Catalogue Enrolment",
       sales_agent_email:
-        provider.supportEmail || "support@belabeautycollege.com",
+        provider.supportEmail || "enrolments@studentpay.com.au",
       provider_order_id: providerOrderId,
       provider_enrolment_id: `ENROL-${providerOrderId}`,
       source: "studentpay_provider_experience_catalogue",

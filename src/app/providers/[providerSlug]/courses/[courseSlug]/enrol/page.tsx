@@ -1,10 +1,12 @@
 import { notFound, redirect } from "next/navigation";
+import { CatalogueUnavailable } from "@/components/courses/CatalogueUnavailable";
 import { CatalogueEnrolmentForm } from "@/components/enrolment/CatalogueEnrolmentForm";
 import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
 import { isCatalogueProvider } from "@/lib/provider-experience/catalogue";
 import { getCatalogueCourse } from "@/lib/provider-experience/catalogue-server";
 import { isAcademyProductionDemo } from "@/lib/provider-experience/checkout";
+import { isProviderSlugBlockedByDeployment } from "@/lib/provider-experience/provider-bindings";
 
 type SandboxEnrolPageProps = {
   params: Promise<{
@@ -27,17 +29,33 @@ export default async function SandboxEnrolPage({
     notFound();
   }
 
+  if (isProviderSlugBlockedByDeployment(providerSlug)) {
+    notFound();
+  }
+
   const provider = getProviderBySlug(providerSlug);
 
   if (isCatalogueProvider(provider)) {
     const catalogueCourse = await getCatalogueCourse(provider, courseSlug);
 
-    if (!catalogueCourse) {
+    if (catalogueCourse.status === "unavailable") {
+      return (
+        <CatalogueUnavailable
+          provider={provider}
+          code={catalogueCourse.code}
+        />
+      );
+    }
+
+    if (catalogueCourse.status !== "ready") {
       notFound();
     }
 
     return (
-      <CatalogueEnrolmentForm provider={provider} course={catalogueCourse} />
+      <CatalogueEnrolmentForm
+        provider={provider}
+        course={catalogueCourse.course}
+      />
     );
   }
 

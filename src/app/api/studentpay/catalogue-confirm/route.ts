@@ -11,10 +11,7 @@ import {
   type CatalogueDdaRecord
 } from "@/lib/provider-experience/catalogue-dda";
 import { getProviderCheckoutBinding } from "@/lib/provider-experience/catalogue-checkout";
-import {
-  formatApiError,
-  getProviderExperienceConfig
-} from "@/lib/provider-experience/checkout";
+import { formatApiError } from "@/lib/provider-experience/checkout";
 import { getProviderBySlug, isCatalogueProvider } from "@/lib/provider-experience/catalogue";
 
 export const runtime = "nodejs";
@@ -101,18 +98,21 @@ export async function GET(request: Request) {
     );
   }
 
-  const course = await getCatalogueCourse(provider, courseSlug);
-  if (!course) {
+  const courseLoad = await getCatalogueCourse(provider, courseSlug);
+  if (courseLoad.status === "unavailable") {
+    return jsonError(503, courseLoad.code, courseLoad.message);
+  }
+  if (courseLoad.status !== "ready") {
     return jsonError(404, "COURSE_NOT_FOUND", "Course not found.");
   }
+  const course = courseLoad.course;
 
   const binding = getProviderCheckoutBinding(provider.code);
-  const config = getProviderExperienceConfig();
   if (!binding?.apiKey) {
-    return jsonError(503, "NOT_CONFIGURED", "Bela catalogue confirm is not configured.");
+    return jsonError(503, "NOT_CONFIGURED", "Catalogue confirm is not configured for this provider.");
   }
 
-  const { upstream, json } = await loadCheckout(checkoutId, binding.apiKey, config.apiBaseUrl);
+  const { upstream, json } = await loadCheckout(checkoutId, binding.apiKey, binding.apiBaseUrl);
   if (!upstream.ok || json.success === false) {
     return jsonError(
       upstream.status || 502,
@@ -187,21 +187,23 @@ export async function POST(request: Request) {
     );
   }
 
-  const course = await getCatalogueCourse(provider, body.courseSlug);
-  if (!course) {
+  const courseLoad = await getCatalogueCourse(provider, body.courseSlug);
+  if (courseLoad.status === "unavailable") {
+    return jsonError(503, courseLoad.code, courseLoad.message);
+  }
+  if (courseLoad.status !== "ready") {
     return jsonError(404, "COURSE_NOT_FOUND", "Course not found.");
   }
 
   const binding = getProviderCheckoutBinding(provider.code);
-  const config = getProviderExperienceConfig();
   if (!binding?.apiKey) {
-    return jsonError(503, "NOT_CONFIGURED", "Bela catalogue confirm is not configured.");
+    return jsonError(503, "NOT_CONFIGURED", "Catalogue confirm is not configured for this provider.");
   }
 
   const { upstream, json } = await loadCheckout(
     body.checkout_id,
     binding.apiKey,
-    config.apiBaseUrl
+    binding.apiBaseUrl
   );
   if (!upstream.ok || json.success === false) {
     return jsonError(
@@ -246,7 +248,7 @@ export async function POST(request: Request) {
     "";
 
   const confirm = await fetch(
-    `${config.apiBaseUrl}/v1/provider-checkouts/${encodeURIComponent(body.checkout_id)}/confirm`,
+    `${binding.apiBaseUrl}/v1/provider-checkouts/${encodeURIComponent(body.checkout_id)}/confirm`,
     {
       method: "POST",
       headers: {

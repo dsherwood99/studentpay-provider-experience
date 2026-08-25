@@ -203,6 +203,31 @@ describe("catalogue confirm prerequisites", () => {
     assert.equal(result.ok, false);
     assert.equal(result.status, 403);
   });
+
+  it("allows production BELA through the hosted confirm path", () => {
+    const result = validateCatalogueConfirmAccess({
+      shown,
+      submitted: bothAccepted,
+      checkoutProviderCode: "BELA",
+      requestProviderCode: "BELA",
+      dda: readyDda
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.code, "CONFIRM_ALLOWED");
+  });
+
+  it("does not let production BELA confirm a sandbox checkout", () => {
+    const result = validateCatalogueConfirmAccess({
+      shown,
+      submitted: bothAccepted,
+      checkoutProviderCode: "BELA_BEAUTY_SANDBOX",
+      requestProviderCode: "BELA",
+      dda: readyDda
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.status, 403);
+    assert.equal(result.code, "PROVIDER_MISMATCH");
+  });
 });
 
 describe("catalogue confirm UX contract", () => {

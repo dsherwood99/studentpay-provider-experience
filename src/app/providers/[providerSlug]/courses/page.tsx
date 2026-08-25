@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CatalogueCourseCard } from "@/components/courses/CatalogueCourseCard";
+import { CatalogueUnavailable } from "@/components/courses/CatalogueUnavailable";
 import { CourseCard } from "@/components/courses/CourseCard";
 import { ProviderIdentity } from "@/components/providers/ProviderIdentity";
 import { getCoursesByProvider } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
 import { isCatalogueProvider } from "@/lib/provider-experience/catalogue";
 import { listCatalogueCourses } from "@/lib/provider-experience/catalogue-server";
+import { isProviderSlugBlockedByDeployment } from "@/lib/provider-experience/provider-bindings";
 
 type CourseCataloguePageProps = {
   params: Promise<{
@@ -18,6 +20,11 @@ export default async function CourseCataloguePage({
   params,
 }: CourseCataloguePageProps) {
   const { providerSlug } = await params;
+
+  if (isProviderSlugBlockedByDeployment(providerSlug)) {
+    notFound();
+  }
+
   const provider = getProviderBySlug(providerSlug);
 
   if (!provider) {
@@ -25,9 +32,18 @@ export default async function CourseCataloguePage({
   }
 
   const catalogueMode = isCatalogueProvider(provider);
-  const catalogueCourses = catalogueMode
+  const catalogueLoad = catalogueMode
     ? await listCatalogueCourses(provider)
-    : [];
+    : null;
+
+  if (catalogueLoad?.status === "unavailable") {
+    return (
+      <CatalogueUnavailable provider={provider} code={catalogueLoad.code} />
+    );
+  }
+
+  const catalogueCourses =
+    catalogueLoad?.status === "ready" ? catalogueLoad.courses : [];
   const legacyCourses = catalogueMode
     ? []
     : getCoursesByProvider(provider.code);

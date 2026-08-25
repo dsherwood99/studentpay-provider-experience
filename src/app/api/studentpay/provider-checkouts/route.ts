@@ -22,7 +22,7 @@ import {
 } from "@/lib/provider-experience/checkout";
 import { createId } from "@/lib/provider-experience/format";
 import type { EnrolmentFormData } from "@/types/enrolment";
-import type { Provider } from "@/types/provider";
+import { isProviderSlugBlockedByDeployment } from "@/lib/provider-experience/provider-bindings";
 
 export const runtime = "nodejs";
 
@@ -81,9 +81,13 @@ async function createCatalogueCheckout({
     );
   }
 
-  const course = await getCatalogueCourse(provider, courseSlug);
+  const courseLoad = await getCatalogueCourse(provider, courseSlug);
 
-  if (!course) {
+  if (courseLoad.status === "unavailable") {
+    return jsonError(503, courseLoad.code, courseLoad.message);
+  }
+
+  if (courseLoad.status !== "ready") {
     return jsonError(
       404,
       "COURSE_NOT_FOUND",
@@ -91,19 +95,19 @@ async function createCatalogueCheckout({
     );
   }
 
+  const course = courseLoad.course;
   const binding = getProviderCheckoutBinding(provider.code);
 
   if (!binding?.apiKey) {
     return jsonError(
       503,
       "NOT_CONFIGURED",
-      "Bela catalogue checkout is not configured. Set BELA_BEAUTY_SANDBOX_API_KEY.",
+      "Catalogue checkout is not configured for this provider.",
     );
   }
 
-  const config = getProviderExperienceConfig();
   const providerOrderId =
-    requestedOrderId || createId(`BELA-${course.code}`);
+    requestedOrderId || createId(`${provider.code}-${course.code}`);
   // Commercial fields from the browser are ignored. The payload identifies
   // the course by code; dummy prices prove the API overlay is authoritative.
   const payload = buildCatalogueCheckoutPayload({
@@ -116,7 +120,7 @@ async function createCatalogueCheckout({
 
   try {
     const upstreamResponse = await fetch(
-      `${config.apiBaseUrl}/v1/provider-checkouts`,
+      `${binding.apiBaseUrl}/v1/provider-checkouts`,
       {
         method: "POST",
         headers: {
@@ -299,6 +303,14 @@ export async function POST(request: Request) {
       403,
       "PROVIDER_NOT_ALLOWED",
       "This Academy Australia production demo is bound to Academy Australia only.",
+    );
+  }
+
+  if (providerSlug && isProviderSlugBlockedByDeployment(providerSlug)) {
+    return jsonError(
+      403,
+      "PROVIDER_NOT_ALLOWED",
+      "This deployment is bound to a different provider.",
     );
   }
 

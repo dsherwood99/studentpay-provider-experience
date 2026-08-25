@@ -4,7 +4,6 @@ import {
   type CatalogueAgreementAcceptancePayload,
 } from "@/lib/provider-experience/catalogue-agreements";
 import { getProviderCheckoutBinding } from "@/lib/provider-experience/catalogue-checkout";
-import { getProviderExperienceConfig } from "@/lib/provider-experience/checkout";
 import { getProviderBySlug, isCatalogueProvider } from "@/lib/provider-experience/catalogue";
 
 export const runtime = "nodejs";
@@ -52,9 +51,19 @@ export async function POST(request: Request) {
     );
   }
 
-  const course = await getCatalogueCourse(provider, body.courseSlug);
+  const courseLoad = await getCatalogueCourse(provider, body.courseSlug);
 
-  if (!course) {
+  if (courseLoad.status === "unavailable") {
+    return Response.json(
+      {
+        success: false,
+        error: { code: courseLoad.code, message: courseLoad.message },
+      },
+      { status: 503 },
+    );
+  }
+
+  if (courseLoad.status !== "ready") {
     return Response.json(
       {
         success: false,
@@ -64,8 +73,8 @@ export async function POST(request: Request) {
     );
   }
 
+  const course = courseLoad.course;
   const binding = getProviderCheckoutBinding(provider.code);
-  const config = getProviderExperienceConfig();
 
   if (!binding?.apiKey) {
     return Response.json(
@@ -73,7 +82,7 @@ export async function POST(request: Request) {
         success: false,
         error: {
           code: "NOT_CONFIGURED",
-          message: "Bela catalogue agreements are not configured.",
+          message: "Catalogue agreements are not configured for this provider.",
         },
       },
       { status: 503 },
@@ -81,7 +90,7 @@ export async function POST(request: Request) {
   }
 
   const upstream = await fetch(
-    `${config.apiBaseUrl}/v1/provider-checkouts/${encodeURIComponent(body.checkout_id)}`,
+    `${binding.apiBaseUrl}/v1/provider-checkouts/${encodeURIComponent(body.checkout_id)}`,
     {
       headers: {
         Authorization: `Bearer ${binding.apiKey}`,

@@ -8,10 +8,7 @@ import {
 } from "@/lib/provider-experience/catalogue-dda";
 import type { CatalogueAgreementAcceptancePayload } from "@/lib/provider-experience/catalogue-agreements";
 import { getProviderCheckoutBinding } from "@/lib/provider-experience/catalogue-checkout";
-import {
-  getProviderExperienceConfig,
-  toEmbeddedSetupUrl
-} from "@/lib/provider-experience/checkout";
+import { toEmbeddedSetupUrl } from "@/lib/provider-experience/checkout";
 import { getProviderBySlug, isCatalogueProvider } from "@/lib/provider-experience/catalogue";
 
 export const runtime = "nodejs";
@@ -73,12 +70,11 @@ export async function GET(request: Request) {
   }
 
   const binding = getProviderCheckoutBinding(provider.code);
-  const config = getProviderExperienceConfig();
   if (!binding?.apiKey) {
-    return jsonError(503, "NOT_CONFIGURED", "Bela catalogue DDA is not configured.");
+    return jsonError(503, "NOT_CONFIGURED", "Catalogue DDA is not configured for this provider.");
   }
 
-  const { upstream, json } = await loadCheckout(checkoutId, binding.apiKey, config.apiBaseUrl);
+  const { upstream, json } = await loadCheckout(checkoutId, binding.apiKey, binding.apiBaseUrl);
   if (!upstream.ok || json.success === false) {
     return jsonError(upstream.status || 502, "CHECKOUT_LOOKUP_FAILED", "Unable to reload checkout DDA state.");
   }
@@ -115,21 +111,23 @@ export async function POST(request: Request) {
     return jsonError(400, "MISSING_FIELDS", "providerSlug, courseSlug and checkout_id are required.");
   }
 
-  const course = await getCatalogueCourse(provider, body.courseSlug);
-  if (!course) {
+  const courseLoad = await getCatalogueCourse(provider, body.courseSlug);
+  if (courseLoad.status === "unavailable") {
+    return jsonError(503, courseLoad.code, courseLoad.message);
+  }
+  if (courseLoad.status !== "ready") {
     return jsonError(404, "COURSE_NOT_FOUND", "Course not found.");
   }
 
   const binding = getProviderCheckoutBinding(provider.code);
-  const config = getProviderExperienceConfig();
   if (!binding?.apiKey) {
-    return jsonError(503, "NOT_CONFIGURED", "Bela catalogue DDA is not configured.");
+    return jsonError(503, "NOT_CONFIGURED", "Catalogue DDA is not configured for this provider.");
   }
 
   const { upstream, json } = await loadCheckout(
     body.checkout_id,
     binding.apiKey,
-    config.apiBaseUrl
+    binding.apiBaseUrl
   );
   if (!upstream.ok || json.success === false) {
     return jsonError(upstream.status || 502, "CHECKOUT_LOOKUP_FAILED", "Unable to reload checkout DDA state.");
@@ -150,7 +148,7 @@ export async function POST(request: Request) {
   }
 
   const setup = await fetch(
-    `${config.apiBaseUrl}/v1/provider-checkouts/${encodeURIComponent(body.checkout_id)}/dda-setup`,
+    `${binding.apiBaseUrl}/v1/provider-checkouts/${encodeURIComponent(body.checkout_id)}/dda-setup`,
     {
       method: "POST",
       headers: {

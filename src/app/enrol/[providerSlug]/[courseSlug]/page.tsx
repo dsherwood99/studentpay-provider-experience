@@ -1,10 +1,12 @@
 import { notFound, redirect } from "next/navigation";
+import { CatalogueUnavailable } from "@/components/courses/CatalogueUnavailable";
 import { EnrolmentWizard } from "@/components/enrolment/EnrolmentWizard";
 import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
 import { isCatalogueProvider } from "@/lib/provider-experience/catalogue";
 import { getCatalogueCourse } from "@/lib/provider-experience/catalogue-server";
 import { getProviderExperienceConfig } from "@/lib/provider-experience/checkout";
+import { isProviderSlugBlockedByDeployment } from "@/lib/provider-experience/provider-bindings";
 import type { EnrolmentPaymentOption } from "@/types/enrolment";
 
 type EnrolmentPageProps = {
@@ -25,6 +27,10 @@ export default async function EnrolmentPage({
   const { payment } = await searchParams;
   const config = getProviderExperienceConfig();
 
+  if (isProviderSlugBlockedByDeployment(providerSlug)) {
+    notFound();
+  }
+
   const provider = getProviderBySlug(providerSlug);
 
   if (!provider) {
@@ -34,12 +40,21 @@ export default async function EnrolmentPage({
   if (isCatalogueProvider(provider)) {
     const catalogueCourse = await getCatalogueCourse(provider, courseSlug);
 
-    if (!catalogueCourse) {
+    if (catalogueCourse.status === "unavailable") {
+      return (
+        <CatalogueUnavailable
+          provider={provider}
+          code={catalogueCourse.code}
+        />
+      );
+    }
+
+    if (catalogueCourse.status !== "ready") {
       notFound();
     }
 
     redirect(
-      `/providers/${provider.slug}/courses/${catalogueCourse.slug}/enrol`,
+      `/providers/${provider.slug}/courses/${catalogueCourse.course.slug}/enrol`,
     );
   }
 
