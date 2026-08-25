@@ -44,6 +44,17 @@ export function generateMetadata(): Metadata {
     };
   }
 
+  if (brand === "bela-beauty-college") {
+    return {
+      title: {
+        default: "Bela Beauty College | Enrolment",
+        template: "%s | Bela Beauty College",
+      },
+      description:
+        "Enrolment and payment plans for Bela Beauty College, provided through StudentPay.",
+    };
+  }
+
   return {
     title: {
       default: "StudentPay | Provider Experience",
@@ -63,7 +74,9 @@ export default function RootLayout({
   const bodyClassName =
     brand === "academy-australia"
       ? `${plusJakarta.variable} ${caveat.variable} platform--academy-australia`
-      : `${poppins.variable} ${inter.variable} platform--studentpay`;
+      : brand === "bela-beauty-college"
+        ? `${poppins.variable} ${inter.variable} platform--bela-beauty-college`
+        : `${poppins.variable} ${inter.variable} platform--studentpay`;
 
   return (
     <html lang="en">
