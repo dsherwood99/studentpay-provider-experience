@@ -1,3 +1,5 @@
+import { getCatalogueBindingByCode } from "./provider-bindings.ts";
+
 export type CatalogueDdaRecord = {
   dda_id?: string | null;
   status?: string | null;
@@ -52,7 +54,7 @@ export function catalogueConfirmBlockedInThisPhase(): boolean {
 }
 
 export function catalogueDdaBindingAllowsProvider(providerCode: string): boolean {
-  return providerCode === "BELA_BEAUTY_SANDBOX";
+  return Boolean(getCatalogueBindingByCode(providerCode));
 }
 
 export function validateCatalogueDdaAccess({

@@ -1,4 +1,5 @@
 import { getProviderExperienceConfig } from "@/lib/provider-experience/checkout";
+import { getProviderBindingBySlug } from "@/lib/provider-experience/provider-bindings";
 
 export const runtime = "nodejs";
 
@@ -14,7 +15,9 @@ export async function proxyLegalDocument(
   request: Request,
   kind: LegalKind,
 ): Promise<Response> {
-  const token = new URL(request.url).searchParams.get("token")?.trim() || "";
+  const url = new URL(request.url);
+  const token = url.searchParams.get("token")?.trim() || "";
+  const providerSlug = url.searchParams.get("providerSlug")?.trim() || "";
 
   if (!token) {
     return new Response("The agreement link is missing its checkout token.", {
@@ -23,9 +26,14 @@ export async function proxyLegalDocument(
     });
   }
 
-  const config = getProviderExperienceConfig();
+  const binding = providerSlug
+    ? getProviderBindingBySlug(providerSlug)
+    : undefined;
+  const apiBaseUrl =
+    binding?.defaultApiBaseUrl || getProviderExperienceConfig().apiBaseUrl;
+
   const upstream = await fetch(
-    `${config.apiBaseUrl}${legalPath(kind)}?token=${encodeURIComponent(token)}`,
+    `${apiBaseUrl}${legalPath(kind)}?token=${encodeURIComponent(token)}`,
     {
       method: "GET",
       headers: { Accept: "text/html" },

@@ -57,8 +57,21 @@ describe("catalogue DDA access", () => {
     assert.equal(result.status, 403);
   });
 
-  it("does not bind Academy to Bela DDA credentials", () => {
+  it("does not bind Academy to catalogue DDA credentials", () => {
     assert.equal(catalogueDdaBindingAllowsProvider("ACADEMYAU"), false);
+    assert.equal(catalogueDdaBindingAllowsProvider("BELA"), true);
+  });
+
+  it("allows production BELA DDA on the generic catalogue path", () => {
+    const result = validateCatalogueDdaAccess({
+      shown,
+      submitted: bothAccepted,
+      checkoutProviderCode: "BELA",
+      requestProviderCode: "BELA"
+    });
+    assert.equal(result.ok, true);
+    assert.equal(catalogueDdaBindingAllowsProvider("BELA"), true);
+    assert.equal(catalogueDdaBindingAllowsProvider("OCA"), false);
   });
 });
 

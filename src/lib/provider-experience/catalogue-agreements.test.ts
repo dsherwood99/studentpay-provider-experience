@@ -111,6 +111,28 @@ describe("separate agreement acceptance", () => {
     assert.equal(result.can_continue, false);
   });
 
+  it("accepts the agreement version returned by the API rather than a PE hardcoded value", () => {
+    const apiShown = {
+      provider_student: "BELA-AU-2026-08-25-v1",
+      payment_plan: "2026-08-02",
+    };
+    const result = validateSeparateAgreementAcceptance({
+      shown: apiShown,
+      submitted: {
+        provider_student_agreement_accepted: true,
+        payment_plan_agreement_accepted: true,
+        agreements: {
+          provider_student: { version: apiShown.provider_student },
+          payment_plan: { version: apiShown.payment_plan },
+        },
+      },
+    });
+
+    assert.equal(isConcreteAgreementVersion(apiShown.provider_student), true);
+    assert.equal(result.can_continue, true);
+    assert.equal(result.ok, true);
+  });
+
   it("requires both agreements before continue", () => {
     const result = validateSeparateAgreementAcceptance({
       shown,

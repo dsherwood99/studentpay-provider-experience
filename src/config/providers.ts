@@ -21,6 +21,26 @@ export const providers: Provider[] = [
 },
   },
   {
+    code: "BELA",
+    slug: "bela-beauty-college",
+    name: "Bela Beauty College",
+    shortName: "Bela Beauty",
+    description:
+      "Beauty courses from Bela Beauty College, with StudentPay payment plans.",
+    logoPath: "",
+    supportEmail: "support@belabeautycollege.com",
+    catalogueEnabled: true,
+    theme: {
+      primaryColour: "#C45C7A",
+      secondaryColour: "#111111",
+      accentColour: "#C45C7A",
+      backgroundColour: "#FFF7FA",
+      surfaceColour: "#FFFFFF",
+      textColour: "#1A1A1A",
+      mutedTextColour: "#5C5458",
+    },
+  },
+  {
     code: "BELA_BEAUTY_SANDBOX",
     slug: "bela-beauty-sandbox",
     name: "Bela Beauty College",

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CatalogueCourseCard } from "@/components/courses/CatalogueCourseCard";
+import { CatalogueUnavailable } from "@/components/courses/CatalogueUnavailable";
 import { CourseCard } from "@/components/courses/CourseCard";
 import { ProviderIdentity } from "@/components/providers/ProviderIdentity";
 import { getFeaturedCoursesByProvider } from "@/config/courses";
@@ -8,6 +9,7 @@ import { getProviderBySlug } from "@/config/providers";
 import { isCatalogueProvider } from "@/lib/provider-experience/catalogue";
 import { listCatalogueCourses } from "@/lib/provider-experience/catalogue-server";
 import { formatCataloguePlanCopy } from "@/lib/provider-experience/catalogue-view";
+import { isProviderSlugBlockedByDeployment } from "@/lib/provider-experience/provider-bindings";
 
 type ProviderPageProps = {
   params: Promise<{
@@ -19,6 +21,11 @@ export default async function ProviderPage({
   params,
 }: ProviderPageProps) {
   const { providerSlug } = await params;
+
+  if (isProviderSlugBlockedByDeployment(providerSlug)) {
+    notFound();
+  }
+
   const provider = getProviderBySlug(providerSlug);
 
   if (!provider) {
@@ -26,9 +33,18 @@ export default async function ProviderPage({
   }
 
   const catalogueMode = isCatalogueProvider(provider);
-  const catalogueCourses = catalogueMode
+  const catalogueLoad = catalogueMode
     ? await listCatalogueCourses(provider)
-    : [];
+    : null;
+
+  if (catalogueLoad?.status === "unavailable") {
+    return (
+      <CatalogueUnavailable provider={provider} code={catalogueLoad.code} />
+    );
+  }
+
+  const catalogueCourses =
+    catalogueLoad?.status === "ready" ? catalogueLoad.courses : [];
   const featuredCatalogue = catalogueCourses.slice(0, 3);
   const featuredCourses = catalogueMode
     ? []
@@ -88,7 +104,10 @@ export default async function ProviderPage({
                 Popular course
               </p>
               <h2>
-                {showcaseCourse?.title ?? "Makeup Artistry Course Bundle"}
+                {showcaseCourse?.title ??
+                  (catalogueMode
+                    ? provider.name
+                    : "Makeup Artistry Course Bundle")}
               </h2>
               <p>
                 {catalogueMode
@@ -101,7 +120,7 @@ export default async function ProviderPage({
                   <span>Payment plan</span>
                   <strong>{formatCataloguePlanCopy(showcaseCourse)}</strong>
                 </div>
-              ) : (
+              ) : catalogueMode ? null : (
                 <div className="provider-showcase-card__price">
                   <span>Payment plan from</span>
                   <strong>$25 per week</strong>

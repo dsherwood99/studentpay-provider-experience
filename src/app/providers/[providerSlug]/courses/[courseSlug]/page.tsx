@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CatalogueCoursePage } from "@/components/courses/CatalogueCoursePage";
+import { CatalogueUnavailable } from "@/components/courses/CatalogueUnavailable";
 import { FullStackCoursePage } from "@/components/courses/FullStackCoursePage";
 import { PhotographyCoursePage } from "@/components/courses/PhotographyCoursePage";
 import { EnrolmentWizard } from "@/components/enrolment/EnrolmentWizard";
@@ -14,6 +15,7 @@ import {
 import { isCatalogueProvider } from "@/lib/provider-experience/catalogue";
 import { getCatalogueCourse } from "@/lib/provider-experience/catalogue-server";
 import { getProviderExperienceConfig } from "@/lib/provider-experience/checkout";
+import { isProviderSlugBlockedByDeployment } from "@/lib/provider-experience/provider-bindings";
 import type { EnrolmentPaymentOption } from "@/types/enrolment";
 
 type CourseDetailPageProps = {
@@ -33,6 +35,10 @@ export default async function CourseDetailPage({
   const { providerSlug, courseSlug } = await params;
   const { payment } = await searchParams;
 
+  if (isProviderSlugBlockedByDeployment(providerSlug)) {
+    notFound();
+  }
+
   const provider = getProviderBySlug(providerSlug);
 
   if (!provider) {
@@ -42,12 +48,21 @@ export default async function CourseDetailPage({
   if (isCatalogueProvider(provider)) {
     const catalogueCourse = await getCatalogueCourse(provider, courseSlug);
 
-    if (!catalogueCourse) {
+    if (catalogueCourse.status === "unavailable") {
+      return (
+        <CatalogueUnavailable
+          provider={provider}
+          code={catalogueCourse.code}
+        />
+      );
+    }
+
+    if (catalogueCourse.status !== "ready") {
       notFound();
     }
 
     return (
-      <CatalogueCoursePage provider={provider} course={catalogueCourse} />
+      <CatalogueCoursePage provider={provider} course={catalogueCourse.course} />
     );
   }
 

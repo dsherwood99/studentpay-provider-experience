@@ -1,6 +1,16 @@
 import "server-only";
 
-import { fetchProviderCourse, fetchProviderCourses } from "@/lib/provider-experience/catalogue-api";
+import {
+  CatalogueRequestError,
+  fetchProviderCourse,
+  fetchProviderCourses,
+} from "@/lib/provider-experience/catalogue-api";
+import {
+  CATALOGUE_COURSE_FAILED,
+  CATALOGUE_LIST_FAILED,
+  type CatalogueUnavailableState,
+  catalogueUnavailableCopy,
+} from "@/lib/provider-experience/catalogue-availability";
 import { isCatalogueProvider } from "@/lib/provider-experience/catalogue";
 import {
   courseCodeFromSlug,
@@ -10,39 +20,86 @@ import {
 import type { CatalogueCourseView } from "@/types/catalogue";
 import type { Provider } from "@/types/provider";
 
-export async function listCatalogueCourses(
+export type CatalogueListLoad =
+  | { status: "ready"; courses: CatalogueCourseView[] }
+  | CatalogueUnavailableState;
+
+export type CatalogueCourseLoad =
+  | { status: "ready"; course: CatalogueCourseView }
+  | { status: "missing" }
+  | CatalogueUnavailableState;
+
+function unavailableFromError(
   provider: Provider,
-): Promise<CatalogueCourseView[]> {
-  if (!isCatalogueProvider(provider)) {
-    return [];
+  error: unknown,
+  fallbackCode: string,
+): CatalogueUnavailableState {
+  if (error instanceof CatalogueRequestError) {
+    return {
+      status: "unavailable",
+      code: error.code,
+      message: catalogueUnavailableCopy(error.code, provider.name).body,
+    };
   }
 
-  const coursesFromApi = await fetchProviderCourses(provider.code);
-  return uniqueActiveCatalogueCourses(
-    coursesFromApi.map((course) => toCatalogueCourseView(provider.code, course)),
-  );
+  return {
+    status: "unavailable",
+    code: fallbackCode,
+    message: catalogueUnavailableCopy(fallbackCode, provider.name).body,
+  };
+}
+
+export async function listCatalogueCourses(
+  provider: Provider,
+): Promise<CatalogueListLoad> {
+  if (!isCatalogueProvider(provider)) {
+    return {
+      status: "unavailable",
+      code: CATALOGUE_LIST_FAILED,
+      message: catalogueUnavailableCopy(CATALOGUE_LIST_FAILED, provider.name)
+        .body,
+    };
+  }
+
+  try {
+    const coursesFromApi = await fetchProviderCourses(provider.code);
+    return {
+      status: "ready",
+      courses: uniqueActiveCatalogueCourses(
+        coursesFromApi.map((course) =>
+          toCatalogueCourseView(provider.code, course),
+        ),
+      ),
+    };
+  } catch (error) {
+    return unavailableFromError(provider, error, CATALOGUE_LIST_FAILED);
+  }
 }
 
 export async function getCatalogueCourse(
   provider: Provider,
   courseSlug: string,
-): Promise<CatalogueCourseView | null> {
+): Promise<CatalogueCourseLoad> {
   if (!isCatalogueProvider(provider)) {
-    return null;
+    return { status: "missing" };
   }
 
-  const courseCode = courseCodeFromSlug(courseSlug);
-  const course = await fetchProviderCourse(provider.code, courseCode);
+  try {
+    const courseCode = courseCodeFromSlug(courseSlug);
+    const course = await fetchProviderCourse(provider.code, courseCode);
 
-  if (!course) {
-    return null;
+    if (!course) {
+      return { status: "missing" };
+    }
+
+    const view = toCatalogueCourseView(provider.code, course);
+
+    if (view.slug !== courseSlug) {
+      return { status: "missing" };
+    }
+
+    return { status: "ready", course: view };
+  } catch (error) {
+    return unavailableFromError(provider, error, CATALOGUE_COURSE_FAILED);
   }
-
-  const view = toCatalogueCourseView(provider.code, course);
-
-  if (view.slug !== courseSlug) {
-    return null;
-  }
-
-  return view;
 }

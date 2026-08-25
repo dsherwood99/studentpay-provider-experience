@@ -152,7 +152,7 @@ export function CatalogueAgreementsStep({
               title={psaTitle}
               src={`/api/studentpay/legal/provider-student-agreement?token=${encodeURIComponent(
                 checkout.checkout_token,
-              )}`}
+              )}&providerSlug=${encodeURIComponent(provider.slug)}`}
             />
           ) : null}
           <label className="catalogue-agreement-accept">
@@ -184,7 +184,7 @@ export function CatalogueAgreementsStep({
               title={ppaTitle}
               src={`/api/studentpay/legal/payment-plan-terms?token=${encodeURIComponent(
                 checkout.checkout_token,
-              )}`}
+              )}&providerSlug=${encodeURIComponent(provider.slug)}`}
             />
           ) : null}
           <label className="catalogue-agreement-accept">

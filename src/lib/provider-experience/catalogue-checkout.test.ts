@@ -8,6 +8,26 @@ import {
   getProviderCheckoutBinding,
 } from "./catalogue-checkout.ts";
 
+const belaProductionProvider = {
+  code: "BELA",
+  slug: "bela-beauty-college",
+  name: "Bela Beauty College",
+  shortName: "Bela Beauty",
+  description: "Production",
+  logoPath: "",
+  supportEmail: "support@belabeautycollege.com",
+  catalogueEnabled: true,
+  theme: {
+    primaryColour: "#C45C7A",
+    secondaryColour: "#111111",
+    accentColour: "#C45C7A",
+    backgroundColour: "#FFF7FA",
+    surfaceColour: "#FFFFFF",
+    textColour: "#1A1A1A",
+    mutedTextColour: "#5C5458",
+  },
+};
+
 const belaProvider = {
   code: "BELA_BEAUTY_SANDBOX",
   slug: "bela-beauty-sandbox",
@@ -54,12 +74,16 @@ describe("catalogue checkout payload", () => {
         apiKey: "test",
         providerCode: "BELA_BEAUTY_SANDBOX",
         providerAccountId: "0018r000017BAHFAA4",
+        apiBaseUrl: "https://sandbox-api.studentpay.com.au",
       },
     });
 
     assert.equal(payload.provider.provider_code, "BELA_BEAUTY_SANDBOX");
     assert.equal(payload.course.course_code, "BRIDAL_FREELANCER_BUNDLE");
     assert.equal(payload.pricing.course_price, TAMPERED_COMMERCIAL.course_price);
+    assert.equal(JSON.stringify(payload).includes("apiKey"), false);
+    assert.equal(JSON.stringify(payload).includes("BELA_API_KEY"), false);
+    assert.equal(JSON.stringify(payload).includes("prod-bela-key"), false);
     assert.equal(payload.pricing.upfront_payment, TAMPERED_COMMERCIAL.upfront_payment);
     assert.equal(payload.plan.number_of_instalments, TAMPERED_COMMERCIAL.number_of_instalments);
     assert.notEqual(payload.pricing.course_price, BRIDAL_AUTHORITATIVE_SNAPSHOT.course_price);
@@ -82,6 +106,7 @@ describe("catalogue checkout payload", () => {
         apiKey: "test",
         providerCode: "BELA_BEAUTY_SANDBOX",
         providerAccountId: "0018r000017BAHFAA4",
+        apiBaseUrl: "https://sandbox-api.studentpay.com.au",
       },
     });
 
@@ -93,6 +118,32 @@ describe("catalogue checkout payload", () => {
     assert.equal(CLASSIC_AUTHORITATIVE_SNAPSHOT.count, 75);
   });
 
+  it("accepts production BELA on the hosted catalogue checkout path", () => {
+    const payload = buildCatalogueCheckoutPayload({
+      provider: belaProductionProvider,
+      course: {
+        code: BRIDAL_AUTHORITATIVE_SNAPSHOT.course_code,
+        title: "Bridal Freelancer Bundle",
+      },
+      student,
+      providerOrderId: "BELA-PROD-BRIDAL",
+      binding: {
+        apiKey: "prod-bela-key",
+        providerCode: "BELA",
+        providerAccountId: "001Mp00000WkleDIAR",
+        apiBaseUrl: "https://api.studentpay.com.au",
+      },
+    });
+
+    assert.equal(payload.provider.provider_code, "BELA");
+    assert.equal(payload.course.course_code, "BRIDAL_FREELANCER_BUNDLE");
+    assert.equal(JSON.stringify(payload).includes("apiKey"), false);
+    assert.equal(JSON.stringify(payload).includes("prod-bela-key"), false);
+    assert.equal(JSON.stringify(payload).includes("BELA_API_KEY"), false);
+    assert.notEqual(payload.provider.provider_code, "BELA_BEAUTY_SANDBOX");
+    assert.notEqual(payload.provider.provider_code, "ACADEMYAU");
+  });
+
   it("does not bind another provider to Bela checkout credentials", () => {
     assert.equal(getProviderCheckoutBinding("ACADEMY_AUSTRALIA"), null);
     assert.equal(getProviderCheckoutBinding("ONFIT"), null);
@@ -101,6 +152,7 @@ describe("catalogue checkout payload", () => {
       getProviderCheckoutBinding("BELA_BEAUTY_SANDBOX")?.providerCode,
       "BELA_BEAUTY_SANDBOX",
     );
+    assert.equal(getProviderCheckoutBinding("BELA")?.providerCode, "BELA");
   });
 
   it("keeps Academy on the non-catalogue checkout path", () => {

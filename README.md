@@ -58,6 +58,29 @@ A dedicated Vercel project (not this sandbox harness) binds to AU production:
 
 Do not set those production values on `studentpay-provider-experience`.
 
+## Bela Beauty College production
+
+A dedicated Vercel project (not this sandbox harness, and not the Academy
+Australia production demo) should bind Bela production server-side:
+
+```bash
+STUDENTPAY_API_BASE_URL=https://api.studentpay.com.au
+STUDENTPAY_PROVIDER_CODE=BELA
+BELA_API_KEY=
+STUDENTPAY_PROVIDER_ACCOUNT_ID=001Mp00000WkleDIAR
+HARNESS_MOCK_MODE=false
+```
+
+- Provider slug: `bela-beauty-college`
+- Provider code: `BELA`
+- Catalogue source: `GET /v1/providers/BELA/courses` (Salesforce remains the gate)
+- Proposed hostname: `https://bela.studentpay.com.au/providers/bela-beauty-college/courses`
+- Do not set `BELA_BEAUTY_SANDBOX_API_KEY` on that production project
+- Do not prefix `BELA_API_KEY` with `NEXT_PUBLIC_`
+- `HARNESS_MOCK_MODE` is unused by the catalogue enrolment path; keep it `false` so the Academy wizard cannot mock-enrol on a Bela host
+
+Salesforce `Hosted_Enrolment_Enabled__c` and `Catalogue_Enabled__c` still control whether courses appear. PE catalogue-capable configuration does not bypass those flags.
+
 ```bash
 curl http://localhost:3000/api/studentpay/provider-checkouts
 ```
@@ -69,4 +92,6 @@ npm run dev
 npm run build
 npm run start
 npm run lint
+npm run typecheck
+npm test
 ```
