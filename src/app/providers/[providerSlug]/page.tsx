@@ -1,9 +1,13 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CatalogueCourseCard } from "@/components/courses/CatalogueCourseCard";
 import { CourseCard } from "@/components/courses/CourseCard";
+import { ProviderIdentity } from "@/components/providers/ProviderIdentity";
 import { getFeaturedCoursesByProvider } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
+import { isCatalogueProvider } from "@/lib/provider-experience/catalogue";
+import { listCatalogueCourses } from "@/lib/provider-experience/catalogue-server";
+import { formatCataloguePlanCopy } from "@/lib/provider-experience/catalogue-view";
 
 type ProviderPageProps = {
   params: Promise<{
@@ -21,7 +25,15 @@ export default async function ProviderPage({
     notFound();
   }
 
-  const featuredCourses = getFeaturedCoursesByProvider(provider.code);
+  const catalogueMode = isCatalogueProvider(provider);
+  const catalogueCourses = catalogueMode
+    ? await listCatalogueCourses(provider)
+    : [];
+  const featuredCatalogue = catalogueCourses.slice(0, 3);
+  const featuredCourses = catalogueMode
+    ? []
+    : getFeaturedCoursesByProvider(provider.code);
+  const showcaseCourse = featuredCatalogue[0];
 
   return (
     <div className="provider-page">
@@ -30,9 +42,8 @@ export default async function ProviderPage({
           <div className="provider-hero__content">
             <p className="provider-eyebrow">Flexible online learning</p>
 
-            <Image
-              src={provider.logoPath}
-              alt={`${provider.name} logo`}
+            <ProviderIdentity
+              provider={provider}
               width={260}
               height={105}
               className="provider-hero__logo"
@@ -76,16 +87,26 @@ export default async function ProviderPage({
               <p className="provider-showcase-card__label">
                 Popular course
               </p>
-              <h2>Makeup Artistry Course Bundle</h2>
+              <h2>
+                {showcaseCourse?.title ?? "Makeup Artistry Course Bundle"}
+              </h2>
               <p>
-                Flexible online study, practical demonstrations and mentor
-                support.
+                {catalogueMode
+                  ? provider.description
+                  : "Flexible online study, practical demonstrations and mentor support."}
               </p>
 
-              <div className="provider-showcase-card__price">
-                <span>Payment plan from</span>
-                <strong>$25 per week</strong>
-              </div>
+              {showcaseCourse ? (
+                <div className="provider-showcase-card__price">
+                  <span>Payment plan</span>
+                  <strong>{formatCataloguePlanCopy(showcaseCourse)}</strong>
+                </div>
+              ) : (
+                <div className="provider-showcase-card__price">
+                  <span>Payment plan from</span>
+                  <strong>$25 per week</strong>
+                </div>
+              )}
             </div>
 
             <div className="provider-showcase-card provider-showcase-card--small provider-showcase-card--top">
@@ -150,13 +171,21 @@ export default async function ProviderPage({
           </div>
 
           <div className="course-grid">
-            {featuredCourses.map((course) => (
-              <CourseCard
-                key={course.code}
-                course={course}
-                providerSlug={provider.slug}
-              />
-            ))}
+            {catalogueMode
+              ? featuredCatalogue.map((course) => (
+                  <CatalogueCourseCard
+                    key={course.code}
+                    course={course}
+                    providerSlug={provider.slug}
+                  />
+                ))
+              : featuredCourses.map((course) => (
+                  <CourseCard
+                    key={course.code}
+                    course={course}
+                    providerSlug={provider.slug}
+                  />
+                ))}
           </div>
         </div>
       </section>
@@ -202,7 +231,7 @@ export default async function ProviderPage({
         <div className="page-shell provider-cta__inner">
           <div>
             <p className="provider-eyebrow">Ready to explore?</p>
-            <h2>Find your next course with Academy Australia.</h2>
+            <h2>Find your next course with {provider.name}.</h2>
           </div>
 
           <Link

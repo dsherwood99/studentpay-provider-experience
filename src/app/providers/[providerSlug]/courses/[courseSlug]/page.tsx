@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CatalogueCoursePage } from "@/components/courses/CatalogueCoursePage";
 import { FullStackCoursePage } from "@/components/courses/FullStackCoursePage";
 import { PhotographyCoursePage } from "@/components/courses/PhotographyCoursePage";
 import { EnrolmentWizard } from "@/components/enrolment/EnrolmentWizard";
@@ -10,6 +11,8 @@ import {
   formatCurrency,
   formatPaymentFrequency,
 } from "@/lib/format";
+import { isCatalogueProvider } from "@/lib/provider-experience/catalogue";
+import { getCatalogueCourse } from "@/lib/provider-experience/catalogue-server";
 import { getProviderExperienceConfig } from "@/lib/provider-experience/checkout";
 import type { EnrolmentPaymentOption } from "@/types/enrolment";
 
@@ -29,7 +32,6 @@ export default async function CourseDetailPage({
 }: CourseDetailPageProps) {
   const { providerSlug, courseSlug } = await params;
   const { payment } = await searchParams;
-  const config = getProviderExperienceConfig();
 
   const provider = getProviderBySlug(providerSlug);
 
@@ -37,6 +39,19 @@ export default async function CourseDetailPage({
     notFound();
   }
 
+  if (isCatalogueProvider(provider)) {
+    const catalogueCourse = await getCatalogueCourse(provider, courseSlug);
+
+    if (!catalogueCourse) {
+      notFound();
+    }
+
+    return (
+      <CatalogueCoursePage provider={provider} course={catalogueCourse} />
+    );
+  }
+
+  const config = getProviderExperienceConfig();
   const course = getCourseBySlug(provider.code, courseSlug);
 
   if (!course) {

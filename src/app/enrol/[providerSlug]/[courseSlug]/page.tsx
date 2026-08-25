@@ -1,7 +1,9 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { EnrolmentWizard } from "@/components/enrolment/EnrolmentWizard";
 import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
+import { isCatalogueProvider } from "@/lib/provider-experience/catalogue";
+import { getCatalogueCourse } from "@/lib/provider-experience/catalogue-server";
 import { getProviderExperienceConfig } from "@/lib/provider-experience/checkout";
 import type { EnrolmentPaymentOption } from "@/types/enrolment";
 
@@ -27,6 +29,18 @@ export default async function EnrolmentPage({
 
   if (!provider) {
     notFound();
+  }
+
+  if (isCatalogueProvider(provider)) {
+    const catalogueCourse = await getCatalogueCourse(provider, courseSlug);
+
+    if (!catalogueCourse) {
+      notFound();
+    }
+
+    redirect(
+      `/providers/${provider.slug}/courses/${catalogueCourse.slug}/enrol`,
+    );
   }
 
   const course = getCourseBySlug(provider.code, courseSlug);

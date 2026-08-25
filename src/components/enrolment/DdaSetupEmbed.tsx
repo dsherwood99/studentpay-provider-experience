@@ -6,6 +6,7 @@ type DdaSetupEmbedProps = {
   setupUrl: string;
   studentFirstName: string;
   courseTitle: string;
+  lead?: string;
   onAuthorised: () => void;
   onRestart?: () => void;
 };
@@ -58,6 +59,7 @@ export function DdaSetupEmbed({
   setupUrl,
   studentFirstName,
   courseTitle,
+  lead,
   onAuthorised,
   onRestart,
 }: DdaSetupEmbedProps) {
@@ -68,6 +70,10 @@ export function DdaSetupEmbed({
       const trustedOrigins = [
         "https://api.studentpay.com.au",
         "https://sandbox-api.studentpay.com.au",
+        "http://127.0.0.1:3010",
+        "http://localhost:3010",
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
       ];
 
       if (
@@ -100,8 +106,8 @@ export function DdaSetupEmbed({
           <p className="enrolment-wizard__eyebrow">Direct debit authority</p>
           <h1>Authorise your StudentPay payment plan, {studentFirstName}.</h1>
           <p className="dda-setup__lead">
-            Secure bank capture for {courseTitle} is embedded below. Complete
-            the authority to continue enrolment confirmation.
+            {lead ||
+              `Secure bank capture for ${courseTitle} is embedded below. Complete the authority to continue enrolment confirmation.`}
           </p>
         </header>
 
