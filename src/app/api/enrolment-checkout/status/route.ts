@@ -3,6 +3,7 @@ import { jsonError } from "@/lib/nz-enrolment/errors";
 import { logNzEnrolmentEvent } from "@/lib/nz-enrolment/observability";
 import {
   readNzSession,
+  requireNzApiBaseUrl,
   requireTenantKey,
   resolveCourseContext,
   writeNzSession,
@@ -27,8 +28,13 @@ export async function GET() {
     return key.error;
   }
 
+  const apiBase = requireNzApiBaseUrl();
+  if ("error" in apiBase) {
+    return apiBase.error;
+  }
+
   const upstream = await canonicalGet({
-    apiBaseUrl: resolved.tenant.apiBaseUrl,
+    apiBaseUrl: apiBase.url,
     apiKey: key.apiKey,
     checkoutId: session.checkoutId,
   });

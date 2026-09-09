@@ -1,20 +1,27 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import {
+  isProductionAppEnv,
+  requireNzEnrolmentSessionSecret,
+} from "./environment.ts";
 import type { NzCheckoutSession } from "./types.ts";
 
 export const NZ_ENROLMENT_SESSION_COOKIE = "sp_nz_enrolment_session";
 
 const MAX_AGE_SECONDS = 60 * 60 * 4;
 
-function sessionSecret(): string {
-  const secret =
-    process.env.NZ_ENROLMENT_SESSION_SECRET ||
-    process.env.ENROLMENT_CHECKOUT_SESSION_SECRET ||
-    "";
-  if (secret.length >= 16) {
-    return secret;
+export class NzSessionConfigError extends Error {
+  constructor(message = "NZ enrolment session secret is not configured.") {
+    super(message);
+    this.name = "NzSessionConfigError";
   }
-  // Local/dev fallback only. Production/sandbox deploys must set a real secret.
-  return "nz-enrolment-checkout-dev-secret";
+}
+
+function sessionSecret(): string {
+  const resolved = requireNzEnrolmentSessionSecret();
+  if (resolved.error || !resolved.secret) {
+    throw new NzSessionConfigError();
+  }
+  return resolved.secret;
 }
 
 function sign(payload: string): string {
@@ -40,7 +47,12 @@ export function decodeNzCheckoutSession(
   }
   const payload = value.slice(0, splitAt);
   const signature = value.slice(splitAt + 1);
-  const expected = sign(payload);
+  let expected: string;
+  try {
+    expected = sign(payload);
+  } catch {
+    return null;
+  }
   const actualBuf = Buffer.from(signature);
   const expectedBuf = Buffer.from(expected);
   if (actualBuf.length !== expectedBuf.length) {
@@ -64,7 +76,7 @@ export function decodeNzCheckoutSession(
 export function nzSessionCookieOptions() {
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isProductionAppEnv() || process.env.NODE_ENV === "production",
     sameSite: "lax" as const,
     path: "/",
     maxAge: MAX_AGE_SECONDS,

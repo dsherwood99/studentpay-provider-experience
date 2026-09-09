@@ -1,13 +1,11 @@
 import type { NzPublicTenant, NzTenant } from "./types.ts";
 
-const NZ_SANDBOX_API = "https://sandbox-api.studentpay.co.nz";
-
 /**
  * Generic NZ Enrolment Checkout tenants.
  * Provider-specific behaviour belongs here as data, not in checkout UI.
  *
- * OLI_NZ is a sandbox assignment. Production Salesforce has an Account named
- * Online Learning Institute (001RE00000kov0dYAA) but no PIC and no provider_code.
+ * API host is resolved from NZ_STUDENTPAY_API_BASE_URL + STUDENTPAY_ENV.
+ * Do not hardcode sandbox or production API URLs on the tenant object.
  */
 export const NZ_TENANTS: readonly NzTenant[] = [
   {
@@ -33,9 +31,7 @@ export const NZ_TENANTS: readonly NzTenant[] = [
         interest_free_payment_plan: { enabled: true },
         pay_in_full: { enabled: false, comingSoon: true },
       },
-      availableFrequencies: ["Weekly", "Fortnightly", "Monthly"],
-      minInstalments: 4,
-      maxInstalments: 52,
+      availableFrequencies: ["Weekly"],
       defaultFrequency: "Weekly",
       wording: {
         ddaLead:
@@ -45,7 +41,6 @@ export const NZ_TENANTS: readonly NzTenant[] = [
       },
     },
     apiKeyEnv: "PROVIDER_API_KEY_OLI_NZ",
-    apiBaseUrl: NZ_SANDBOX_API,
     active: true,
   },
   {
@@ -75,27 +70,37 @@ export const NZ_TENANTS: readonly NzTenant[] = [
       defaultFrequency: "Monthly",
     },
     apiKeyEnv: "SANDBOX_DEMO_API_KEY",
-    apiBaseUrl: NZ_SANDBOX_API,
     active: true,
+    sandboxOnly: true,
   },
 ];
 
+function tenantVisible(tenant: NzTenant): boolean {
+  if (!tenant.active) {
+    return false;
+  }
+  if (tenant.sandboxOnly) {
+    return process.env.STUDENTPAY_ENV?.trim().toLowerCase() === "sandbox";
+  }
+  return true;
+}
+
 export function getNzTenantBySlug(slug: string): NzTenant | undefined {
   const normalised = slug.trim().toLowerCase();
-  return NZ_TENANTS.find((tenant) => tenant.slug === normalised && tenant.active);
+  const tenant = NZ_TENANTS.find((item) => item.slug === normalised);
+  return tenant && tenantVisible(tenant) ? tenant : undefined;
 }
 
 export function getNzTenantByProviderCode(
   providerCode: string,
 ): NzTenant | undefined {
   const normalised = providerCode.trim().toUpperCase();
-  return NZ_TENANTS.find(
-    (tenant) => tenant.providerCode === normalised && tenant.active,
-  );
+  const tenant = NZ_TENANTS.find((item) => item.providerCode === normalised);
+  return tenant && tenantVisible(tenant) ? tenant : undefined;
 }
 
 export function listActiveNzTenants(): NzTenant[] {
-  return NZ_TENANTS.filter((tenant) => tenant.active);
+  return NZ_TENANTS.filter(tenantVisible);
 }
 
 export function toPublicTenant(tenant: NzTenant): NzPublicTenant {

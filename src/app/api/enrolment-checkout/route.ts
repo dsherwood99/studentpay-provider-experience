@@ -4,20 +4,24 @@ import {
   canonicalCreate,
   extractCheckoutToken,
   extractSetupUrl,
+  previewCoursePlan,
 } from "@/lib/nz-enrolment/canonical";
 import { jsonError } from "@/lib/nz-enrolment/errors";
+import { GENERIC_MAX_RECURRING_INSTALMENTS } from "@/lib/nz-enrolment/environment";
 import { logNzEnrolmentEvent } from "@/lib/nz-enrolment/observability";
-import { defaultFirstPaymentDate, previewPlan } from "@/lib/nz-enrolment/plan-math";
+import { defaultFirstPaymentDate } from "@/lib/nz-enrolment/plan-math";
 import {
   assertSessionTenant,
   readNzSession,
+  requireNzApiBaseUrl,
   requireTenantKey,
   resolveCourseContext,
+  resolveTenantContext,
   writeNzSession,
 } from "@/lib/nz-enrolment/request-context";
 import { getNzCourse, getNzCoursesForProvider, toPublicCourse } from "@/lib/nz-enrolment/courses";
-import { getNzTenantBySlug, toPublicTenant } from "@/lib/nz-enrolment/tenants";
-import { publicSessionView } from "@/lib/nz-enrolment/session";
+import { toPublicTenant } from "@/lib/nz-enrolment/tenants";
+import { NzSessionConfigError, publicSessionView } from "@/lib/nz-enrolment/session";
 import {
   publicBaseUrl,
   sameOriginOrConfigured,
@@ -32,12 +36,13 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const providerSlug = url.searchParams.get("providerSlug")?.trim() || "";
   const courseSlug = url.searchParams.get("courseSlug")?.trim() || "";
-  const tenant = getNzTenantBySlug(providerSlug);
+  const resolved = resolveTenantContext(providerSlug);
 
-  if (!tenant) {
-    return jsonError(404, "PROVIDER_NOT_FOUND");
+  if (resolved.error || !resolved.tenant) {
+    return resolved.error || jsonError(404, "PROVIDER_NOT_FOUND");
   }
 
+  const { tenant } = resolved;
   const courses = courseSlug
     ? [getNzCourse(providerSlug, courseSlug)].filter(Boolean)
     : getNzCoursesForProvider(providerSlug);
@@ -90,6 +95,11 @@ export async function POST(request: Request) {
     return resolved.error || jsonError(404, "PROVIDER_NOT_FOUND");
   }
 
+  const apiBase = requireNzApiBaseUrl();
+  if ("error" in apiBase) {
+    return apiBase.error;
+  }
+
   const { tenant, course } = resolved;
   const existing = await readNzSession();
   const mismatch = assertSessionTenant(existing, providerSlug, courseSlug);
@@ -121,33 +131,39 @@ export async function POST(request: Request) {
   const plan: NzPlanSelection = {
     paymentOption: "interest_free_payment_plan",
     upfrontAmountCents:
-      body.plan?.upfrontAmountCents ?? course.planDefaults.upfrontAmountCents,
-    frequency: body.plan?.frequency || course.planDefaults.frequency,
+      course.planPolicy.mode === "derived_regular"
+        ? course.planPolicy.upfrontAmountCents
+        : (body.plan?.upfrontAmountCents ?? course.planPolicy.upfrontAmountCents),
+    frequency:
+      course.planPolicy.mode === "derived_regular"
+        ? course.planPolicy.frequency
+        : body.plan?.frequency || course.planPolicy.frequency,
     numberOfInstalments:
-      body.plan?.numberOfInstalments ?? course.planDefaults.numberOfInstalments,
+      course.planPolicy.mode === "student_selected_equal"
+        ? (body.plan?.numberOfInstalments ?? course.planPolicy.numberOfInstalments)
+        : undefined,
+    regularInstalmentCents:
+      course.planPolicy.mode === "derived_regular"
+        ? course.planPolicy.regularInstalmentCents
+        : undefined,
     firstPaymentDate: body.plan?.firstPaymentDate || defaultFirstPaymentDate(),
   };
 
-  if (
-    plan.numberOfInstalments < tenant.checkout.minInstalments ||
-    plan.numberOfInstalments > tenant.checkout.maxInstalments
-  ) {
-    return jsonError(400, "VALIDATION_ERROR", "Instalment count is outside the allowed range.");
-  }
-
-  if (!tenant.checkout.availableFrequencies.includes(plan.frequency)) {
-    return jsonError(400, "VALIDATION_ERROR", "That payment frequency is not available.");
+  if (course.planPolicy.mode === "student_selected_equal") {
+    const count = plan.numberOfInstalments || 0;
+    const min = tenant.checkout.minInstalments ?? 1;
+    const max = tenant.checkout.maxInstalments ?? GENERIC_MAX_RECURRING_INSTALMENTS;
+    if (count < min || count > max) {
+      return jsonError(400, "VALIDATION_ERROR", "Instalment count is outside the allowed range.");
+    }
+    if (!tenant.checkout.availableFrequencies.includes(plan.frequency)) {
+      return jsonError(400, "VALIDATION_ERROR", "That payment frequency is not available.");
+    }
   }
 
   let preview;
   try {
-    preview = previewPlan({
-      coursePriceCents: course.priceCents,
-      upfrontAmountCents: plan.upfrontAmountCents,
-      frequency: plan.frequency,
-      numberOfInstalments: plan.numberOfInstalments,
-      firstPaymentDate: plan.firstPaymentDate,
-    });
+    preview = previewCoursePlan(course, plan);
   } catch (error) {
     return jsonError(
       400,
@@ -181,10 +197,11 @@ export async function POST(request: Request) {
     provider_slug: tenant.slug,
     frequency: preview.frequency,
     instalments: preview.numberOfInstalments,
+    residual: preview.hasResidualFinal,
   });
 
   const upstream = await canonicalCreate({
-    apiBaseUrl: tenant.apiBaseUrl,
+    apiBaseUrl: apiBase.url,
     apiKey: key.apiKey,
     payload,
     idempotencyKey: providerOrderId,
@@ -212,18 +229,25 @@ export async function POST(request: Request) {
   const setupUrl = extractSetupUrl(upstream.body);
   const checkoutId = upstream.body.checkout?.checkout_id || "";
 
-  await writeNzSession({
-    providerSlug: tenant.slug,
-    courseSlug: course.slug,
-    providerOrderId,
-    checkoutId,
-    opportunityId: upstream.body.records?.opportunity_id,
-    ddaId: upstream.body.records?.dda_id || upstream.body.direct_debit?.dda_id,
-    checkoutToken,
-    setupUrl,
-    student,
-    plan,
-  });
+  try {
+    await writeNzSession({
+      providerSlug: tenant.slug,
+      courseSlug: course.slug,
+      providerOrderId,
+      checkoutId,
+      opportunityId: upstream.body.records?.opportunity_id,
+      ddaId: upstream.body.records?.dda_id || upstream.body.direct_debit?.dda_id,
+      checkoutToken,
+      setupUrl,
+      student,
+      plan,
+    });
+  } catch (error) {
+    if (error instanceof NzSessionConfigError) {
+      return jsonError(503, "SESSION_NOT_CONFIGURED");
+    }
+    throw error;
+  }
 
   logNzEnrolmentEvent("checkout_created", {
     provider_slug: tenant.slug,
