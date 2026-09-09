@@ -152,7 +152,9 @@ export type NzPublicCourse = {
 export type CanonicalCheckoutResult = {
   success: boolean;
   idempotentReplay?: boolean;
+  idempotent_replay?: boolean;
   alreadyConfirmed?: boolean;
+  already_confirmed?: boolean;
   requestId?: string;
   error?: {
     code?: string;

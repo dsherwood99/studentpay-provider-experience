@@ -112,13 +112,17 @@ export async function POST(request: Request) {
   logNzEnrolmentEvent("checkout_confirmed", {
     provider_slug: session.providerSlug,
     checkout_id: session.checkoutId,
-    already_confirmed: Boolean(upstream.body.alreadyConfirmed),
+    already_confirmed: Boolean(
+      upstream.body.already_confirmed || upstream.body.alreadyConfirmed,
+    ),
     agreement_number: upstream.body.agreement?.number || null,
   });
 
   return Response.json({
     success: true,
-    already_confirmed: Boolean(upstream.body.alreadyConfirmed),
+    already_confirmed: Boolean(
+      upstream.body.already_confirmed || upstream.body.alreadyConfirmed,
+    ),
     checkout: {
       checkout_id: session.checkoutId,
       status: upstream.body.checkout?.status || "confirmed",

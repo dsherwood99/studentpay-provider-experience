@@ -91,6 +91,12 @@ export async function POST(request: Request) {
   }
 
   const { tenant, course } = resolved;
+  const existing = await readNzSession();
+  const mismatch = assertSessionTenant(existing, providerSlug, courseSlug);
+  if (mismatch) {
+    return mismatch;
+  }
+
   const key = requireTenantKey(tenant);
   if (key.error || !key.apiKey) {
     logNzEnrolmentEvent("checkout_failed", {
@@ -110,12 +116,6 @@ export async function POST(request: Request) {
     return jsonError(400, "INVALID_STUDENT", undefined, {
       invalid_fields: studentErrors,
     });
-  }
-
-  const existing = await readNzSession();
-  const mismatch = assertSessionTenant(existing, providerSlug, courseSlug);
-  if (mismatch) {
-    return mismatch;
   }
 
   const plan: NzPlanSelection = {
@@ -229,7 +229,9 @@ export async function POST(request: Request) {
     provider_slug: tenant.slug,
     provider_order_id: providerOrderId,
     checkout_id: checkoutId,
-    idempotent_replay: Boolean(upstream.body.idempotentReplay),
+    idempotent_replay: Boolean(
+      upstream.body.idempotent_replay || upstream.body.idempotentReplay,
+    ),
     request_id: upstream.body.requestId || null,
   });
   logNzEnrolmentEvent("dda_started", {
@@ -239,7 +241,9 @@ export async function POST(request: Request) {
 
   return Response.json({
     success: true,
-    idempotent_replay: Boolean(upstream.body.idempotentReplay),
+    idempotent_replay: Boolean(
+      upstream.body.idempotent_replay || upstream.body.idempotentReplay,
+    ),
     checkout: {
       checkout_id: checkoutId,
       status: upstream.body.checkout?.status,
