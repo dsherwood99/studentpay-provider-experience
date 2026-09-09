@@ -85,6 +85,17 @@ Salesforce `Hosted_Enrolment_Enabled__c` and `Catalogue_Enabled__c` still contro
 curl http://localhost:3000/api/studentpay/provider-checkouts
 ```
 
+## NZ Enrolment Checkout
+
+Generic StudentPay-hosted NZ enrolment over canonical `/v1`.
+
+- `/enrol/oli`
+- `/enrol/oli/certification-course`
+- `/enrol/fixture-institute/example-certificate`
+
+See [docs/enrolment-checkout.md](docs/enrolment-checkout.md). Provider API keys stay
+server-side. Do not set `NEXT_PUBLIC_PROVIDER_API_KEY_*`.
+
 ## Scripts
 
 ```bash

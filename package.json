@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/lib/provider-experience/*.test.ts"
+    "test": "node --experimental-strip-types --test src/lib/provider-experience/*.test.ts src/lib/nz-enrolment/*.test.ts"
   },
   "dependencies": {
     "lucide-react": "^1.33.0",

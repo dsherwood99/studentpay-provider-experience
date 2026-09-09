@@ -1,8 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 import { CatalogueUnavailable } from "@/components/courses/CatalogueUnavailable";
 import { EnrolmentWizard } from "@/components/enrolment/EnrolmentWizard";
+import { NzEnrolmentCheckout } from "@/components/nz-enrolment/EnrolmentCheckout";
 import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
+import { getNzCourse, toPublicCourse } from "@/lib/nz-enrolment/courses";
+import { getNzTenantBySlug, toPublicTenant } from "@/lib/nz-enrolment/tenants";
 import { isCatalogueProvider } from "@/lib/provider-experience/catalogue";
 import { getCatalogueCourse } from "@/lib/provider-experience/catalogue-server";
 import { getProviderExperienceConfig } from "@/lib/provider-experience/checkout";
@@ -16,6 +19,7 @@ type EnrolmentPageProps = {
   }>;
   searchParams: Promise<{
     payment?: string;
+    dda?: string;
   }>;
 };
 
@@ -24,7 +28,21 @@ export default async function EnrolmentPage({
   searchParams,
 }: EnrolmentPageProps) {
   const { providerSlug, courseSlug } = await params;
-  const { payment } = await searchParams;
+  const { payment, dda } = await searchParams;
+  const nzTenant = getNzTenantBySlug(providerSlug);
+  const nzCourse = nzTenant ? getNzCourse(providerSlug, courseSlug) : undefined;
+
+  if (nzTenant && nzCourse) {
+    const ddaReturn = dda === "return" || dda === "cancelled" ? dda : null;
+    return (
+      <NzEnrolmentCheckout
+        tenant={toPublicTenant(nzTenant)}
+        course={toPublicCourse(nzCourse)}
+        ddaReturn={ddaReturn}
+      />
+    );
+  }
+
   const config = getProviderExperienceConfig();
 
   if (isProviderSlugBlockedByDeployment(providerSlug)) {
