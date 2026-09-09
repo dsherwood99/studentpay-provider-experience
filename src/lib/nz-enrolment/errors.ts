@@ -14,6 +14,15 @@ const SAFE_MESSAGES: Record<string, string> = {
   SESSION_EXPIRED: "Your enrolment session expired. Please start again.",
   TENANT_MISMATCH: "This enrolment belongs to a different provider.",
   PAY_IN_FULL_UNAVAILABLE: "Pay in full is not available yet. Choose a payment plan to continue.",
+  NZ_HOSTED_PRODUCT_DISABLED: "This enrolment page is not available on this host.",
+  STUDENTPAY_ENV_REQUIRED: "This enrolment page is not configured yet. Please try again later.",
+  NZ_API_BASE_REQUIRED: "This enrolment page is not configured yet. Please try again later.",
+  NZ_API_PRODUCTION_SANDBOX_MISMATCH:
+    "This enrolment page is not configured yet. Please try again later.",
+  NZ_API_PRODUCTION_INVALID: "This enrolment page is not configured yet. Please try again later.",
+  NZ_API_SANDBOX_PRODUCTION_MISMATCH:
+    "This enrolment page is not configured yet. Please try again later.",
+  SESSION_NOT_CONFIGURED: "This enrolment page is not configured yet. Please try again later.",
 };
 
 export function hostedErrorMessage(

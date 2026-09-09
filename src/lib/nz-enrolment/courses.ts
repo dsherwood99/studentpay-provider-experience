@@ -1,13 +1,8 @@
-import type { NzCourse } from "./types.ts";
+import { allowSandboxFixtures } from "./environment.ts";
+import oliProduction from "./catalogues/oli-production.json" with { type: "json" };
+import type { NzCourse, NzPlanPolicy, NzPublicCourse } from "./types.ts";
 
-/**
- * Lightweight NZ hosted course catalogue.
- * Salesforce NZ has no Course/Product catalogue for OLI, so this config is the
- * hosted source of truth for launch. Canonical /v1 still validates the maths.
- *
- * OLI course amounts are a sandbox certification fixture, not a live price list.
- */
-export const NZ_COURSES: readonly NzCourse[] = [
+const SANDBOX_FIXTURE_COURSES: readonly NzCourse[] = [
   {
     courseCode: "OLI_SANDBOX_CERT_COURSE",
     slug: "certification-course",
@@ -15,13 +10,16 @@ export const NZ_COURSES: readonly NzCourse[] = [
     name: "Sandbox Certification Course",
     description:
       "StudentPay NZ sandbox certification course for Online Learning Institute hosted enrolment. Not a live student offering.",
-    priceCents: 120_000,
+    paymentPlanCourseFeeCents: 120_000,
+    paymentInFullCourseFeeCents: 120_000,
     status: "active",
+    sandboxOnly: true,
     duration: "Self-paced",
-    planDefaults: {
-      upfrontAmountCents: 0,
+    planPolicy: {
+      mode: "derived_regular",
       frequency: "Weekly",
-      numberOfInstalments: 48,
+      regularInstalmentCents: 2500,
+      upfrontAmountCents: 0,
     },
   },
   {
@@ -31,20 +29,71 @@ export const NZ_COURSES: readonly NzCourse[] = [
     name: "Example Certificate",
     description:
       "Generic fixture course used to prove Enrolment Checkout is tenant-configured, not OLI-hardcoded.",
-    priceCents: 120_000,
+    paymentPlanCourseFeeCents: 120_000,
+    paymentInFullCourseFeeCents: 120_000,
     status: "active",
-    planDefaults: {
-      upfrontAmountCents: 0,
+    sandboxOnly: true,
+    planPolicy: {
+      mode: "student_selected_equal",
       frequency: "Monthly",
       numberOfInstalments: 12,
+      upfrontAmountCents: 0,
     },
   },
 ];
 
+function asCourse(row: {
+  courseCode: string;
+  slug: string;
+  providerSlug: string;
+  name: string;
+  category?: string;
+  description: string;
+  paymentInFullCourseFeeCents: number;
+  paymentPlanCourseFeeCents: number;
+  status: "active" | "inactive";
+  sandboxOnly?: boolean;
+  sourceRow?: number;
+  planPolicy: NzPlanPolicy;
+}): NzCourse {
+  return {
+    courseCode: row.courseCode,
+    slug: row.slug,
+    providerSlug: row.providerSlug,
+    name: row.name,
+    category: row.category,
+    description: row.description,
+    paymentInFullCourseFeeCents: row.paymentInFullCourseFeeCents,
+    paymentPlanCourseFeeCents: row.paymentPlanCourseFeeCents,
+    status: row.status,
+    sandboxOnly: row.sandboxOnly,
+    sourceRow: row.sourceRow,
+    planPolicy: row.planPolicy,
+  };
+}
+
+const OLI_PRODUCTION_COURSES: readonly NzCourse[] = (
+  oliProduction as Array<Parameters<typeof asCourse>[0]>
+).map(asCourse);
+
+function courseVisible(course: NzCourse): boolean {
+  if (course.status !== "active") {
+    return false;
+  }
+  if (course.sandboxOnly) {
+    return allowSandboxFixtures();
+  }
+  return true;
+}
+
+export function listConfiguredNzCourses(): NzCourse[] {
+  return [...SANDBOX_FIXTURE_COURSES, ...OLI_PRODUCTION_COURSES];
+}
+
 export function getNzCoursesForProvider(providerSlug: string): NzCourse[] {
   const slug = providerSlug.trim().toLowerCase();
-  return NZ_COURSES.filter(
-    (course) => course.providerSlug === slug && course.status === "active",
+  return listConfiguredNzCourses().filter(
+    (course) => course.providerSlug === slug && courseVisible(course),
   );
 }
 
@@ -54,22 +103,37 @@ export function getNzCourse(
 ): NzCourse | undefined {
   const provider = providerSlug.trim().toLowerCase();
   const course = courseSlug.trim().toLowerCase();
-  return NZ_COURSES.find(
-    (item) =>
-      item.providerSlug === provider &&
-      item.slug === course &&
-      item.status === "active",
+  const found = listConfiguredNzCourses().find(
+    (item) => item.providerSlug === provider && item.slug === course,
   );
+  return found && courseVisible(found) ? found : undefined;
 }
 
-export function toPublicCourse(course: NzCourse) {
+export function toPublicCourse(course: NzCourse): NzPublicCourse {
+  const planDefaults =
+    course.planPolicy.mode === "derived_regular"
+      ? {
+          upfrontAmountCents: course.planPolicy.upfrontAmountCents,
+          frequency: course.planPolicy.frequency,
+          regularInstalmentCents: course.planPolicy.regularInstalmentCents,
+        }
+      : {
+          upfrontAmountCents: course.planPolicy.upfrontAmountCents,
+          frequency: course.planPolicy.frequency,
+          numberOfInstalments: course.planPolicy.numberOfInstalments,
+        };
+
   return {
     slug: course.slug,
     courseCode: course.courseCode,
     name: course.name,
+    category: course.category,
     description: course.description,
-    priceCents: course.priceCents,
+    priceCents: course.paymentPlanCourseFeeCents,
+    paymentPlanCourseFeeCents: course.paymentPlanCourseFeeCents,
+    paymentInFullCourseFeeCents: course.paymentInFullCourseFeeCents,
     duration: course.duration,
-    planDefaults: course.planDefaults,
+    planPolicy: course.planPolicy,
+    planDefaults,
   };
 }

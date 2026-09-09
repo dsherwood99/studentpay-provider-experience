@@ -23,11 +23,29 @@ export type NzPaymentOptions = {
   };
 };
 
+export type NzDerivedRegularPlanPolicy = {
+  mode: "derived_regular";
+  frequency: NzPaymentFrequency;
+  regularInstalmentCents: number;
+  upfrontAmountCents: number;
+};
+
+export type NzStudentSelectedEqualPlanPolicy = {
+  mode: "student_selected_equal";
+  frequency: NzPaymentFrequency;
+  numberOfInstalments: number;
+  upfrontAmountCents: number;
+};
+
+export type NzPlanPolicy =
+  | NzDerivedRegularPlanPolicy
+  | NzStudentSelectedEqualPlanPolicy;
+
 export type NzTenantCheckoutConfig = {
   paymentOptions: NzPaymentOptions;
   availableFrequencies: readonly NzPaymentFrequency[];
-  minInstalments: number;
-  maxInstalments: number;
+  minInstalments?: number;
+  maxInstalments?: number;
   defaultFrequency: NzPaymentFrequency;
   wording?: {
     ddaLead?: string;
@@ -51,14 +69,15 @@ export type NzTenant = {
   checkout: NzTenantCheckoutConfig;
   /** Server-only env var holding the provider API key. Never NEXT_PUBLIC_. */
   apiKeyEnv: string;
-  apiBaseUrl: string;
   active: boolean;
+  sandboxOnly?: boolean;
 };
 
 export type NzCoursePlanDefaults = {
   upfrontAmountCents: number;
   frequency: NzPaymentFrequency;
-  numberOfInstalments: number;
+  numberOfInstalments?: number;
+  regularInstalmentCents?: number;
 };
 
 export type NzCourse = {
@@ -66,11 +85,17 @@ export type NzCourse = {
   slug: string;
   providerSlug: string;
   name: string;
+  category?: string;
   description: string;
-  priceCents: number;
+  /** Launch canonical course_price: Payment Plan Course Fee. */
+  paymentPlanCourseFeeCents: number;
+  /** Payment in Full of Course Fees. Not a payment-plan upfront/deposit. */
+  paymentInFullCourseFeeCents: number;
   status: "active" | "inactive";
+  sandboxOnly?: boolean;
   duration?: string;
-  planDefaults: NzCoursePlanDefaults;
+  planPolicy: NzPlanPolicy;
+  sourceRow?: number;
 };
 
 export type NzStudentDetails = {
@@ -91,7 +116,8 @@ export type NzPlanSelection = {
   paymentOption: NzPaymentOptionId;
   upfrontAmountCents: number;
   frequency: NzPaymentFrequency;
-  numberOfInstalments: number;
+  numberOfInstalments?: number;
+  regularInstalmentCents?: number;
   firstPaymentDate: string;
 };
 
@@ -101,7 +127,13 @@ export type NzPlanPreview = {
   amountToFinanceCents: number;
   frequency: NzPaymentFrequency;
   numberOfInstalments: number;
+  /** Regular / recurring instalment. Existing equal-plan clients read this. */
   instalmentAmountCents: number;
+  regularInstalmentAmountCents: number;
+  /** Residual final instalment, or null when every instalment is regular. */
+  finalInstalmentAmountCents: number | null;
+  fullRegularInstalmentCount: number;
+  hasResidualFinal: boolean;
   firstPaymentDate: string;
   totalPayableCents: number;
 };
@@ -132,8 +164,8 @@ export type NzPublicTenant = {
   checkout: {
     paymentOptions: NzPaymentOptions;
     availableFrequencies: readonly NzPaymentFrequency[];
-    minInstalments: number;
-    maxInstalments: number;
+    minInstalments?: number;
+    maxInstalments?: number;
     defaultFrequency: NzPaymentFrequency;
     wording?: NzTenantCheckoutConfig["wording"];
   };
@@ -143,9 +175,13 @@ export type NzPublicCourse = {
   slug: string;
   courseCode: string;
   name: string;
+  category?: string;
   description: string;
   priceCents: number;
+  paymentPlanCourseFeeCents: number;
+  paymentInFullCourseFeeCents: number;
   duration?: string;
+  planPolicy: NzPlanPolicy;
   planDefaults: NzCoursePlanDefaults;
 };
 

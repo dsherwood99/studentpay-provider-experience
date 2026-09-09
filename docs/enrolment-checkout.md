@@ -57,9 +57,10 @@ AU `studentpay-api` is not the NZ enrolment API.
 
 Examples:
 
-- `/enrol/oli` → redirects to the single active OLI course
-- `/enrol/oli/certification-course`
-- `/enrol/fixture-institute/example-certificate`
+- `/enrol/oli` → course picker for the environment-visible OLI catalogue
+- `/enrol/oli/certificate-in-psychology-counselling`
+- `/enrol/oli/certification-course` (sandbox fixture only)
+- `/enrol/fixture-institute/example-certificate` (sandbox only)
 
 Do not add `/enrol/oli-hardcoded-page`.
 
@@ -81,33 +82,46 @@ Source of truth:
 | Commercial provider identity, PIC, API enabled, branding colours | Salesforce `Provider_Integration_Config__c` (canonical `/v1`) |
 | Hosted slug, copy, course list, default plan, feature flags | App config in `src/lib/nz-enrolment/` |
 | Provider API secret | Server env `PROVIDER_API_KEY_{PROVIDER_CODE}` (or tenant `apiKeyEnv`) |
+| NZ API host | Server env `NZ_STUDENTPAY_API_BASE_URL` (never tenant-hardcoded) |
+| Application environment | Server env `STUDENTPAY_ENV=sandbox` or `STUDENTPAY_ENV=production` |
+| Hosted product | Server env `HOSTED_PRODUCT_MODE=nz_enrolment` |
 
 Add a provider by:
 
 1. Creating sandbox Account + PIC with a unique `provider_code`
 2. Setting `PROVIDER_API_KEY_{CODE}` on **sandbox** NZ API
-3. Adding a tenant object to `src/lib/nz-enrolment/tenants.ts`
-4. Adding one or more courses in `src/lib/nz-enrolment/courses.ts`
-5. Setting the same key on the hosted app (server-only)
+3. Adding a tenant object to `src/lib/nz-enrolment/tenants.ts` (no `apiBaseUrl`)
+4. Adding courses in the generic catalogue (`courses.ts` / `catalogues/`)
+5. Setting the same key on the dedicated NZ hosted app (server-only)
 6. Pointing success/cancel URLs at `/enrol/{slug}/{course}`
 
 Do not add `if (provider === '…')` in checkout components.
+Do not select API environment by provider.
+Do not infer sandbox vs production solely from `NODE_ENV` or Vercel Preview.
 
 ---
 
 ## Course configuration
 
-NZ Salesforce currently has no OLI course catalogue object. Launch uses a
-lightweight config catalogue:
+Approved OLI Production courses come from `data/oli/2608-course-list-and-fees.csv`.
+See `data/oli/README.md` and `docs/artefacts/oli-course-reconciliation.md`.
 
-- stable `course_code`
-- provider slug relationship
-- public slug, name, description
-- price in integer cents
-- active/inactive
-- default upfront / frequency / instalment count
+Each course stores two commercial prices:
 
-The hosted UI may preview maths. Canonical `/v1` is authoritative.
+- **Payment Plan Course Fee** — canonical `course_price` / amount financed for this launch
+- **Payment in Full of Course Fees** — CSV “Upfront Payment of Course Fee”. This is **not** a payment-plan deposit. Pay-in-full processing is out of scope.
+
+OLI payment-plan rule (generic derived-regular policy, not an OLI branch):
+
+- frequency: Weekly
+- regular instalment: $25.00
+- payment-plan upfront: $0.00
+- final instalment: exact residual below $25 when the financed amount is not divisible by $25
+- no extra $0.00 row when it divides evenly
+
+The hosted UI may preview maths. Canonical `/v1` remains arithmetic authority. Salesforce `ChargeScheduleOriginationService` already originates amount-conserving residual finals from Opportunity Amount + `Value_of_Each_Instalment__c`.
+
+Sandbox fixtures (`OLI_SANDBOX_CERT_COURSE`, `fixture-institute`) remain available only when `STUDENTPAY_ENV=sandbox`.
 
 ---
 
@@ -184,8 +198,50 @@ course is a certification fixture, not a live offering.
 
 ## Adding a course
 
-Edit `src/lib/nz-enrolment/courses.ts` with `providerSlug`, `courseCode`,
-`slug`, `priceCents`, `status`, and `planDefaults` that divide evenly in cents.
+For OLI Production courses, update the approved CSV and regenerate:
+
+```
+python3 scripts/generate-oli-catalogue.py
+```
+
+For a future provider, add a tenant in `tenants.ts` and courses in the generic catalogue using the same two-price + `planPolicy` schema.
+
+Sandbox-only certification fixtures stay in `courses.ts` with `sandboxOnly: true`.
+
+---
+
+## Environment, host, and secrets
+
+Dedicated NZ Enrolment Checkout (intended Production host `enrol.studentpay.co.nz`) must set:
+
+| Env | Purpose | Fail-closed |
+|---|---|---|
+| `HOSTED_PRODUCT_MODE=nz_enrolment` | Enables `/enrol/*` NZ routes | Missing → NZ routes 404 on Bela/Academy/generic hosts |
+| `STUDENTPAY_ENV=sandbox\|production` | Fixture vs approved catalogue | Missing on NZ host → 503 |
+| `NZ_STUDENTPAY_API_BASE_URL` | Sandbox: `https://sandbox-api.studentpay.co.nz`. Production: `https://api.studentpay.co.nz` | Production + sandbox URL or missing → 503 |
+| `NZ_ENROLMENT_SESSION_SECRET` | HttpOnly session HMAC | Production missing/short → 503; no dev fallback |
+| `PROVIDER_API_KEY_OLI_NZ` | Server-side provider key | Create/confirm 503 |
+
+Bela Production (`STUDENTPAY_PROVIDER_CODE=BELA`) and Academy (`ACADEMYAU`) are not NZ hosted product deployments. NZ routes must not render there.
+
+Cookie: HttpOnly, host-only (`path=/`), SameSite=Lax, Secure when `STUDENTPAY_ENV=production` or `NODE_ENV=production`.
+
+Instalment ceiling: generic 400 recurring schedules, matching Salesforce `ChargeScheduleOriginationService.MAX_RECURRING_SCHEDULES`. Not a 4–52 demo cap and not hardcoded to OLI’s current 207.
+
+---
+
+## OLI first tenant
+
+| Field | Value |
+|---|---|
+| Slug | `oli` |
+| Provider code | `OLI_NZ` |
+| Production Account (read-only) | Online Learning Institute `001RE00000kov0dYAA` |
+| Production PIC | None yet. Do not create in this phase. |
+| Production catalogue | 64 CSV courses |
+| Sandbox fixture | `OLI_SANDBOX_CERT_COURSE` $1,200 / 48 × $25 / $0 upfront |
+
+CSV course codes TRA101–TRA104 are duplicated across Personal Training and Trades. Hosted slugs are unique course names. Codes were not invented.
 
 ---
 
@@ -209,19 +265,20 @@ Suggested unique order id: `OLI-HOSTED-CERT-20260909-001` (confirm unused first)
 
 Do not execute in this phase.
 
-- Production Account already exists: Online Learning Institute `001RE00000kov0dYAA`
-- Create Production PIC `OLI_NZ`, Active, API enabled, Environment=Production
-- Issue Production `PROVIDER_API_KEY_OLI_NZ` (never copy sandbox)
-- Hosted production domain (new NZ Enrolment Checkout Vercel project or alias)
-- Real course list and prices from OLI
-- PIC branding, support, privacy/terms URLs
-- success/cancel URLs on the production host
-- Live GoCardless (already on NZ Production API; do not reuse sandbox)
-- Salesforce identity already used by NZ Production API
-- Deploy hosted app to production only after sandbox certification
-- First controlled Production canary, then cancel/neutralise like Bela
-- Monitoring on structured `enrolment_checkout` log events
-- Rollback: disable PIC `API_Enabled__c` and remove Production key
+Remaining Production-only writes:
+
+- Dedicated Vercel project linked to this repo (do not reuse Bela or Academy)
+- Assign `enrol.studentpay.co.nz`
+- `HOSTED_PRODUCT_MODE=nz_enrolment`
+- `STUDENTPAY_ENV=production`
+- `NZ_STUDENTPAY_API_BASE_URL=https://api.studentpay.co.nz`
+- Production PIC `OLI_NZ` on Account `001RE00000kov0dYAA`
+- Production `PROVIDER_API_KEY_OLI_NZ` (never copy sandbox)
+- Production `NZ_ENROLMENT_SESSION_SECRET`
+- PIC success/cancel URLs on the dedicated host
+- Controlled Production canary, then cancel/neutralise like Bela
+
+Rollback: disable PIC `API_Enabled__c` and remove the Production key.
 
 ---
 
@@ -231,4 +288,7 @@ Hosted 4xx messages are mapped. Raw Salesforce ids, stack traces, and API keys
 must not appear in the browser. Server logs may include `request_id`,
 `checkout_id`, and `provider_order_id`.
 
-Pay in full is modelled (`pay_in_full.comingSoon`) and must not block launch.
+Pay in full is modelled as **Payment in Full of Course Fees** (`comingSoon`) and
+must not block launch. It is not a payment-plan upfront payment. No Stripe or
+other pay-in-full processor is included.
+

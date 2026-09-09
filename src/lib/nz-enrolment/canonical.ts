@@ -5,6 +5,7 @@ import {
 import type {
   CanonicalCheckoutResult,
   NzCourse,
+  NzPlanPreview,
   NzPlanSelection,
   NzStudentDetails,
   NzTenant,
@@ -48,8 +49,37 @@ export type CanonicalCreatePayload = {
     number_of_instalments: number;
     instalment_amount: number;
     first_payment_date: string;
+    regular_instalment_amount: number;
+    final_instalment_amount?: number;
   };
 };
+
+export function previewCoursePlan(
+  course: NzCourse,
+  selection: Partial<NzPlanSelection> & { firstPaymentDate: string },
+): NzPlanPreview {
+  const policy = course.planPolicy;
+
+  if (policy.mode === "derived_regular") {
+    return previewPlan({
+      coursePriceCents: course.paymentPlanCourseFeeCents,
+      upfrontAmountCents: policy.upfrontAmountCents,
+      frequency: policy.frequency,
+      regularInstalmentCents: policy.regularInstalmentCents,
+      firstPaymentDate: selection.firstPaymentDate,
+    });
+  }
+
+  return previewPlan({
+    coursePriceCents: course.paymentPlanCourseFeeCents,
+    upfrontAmountCents:
+      selection.upfrontAmountCents ?? policy.upfrontAmountCents,
+    frequency: selection.frequency || policy.frequency,
+    numberOfInstalments:
+      selection.numberOfInstalments ?? policy.numberOfInstalments,
+    firstPaymentDate: selection.firstPaymentDate,
+  });
+}
 
 export function buildCanonicalCreatePayload(input: {
   tenant: NzTenant;
@@ -64,13 +94,24 @@ export function buildCanonicalCreatePayload(input: {
     throw new Error("Only interest-free payment plans are enabled.");
   }
 
-  const preview = previewPlan({
-    coursePriceCents: input.course.priceCents,
-    upfrontAmountCents: input.plan.upfrontAmountCents,
-    frequency: input.plan.frequency,
-    numberOfInstalments: input.plan.numberOfInstalments,
-    firstPaymentDate: input.plan.firstPaymentDate,
-  });
+  const preview = previewCoursePlan(input.course, input.plan);
+
+  const plan: CanonicalCreatePayload["plan"] = {
+    payment_type: "interest_free_payment_plan",
+    payment_frequency: preview.frequency,
+    number_of_instalments: preview.numberOfInstalments,
+    instalment_amount: centsToApiAmount(preview.regularInstalmentAmountCents),
+    first_payment_date: preview.firstPaymentDate,
+    regular_instalment_amount: centsToApiAmount(
+      preview.regularInstalmentAmountCents,
+    ),
+  };
+
+  if (preview.finalInstalmentAmountCents != null) {
+    plan.final_instalment_amount = centsToApiAmount(
+      preview.finalInstalmentAmountCents,
+    );
+  }
 
   return {
     provider: {
@@ -104,13 +145,7 @@ export function buildCanonicalCreatePayload(input: {
       upfront_payment: centsToApiAmount(preview.upfrontAmountCents),
       amount_to_finance: centsToApiAmount(preview.amountToFinanceCents),
     },
-    plan: {
-      payment_type: "interest_free_payment_plan",
-      payment_frequency: preview.frequency,
-      number_of_instalments: preview.numberOfInstalments,
-      instalment_amount: centsToApiAmount(preview.instalmentAmountCents),
-      first_payment_date: preview.firstPaymentDate,
-    },
+    plan,
   };
 }
 

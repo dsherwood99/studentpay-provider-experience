@@ -1,6 +1,7 @@
 import { jsonError } from "@/lib/nz-enrolment/errors";
 import {
   readNzSession,
+  requireNzApiBaseUrl,
   resolveCourseContext,
 } from "@/lib/nz-enrolment/request-context";
 
@@ -20,6 +21,11 @@ export async function GET(request: Request) {
     return resolved.error || jsonError(404, "PROVIDER_NOT_FOUND");
   }
 
+  const apiBase = requireNzApiBaseUrl();
+  if ("error" in apiBase) {
+    return apiBase.error;
+  }
+
   const url = new URL(request.url);
   const kind = url.searchParams.get("kind") === "direct-debit" ? "direct-debit" : "payment-plan";
 
@@ -29,7 +35,7 @@ export async function GET(request: Request) {
       : `/legal/payment-plan-terms?token=${encodeURIComponent(session.checkoutToken)}`;
 
   const upstream = await fetch(
-    `${resolved.tenant.apiBaseUrl.replace(/\/$/, "")}${upstreamPath}`,
+    `${apiBase.url.replace(/\/$/, "")}${upstreamPath}`,
     {
       method: "GET",
       headers: { Accept: "text/html" },

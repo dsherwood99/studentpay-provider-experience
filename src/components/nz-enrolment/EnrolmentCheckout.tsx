@@ -63,11 +63,13 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn }: Props) {
   const [student, setStudent] = useState<NzStudentDetails>(emptyStudent);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [upfrontAmountCents, setUpfrontAmountCents] = useState(
-    course.planDefaults.upfrontAmountCents,
+    course.planPolicy.upfrontAmountCents,
   );
-  const [frequency, setFrequency] = useState(course.planDefaults.frequency);
+  const [frequency, setFrequency] = useState(course.planPolicy.frequency);
   const [numberOfInstalments, setNumberOfInstalments] = useState(
-    course.planDefaults.numberOfInstalments,
+    course.planPolicy.mode === "student_selected_equal"
+      ? course.planPolicy.numberOfInstalments
+      : 0,
   );
   const [firstPaymentDate, setFirstPaymentDate] = useState(defaultFirstPaymentDate());
   const [busy, setBusy] = useState(false);
@@ -83,10 +85,20 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn }: Props) {
   const errorRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
+  const derivedPlan = course.planPolicy.mode === "derived_regular";
   const preview: NzPlanPreview | null = useMemo(() => {
     try {
+      if (course.planPolicy.mode === "derived_regular") {
+        return previewPlan({
+          coursePriceCents: course.paymentPlanCourseFeeCents,
+          upfrontAmountCents: course.planPolicy.upfrontAmountCents,
+          frequency: course.planPolicy.frequency,
+          regularInstalmentCents: course.planPolicy.regularInstalmentCents,
+          firstPaymentDate,
+        });
+      }
       return previewPlan({
-        coursePriceCents: course.priceCents,
+        coursePriceCents: course.paymentPlanCourseFeeCents,
         upfrontAmountCents,
         frequency,
         numberOfInstalments,
@@ -95,7 +107,13 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn }: Props) {
     } catch {
       return null;
     }
-  }, [course.priceCents, upfrontAmountCents, frequency, numberOfInstalments, firstPaymentDate]);
+  }, [
+    course,
+    upfrontAmountCents,
+    frequency,
+    numberOfInstalments,
+    firstPaymentDate,
+  ]);
 
   useEffect(() => {
     headingRef.current?.focus();
@@ -242,7 +260,8 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn }: Props) {
             <p className={styles.kicker}>Enrolment Checkout · StudentPay NZ</p>
             <h1>{course.name}</h1>
             <p>
-              {tenant.displayName} · {formatNzdFromCents(course.priceCents)}
+              {tenant.displayName} · Payment Plan Course Fee{" "}
+              {formatNzdFromCents(course.paymentPlanCourseFeeCents)}
             </p>
           </div>
         </header>
@@ -382,23 +401,29 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn }: Props) {
                 Choose how to pay
               </h2>
               <p className={styles.lead}>
-                Interest-free payment plans are available now. Pay in full is coming next.
+                Interest-free payment plans are available now. Payment in Full of
+                Course Fees is a separate whole-course price and is not offered in
+                this checkout yet.
               </p>
               <div className={styles.options}>
                 <label className={styles.option}>
                   <input type="radio" name="payment-option" defaultChecked />
                   <span>
                     <strong>Interest-free payment plan</strong>
-                    Split the course fee into equal instalments after any optional upfront
-                    amount.
+                    Pay the Payment Plan Course Fee of{" "}
+                    {formatNzdFromCents(course.paymentPlanCourseFeeCents)}
+                    {derivedPlan
+                      ? " in weekly StudentPay instalments. There is no payment-plan deposit."
+                      : ", split into instalments after any optional payment-plan deposit."}
                   </span>
                 </label>
                 <div className={styles.option} data-disabled="true">
                   <input type="radio" name="payment-option-full" disabled />
                   <span>
-                    <strong>Pay in full</strong>
+                    <strong>Payment in Full of Course Fees</strong>{" "}
+                    {formatNzdFromCents(course.paymentInFullCourseFeeCents)}.
                     {payInFull.comingSoon
-                      ? " Not available on this checkout yet."
+                      ? " Not a payment-plan deposit. Not available on this checkout yet."
                       : " Unavailable."}
                   </span>
                 </div>
@@ -428,54 +453,74 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn }: Props) {
                 Payment plan details
               </h2>
               <p className={styles.lead}>
-                StudentPay NZ checks these amounts. They must divide evenly in cents.
+                {derivedPlan
+                  ? "StudentPay NZ derives this weekly plan from the Payment Plan Course Fee. Canonical /v1 is the arithmetic authority."
+                  : "StudentPay NZ checks these amounts in integer cents."}
               </p>
-              <div className={styles.grid}>
-                <TextField
-                  label="Upfront payment (NZD)"
-                  name="upfront"
-                  type="number"
-                  value={String(upfrontAmountCents / 100)}
-                  onChange={(value) =>
-                    setUpfrontAmountCents(Math.round(Number(value || 0) * 100))
-                  }
-                />
-                <label className={styles.field}>
-                  <span>Frequency</span>
-                  <select
-                    value={frequency}
-                    onChange={(event) =>
-                      setFrequency(event.target.value as typeof frequency)
+              {derivedPlan ? (
+                <p className={styles.note}>
+                  Weekly instalments of $25.00. If the Payment Plan Course Fee does not
+                  divide evenly, the final instalment is the exact remaining balance.
+                  Payment-plan upfront is $0.00.
+                </p>
+              ) : (
+                <div className={styles.grid}>
+                  <TextField
+                    label="Payment-plan deposit (NZD)"
+                    name="upfront"
+                    type="number"
+                    value={String(upfrontAmountCents / 100)}
+                    onChange={(value) =>
+                      setUpfrontAmountCents(Math.round(Number(value || 0) * 100))
                     }
-                  >
-                    {tenant.checkout.availableFrequencies.map((item) => (
-                      <option key={item} value={item}>
-                        {item}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <TextField
-                  label="Number of instalments"
-                  name="instalments"
-                  type="number"
-                  value={String(numberOfInstalments)}
-                  onChange={(value) => setNumberOfInstalments(Number(value || 0))}
-                />
-                <TextField
-                  label="First payment date"
-                  name="first-payment-date"
-                  type="date"
-                  value={firstPaymentDate}
-                  onChange={setFirstPaymentDate}
-                />
-              </div>
+                  />
+                  <label className={styles.field}>
+                    <span>Frequency</span>
+                    <select
+                      value={frequency}
+                      onChange={(event) =>
+                        setFrequency(event.target.value as typeof frequency)
+                      }
+                    >
+                      {tenant.checkout.availableFrequencies.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <TextField
+                    label="Number of instalments"
+                    name="instalments"
+                    type="number"
+                    value={String(numberOfInstalments)}
+                    onChange={(value) => setNumberOfInstalments(Number(value || 0))}
+                  />
+                  <TextField
+                    label="First payment date"
+                    name="first-payment-date"
+                    type="date"
+                    value={firstPaymentDate}
+                    onChange={setFirstPaymentDate}
+                  />
+                </div>
+              )}
+              {derivedPlan ? (
+                <div className={styles.grid}>
+                  <TextField
+                    label="First payment date"
+                    name="first-payment-date"
+                    type="date"
+                    value={firstPaymentDate}
+                    onChange={setFirstPaymentDate}
+                  />
+                </div>
+              ) : null}
               {preview ? (
                 <PlanSummary preview={preview} />
               ) : (
                 <p className={styles.error} role="alert">
-                  This plan does not divide evenly. Adjust the upfront amount or instalment
-                  count.
+                  This plan cannot be reconciled in integer cents.
                 </p>
               )}
               <div className={styles.actions}>
@@ -705,17 +750,40 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn }: Props) {
 function PlanSummary({ preview }: { preview: NzPlanPreview }) {
   return (
     <dl className={styles.review}>
-      <dt>Course price</dt>
+      <dt>Payment Plan Course Fee</dt>
       <dd>{formatNzdFromCents(preview.coursePriceCents)}</dd>
-      <dt>Upfront payment</dt>
-      <dd>{formatNzdFromCents(preview.upfrontAmountCents)}</dd>
+      {preview.upfrontAmountCents > 0 ? (
+        <>
+          <dt>Payment-plan deposit</dt>
+          <dd>{formatNzdFromCents(preview.upfrontAmountCents)}</dd>
+        </>
+      ) : null}
       <dt>Amount financed</dt>
       <dd>{formatNzdFromCents(preview.amountToFinanceCents)}</dd>
-      <dt>Instalment amount</dt>
-      <dd>{formatNzdFromCents(preview.instalmentAmountCents)}</dd>
-      <dt>Frequency</dt>
-      <dd>{preview.frequency}</dd>
-      <dt>Number of instalments</dt>
+      <dt>Regular payment</dt>
+      <dd>
+        {formatNzdFromCents(preview.regularInstalmentAmountCents)} {preview.frequency.toLowerCase()}
+      </dd>
+      {preview.hasResidualFinal && preview.finalInstalmentAmountCents != null ? (
+        <>
+          <dt>Regular weekly payments</dt>
+          <dd>
+            {preview.fullRegularInstalmentCount} ×{" "}
+            {formatNzdFromCents(preview.regularInstalmentAmountCents)}
+          </dd>
+          <dt>Final payment</dt>
+          <dd>{formatNzdFromCents(preview.finalInstalmentAmountCents)}</dd>
+        </>
+      ) : (
+        <>
+          <dt>Instalments</dt>
+          <dd>
+            {preview.numberOfInstalments} ×{" "}
+            {formatNzdFromCents(preview.regularInstalmentAmountCents)}
+          </dd>
+        </>
+      )}
+      <dt>Total instalments</dt>
       <dd>{preview.numberOfInstalments}</dd>
       <dt>First payment date</dt>
       <dd>{preview.firstPaymentDate}</dd>

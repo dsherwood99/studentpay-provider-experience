@@ -6,6 +6,7 @@ import { jsonError } from "@/lib/nz-enrolment/errors";
 import { logNzEnrolmentEvent } from "@/lib/nz-enrolment/observability";
 import {
   readNzSession,
+  requireNzApiBaseUrl,
   requireTenantKey,
   resolveCourseContext,
   writeNzSession,
@@ -68,6 +69,11 @@ export async function POST(request: Request) {
     return key.error;
   }
 
+  const apiBase = requireNzApiBaseUrl();
+  if ("error" in apiBase) {
+    return apiBase.error;
+  }
+
   logNzEnrolmentEvent("confirm_started", {
     provider_slug: session.providerSlug,
     checkout_id: session.checkoutId,
@@ -85,7 +91,7 @@ export async function POST(request: Request) {
   });
 
   const upstream = await canonicalConfirm({
-    apiBaseUrl: resolved.tenant.apiBaseUrl,
+    apiBaseUrl: apiBase.url,
     apiKey: key.apiKey,
     checkoutId: session.checkoutId,
     payload,

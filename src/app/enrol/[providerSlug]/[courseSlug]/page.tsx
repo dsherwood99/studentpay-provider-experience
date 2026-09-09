@@ -5,6 +5,7 @@ import { NzEnrolmentCheckout } from "@/components/nz-enrolment/EnrolmentCheckout
 import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
 import { getNzCourse, toPublicCourse } from "@/lib/nz-enrolment/courses";
+import { isNzEnrolmentProductAvailable } from "@/lib/nz-enrolment/environment";
 import { getNzTenantBySlug, toPublicTenant } from "@/lib/nz-enrolment/tenants";
 import { isCatalogueProvider } from "@/lib/provider-experience/catalogue";
 import { getCatalogueCourse } from "@/lib/provider-experience/catalogue-server";
@@ -29,7 +30,9 @@ export default async function EnrolmentPage({
 }: EnrolmentPageProps) {
   const { providerSlug, courseSlug } = await params;
   const { payment, dda } = await searchParams;
-  const nzTenant = getNzTenantBySlug(providerSlug);
+  const nzTenant = isNzEnrolmentProductAvailable()
+    ? getNzTenantBySlug(providerSlug)
+    : undefined;
   const nzCourse = nzTenant ? getNzCourse(providerSlug, courseSlug) : undefined;
 
   if (nzTenant && nzCourse) {
