@@ -4,13 +4,45 @@ export type NzPaymentOptionId =
   | "interest_free_payment_plan"
   | "pay_in_full";
 
+export type NzButtonRadius = "pill" | "medium" | "small";
+
+export type NzHeaderNavItem = {
+  label: string;
+  href: string;
+};
+
+export type NzHostedPathStyle = "enrol-slug" | "provider-root";
+
 export type NzTenantBranding = {
   logoPath: string;
   primaryColour: string;
+  secondaryColour?: string;
   accentColour: string;
   backgroundColour: string;
+  surfaceColour?: string;
+  headingColour?: string;
+  mutedTextColour?: string;
   textColour: string;
   fontFamily: string;
+  buttonRadius?: NzButtonRadius;
+  headerStyle?: "provider-native" | "minimal";
+  footerStyle?: "provider-native" | "minimal";
+};
+
+export type NzTenantPresentation = {
+  /** Hosted chrome. Provider-native is the default student experience. */
+  chrome: "provider-native" | "platform";
+  attributionLabel: string;
+  studentPayUrl: string;
+  returnToProviderUrl?: string;
+  returnToProviderLabel?: string;
+  courseUrlPattern?: string;
+  knownCourseWebsiteSlugs?: readonly string[];
+  allowedHosts: readonly string[];
+  headerLinks?: readonly NzHeaderNavItem[];
+  currentHostedOrigin: string;
+  preferredHostedOrigin?: string;
+  preferredPathStyle?: NzHostedPathStyle;
 };
 
 export type NzPaymentOptions = {
@@ -66,6 +98,7 @@ export type NzTenant = {
   termsUrl: string;
   websiteUrl?: string;
   branding: NzTenantBranding;
+  presentation: NzTenantPresentation;
   checkout: NzTenantCheckoutConfig;
   /** Server-only env var holding the provider API key. Never NEXT_PUBLIC_. */
   apiKeyEnv: string;
@@ -161,6 +194,7 @@ export type NzPublicTenant = {
   termsUrl: string;
   websiteUrl?: string;
   branding: NzTenantBranding;
+  presentation: NzTenantPresentation;
   checkout: {
     paymentOptions: NzPaymentOptions;
     availableFrequencies: readonly NzPaymentFrequency[];

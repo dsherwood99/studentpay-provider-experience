@@ -59,4 +59,30 @@ describe("NZ enrolment checkout security", () => {
     }
     assert.deepEqual(hits, []);
   });
+
+  it("keeps generic PE demo navigation out of the provider-native header", () => {
+    const header = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/ProviderNativeHeader.tsx"),
+      "utf8",
+    );
+    const footer = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/ProviderNativeFooter.tsx"),
+      "utf8",
+    );
+    for (const text of [header, footer]) {
+      assert.doesNotMatch(text, /Provider demos/);
+      assert.doesNotMatch(text, /View demo/);
+      assert.doesNotMatch(text, /Enrolment checkout/);
+      assert.doesNotMatch(text, /Developers/);
+    }
+    assert.match(header, /attributionLabel/);
+  });
+
+  it("does not change BFF enrolment-checkout route files in this presentation layer", () => {
+    const bff = path.join(srcRoot, "app/api/enrolment-checkout/route.ts");
+    const text = fs.readFileSync(bff, "utf8");
+    assert.match(text, /sameOriginOrConfigured/);
+    assert.match(text, /writeNzSession/);
+    assert.doesNotMatch(text, /NEXT_PUBLIC_PROVIDER_API_KEY/);
+  });
 });

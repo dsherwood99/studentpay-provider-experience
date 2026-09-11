@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { NZ_ENROLMENT_STEPS, NZ_STUDENT_DETAILS_COPY } from "@/lib/nz-enrolment/checkout-ui";
 import {
   defaultFirstPaymentDate,
   formatNzdFromCents,
   previewPlan,
 } from "@/lib/nz-enrolment/plan-math";
+import {
+  providerCourseWebsiteUrl,
+  safeReturnToProviderUrl,
+  tenantCssVars,
+} from "@/lib/nz-enrolment/presentation";
 import type {
   NzPlanPreview,
   NzPublicCourse,
@@ -15,24 +21,9 @@ import type {
 import type { CSSProperties } from "react";
 import styles from "./enrolment-checkout.module.css";
 
-type Step =
-  | "student"
-  | "payment"
-  | "plan"
-  | "review"
-  | "dda"
-  | "agreement"
-  | "success";
+type Step = (typeof NZ_ENROLMENT_STEPS)[number]["id"];
 
-const STEPS: { id: Step; label: string }[] = [
-  { id: "student", label: "Your details" },
-  { id: "payment", label: "Payment option" },
-  { id: "plan", label: "Payment plan" },
-  { id: "review", label: "Review" },
-  { id: "dda", label: "Direct Debit" },
-  { id: "agreement", label: "Agreement" },
-  { id: "success", label: "Confirmed" },
-];
+const STEPS = NZ_ENROLMENT_STEPS;
 
 type Props = {
   tenant: NzPublicTenant;
@@ -233,36 +224,26 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn }: Props) {
   }
 
   const payInFull = tenant.checkout.paymentOptions.pay_in_full;
+  const courseWebsiteUrl = providerCourseWebsiteUrl(tenant, course);
+  const returnToProviderUrl = safeReturnToProviderUrl(tenant);
+  const attribution = tenant.presentation.attributionLabel;
 
   return (
-    <div
-      className={styles.page}
-      style={
-        {
-          "--nz-primary": tenant.branding.primaryColour,
-          "--nz-primary-deep": tenant.branding.accentColour,
-          "--nz-text": tenant.branding.textColour,
-          "--nz-bg": tenant.branding.backgroundColour,
-        } as CSSProperties
-      }
-    >
+    <div className={styles.page} style={tenantCssVars(tenant) as CSSProperties}>
       <div className={styles.shell}>
         <header className={styles.hero}>
-          {tenant.branding.logoPath ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              className={styles.logo}
-              src={tenant.branding.logoPath}
-              alt={`${tenant.displayName} logo`}
-            />
-          ) : null}
           <div>
-            <p className={styles.kicker}>Enrolment Checkout · StudentPay NZ</p>
+            <p className={styles.kicker}>{tenant.displayName}</p>
             <h1>{course.name}</h1>
             <p>
-              {tenant.displayName} · Payment Plan Course Fee{" "}
-              {formatNzdFromCents(course.paymentPlanCourseFeeCents)}
+              Course fee {formatNzdFromCents(course.paymentPlanCourseFeeCents)} ·
+              Payment plan available
             </p>
+            {courseWebsiteUrl ? (
+              <p>
+                <a href={courseWebsiteUrl}>View this course on the {tenant.displayName} website</a>
+              </p>
+            ) : null}
           </div>
         </header>
 
@@ -288,11 +269,9 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn }: Props) {
           {step === "student" ? (
             <>
               <h2 ref={headingRef} tabIndex={-1}>
-                Student details
+                {NZ_STUDENT_DETAILS_COPY.heading}
               </h2>
-              <p className={styles.lead}>
-                These details are used for your enrolment and Direct Debit authority.
-              </p>
+              <p className={styles.lead}>{NZ_STUDENT_DETAILS_COPY.lead}</p>
               <div className={styles.grid}>
                 <TextField
                   label="First name"
@@ -450,11 +429,11 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn }: Props) {
           {step === "plan" ? (
             <>
               <h2 ref={headingRef} tabIndex={-1}>
-                Payment plan details
+                Your plan
               </h2>
               <p className={styles.lead}>
                 {derivedPlan
-                  ? "StudentPay NZ derives this weekly plan from the Payment Plan Course Fee. Canonical /v1 is the arithmetic authority."
+                  ? "This weekly payment plan is calculated from the course fee. There is no payment-plan deposit."
                   : "StudentPay NZ checks these amounts in integer cents."}
               </p>
               {derivedPlan ? (
@@ -732,11 +711,19 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn }: Props) {
                 <p>Payment Plan Agreement: {agreementNumber}</p>
               ) : null}
               {preview ? <PlanSummary preview={preview} /> : null}
+              {returnToProviderUrl ? (
+                <div className={styles.actions}>
+                  <a className={`${styles.btn} ${styles.btnPrimary}`} href={returnToProviderUrl}>
+                    {tenant.presentation.returnToProviderLabel ||
+                      `Return to ${tenant.displayName}`}
+                  </a>
+                </div>
+              ) : null}
             </div>
           ) : null}
 
           <p className={styles.powered}>
-            Payments by <strong>StudentPay NZ</strong>
+            {attribution}
             {tenant.checkout.wording?.supportNote
               ? ` · ${tenant.checkout.wording.supportNote}`
               : null}

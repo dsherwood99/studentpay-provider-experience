@@ -2,26 +2,29 @@
   --nz-primary: #8b79f1;
   --nz-primary-deep: #715fe2;
   --nz-text: #161b1a;
+  --nz-heading: #161b1a;
   --nz-muted: #4f5f59;
   --nz-border: #e4ebe8;
   --nz-surface: #ffffff;
   --nz-soft: #f8faf9;
   --nz-danger: #c83c46;
+  --nz-button-radius: 10px;
   min-height: 70vh;
   background: var(--nz-bg, #ffffff);
   color: var(--nz-text);
+  font-family: var(--nz-font, Inter, "Segoe UI", sans-serif);
   padding: 24px 16px 64px;
 }
 
 .shell {
-  width: min(920px, 100%);
+  width: min(880px, 100%);
   margin: 0 auto;
 }
 
 .hero {
   display: flex;
   gap: 20px;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 24px;
 }
 
@@ -43,11 +46,18 @@
   margin: 0 0 8px;
   font-size: clamp(1.6rem, 3vw, 2.1rem);
   letter-spacing: -0.03em;
+  color: var(--nz-heading);
 }
 
 .hero p {
   margin: 0;
   color: var(--nz-muted);
+}
+
+.hero a {
+  color: var(--nz-primary-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .progress {
@@ -82,13 +92,14 @@
   background: var(--nz-surface);
   border: 1px solid var(--nz-border);
   border-radius: 18px;
-  padding: 24px;
+  padding: 28px;
   box-shadow: 0 12px 32px rgba(22, 27, 26, 0.04);
 }
 
 .card h2 {
   margin: 0 0 8px;
   font-size: 1.25rem;
+  color: var(--nz-heading);
 }
 
 .lead {
@@ -209,11 +220,14 @@
 .btn {
   min-height: 44px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--nz-button-radius, 10px);
   padding: 10px 18px;
   font: inherit;
   font-weight: 650;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn:disabled {
@@ -255,8 +269,8 @@
 .note {
   padding: 14px 16px;
   border-radius: 12px;
-  background: #ece9ff;
-  color: #2d2460;
+  background: color-mix(in srgb, var(--nz-primary) 12%, white);
+  color: var(--nz-text);
 }
 
 .success {

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, it } from "node:test";
 import {
   dedicatedHostHidesGenericDemoChrome,
   dedicatedHostPlatformBrand,
+  dedicatedNzEnrolmentHomePath,
   dedicatedProductionHomePath,
   getDedicatedProductionProvider,
   isDedicatedBelaProductionHost,
@@ -13,6 +14,7 @@ import { isProviderSlugBlockedByDeployment } from "./provider-bindings.ts";
 const managed = [
   "STUDENTPAY_PROVIDER_CODE",
   "ACADEMY_PROVIDER_CODE",
+  "HOSTED_PRODUCT_MODE",
 ];
 
 const previous: Record<string, string | undefined> = {};
@@ -71,5 +73,15 @@ describe("dedicated Bela production host isolation", () => {
     assert.equal(isProviderSlugBlockedByDeployment("bela-beauty-college"), false);
     assert.equal(isProviderSlugBlockedByDeployment("academy-australia"), true);
     assert.equal(isProviderSlugBlockedByDeployment("bela-beauty-sandbox"), true);
+  });
+
+  it("hides generic PE chrome on the NZ enrolment host and sends home to the tenant catalogue", () => {
+    process.env.HOSTED_PRODUCT_MODE = "nz_enrolment";
+
+    assert.equal(dedicatedNzEnrolmentHomePath(), "/enrol/oli");
+    assert.equal(dedicatedProductionHomePath(), "/enrol/oli");
+    assert.equal(dedicatedHostHidesGenericDemoChrome(), true);
+    assert.equal(isDedicatedBelaProductionHost(), false);
+    assert.equal(dedicatedHostPlatformBrand(), null);
   });
 });

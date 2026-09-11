@@ -55,12 +55,22 @@ AU `studentpay-api` is not the NZ enrolment API.
 /enrol/{providerSlug}/{courseSlug}
 ```
 
+The preferred student journey is a **course-specific deep link**. The provider
+website remains the catalogue. StudentPay hosts a provider-branded checkout
+with the course already selected.
+
 Examples:
 
-- `/enrol/oli` → course picker for the environment-visible OLI catalogue
+- `/enrol/oli` → provider-native fallback catalogue (search + category filter)
+- `/enrol/oli/certificate-in-animal-grooming` → preferred deep-link entry
 - `/enrol/oli/certificate-in-psychology-counselling`
 - `/enrol/oli/certification-course` (sandbox fixture only)
 - `/enrol/fixture-institute/example-certificate` (sandbox only)
+
+Current production origin: `https://enrol.studentpay.co.nz`.
+
+Preferred future provider-owned origin (not configured in this change):
+`https://enrol.onlinelearninginstitute.co.nz/{courseSlug}`.
 
 Do not add `/enrol/oli-hardcoded-page`.
 
@@ -70,6 +80,10 @@ Return from GoCardless:
 - `?dda=cancelled`
 
 Checkout JWTs are not placed in these URLs.
+
+On the dedicated NZ enrolment host, `/` redirects to the default production
+tenant catalogue (`/enrol/{slug}`). Generic StudentPay demo navigation is not
+rendered.
 
 ---
 
@@ -98,6 +112,16 @@ Add a provider by:
 Do not add `if (provider === '…')` in checkout components.
 Do not select API environment by provider.
 Do not infer sandbox vs production solely from `NODE_ENV` or Vercel Preview.
+
+Provider-native presentation is also configuration, not a workflow branch:
+
+- logo, colours, background, heading/body colours, button radius
+- header/footer style and allowlisted provider website links
+- StudentPay attribution label
+- return-to-provider URL (allowlisted host only; never from query string)
+- course website URL pattern, used only when the slug is known to exist
+
+See `src/lib/nz-enrolment/presentation.ts` and `docs/artefacts/oli-website-integration.md`.
 
 ---
 

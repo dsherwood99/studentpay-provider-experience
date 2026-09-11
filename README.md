@@ -89,12 +89,14 @@ curl http://localhost:3000/api/studentpay/provider-checkouts
 
 Generic StudentPay-hosted NZ enrolment over canonical `/v1`.
 
-- `/enrol/oli`
-- `/enrol/oli/certification-course`
+- `/enrol/oli` — provider-native fallback catalogue
+- `/enrol/oli/certificate-in-animal-grooming` — preferred course deep link
 - `/enrol/fixture-institute/example-certificate`
 
 See [docs/enrolment-checkout.md](docs/enrolment-checkout.md). Provider API keys stay
 server-side. Do not set `NEXT_PUBLIC_PROVIDER_API_KEY_*`.
+
+OLI website integration: [docs/artefacts/oli-website-integration.md](docs/artefacts/oli-website-integration.md).
 
 ## Scripts
 
