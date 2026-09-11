@@ -102,6 +102,15 @@
   color: var(--nz-heading);
 }
 
+.card h2:focus {
+  outline: none;
+}
+
+.card h2:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--nz-primary) 35%, white);
+  outline-offset: 2px;
+}
+
 .lead {
   margin: 0 0 20px;
   color: var(--nz-muted);
