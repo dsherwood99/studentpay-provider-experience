@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
-import { NZ_ENROLMENT_STEPS, NZ_STUDENT_DETAILS_COPY } from "./checkout-ui.ts";
+import { NZ_CHECKOUT_SECTIONS, NZ_STUDENT_DETAILS_COPY } from "./checkout-ui.ts";
 import { buildCourseLinkMapping } from "./course-links.ts";
 import { getNzCourse, getNzCoursesForProvider } from "./courses.ts";
 import {
@@ -138,20 +138,15 @@ describe("safe return-to-provider URLs", () => {
 });
 
 describe("provider-native checkout copy", () => {
-  it("uses the preferred enrolment step labels", () => {
+  it("uses the single-page section labels", () => {
     assert.deepEqual(
-      NZ_ENROLMENT_STEPS.map((step) => step.label),
-      [
-        "Your details",
-        "Payment option",
-        "Your plan",
-        "Review",
-        "Direct debit",
-        "Agreement",
-        "Complete",
-      ],
+      NZ_CHECKOUT_SECTIONS.map((section) => section.title),
+      ["Your payment plan", "Your details", "Direct debit", "Review & confirm"],
     );
-    assert.match(NZ_STUDENT_DETAILS_COPY.lead, /Tell us about yourself/);
+    assert.match(
+      NZ_STUDENT_DETAILS_COPY.lead,
+      /enrolment and StudentPay payment plan/,
+    );
   });
 });
 

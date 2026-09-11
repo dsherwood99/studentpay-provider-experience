@@ -60,32 +60,106 @@
   text-underline-offset: 2px;
 }
 
-.progress {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0 0 24px;
-  padding: 0;
-  list-style: none;
+.fee {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--nz-heading);
 }
 
-.progress li {
-  font-size: 0.78rem;
-  color: var(--nz-muted);
-  padding: 4px 10px;
+.form {
+  background: var(--nz-surface);
+  border: 1px solid var(--nz-border);
+  border-radius: 18px;
+  box-shadow: 0 12px 32px rgba(22, 27, 26, 0.04);
+  overflow: hidden;
+}
+
+.form h1 {
+  margin: 0 0 8px;
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  letter-spacing: -0.03em;
+  color: var(--nz-heading);
+}
+
+.section {
+  padding: 28px;
+  border-bottom: 1px solid var(--nz-border);
+}
+
+.section:last-child {
+  border-bottom: 0;
+}
+
+.section:focus {
+  outline: none;
+}
+
+.section:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--nz-primary) 35%, white);
+  outline-offset: -3px;
+}
+
+.sectionHeading {
+  margin-bottom: 12px;
+}
+
+.sectionHeading .kicker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section h2 {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+  color: var(--nz-heading);
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
   border-radius: 999px;
   border: 1px solid var(--nz-border);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--nz-muted);
 }
 
-.progress li[data-active="true"] {
-  color: var(--nz-surface);
-  background: var(--nz-primary);
-  border-color: var(--nz-primary);
+.statusBadge[data-status="ready"] {
+  border-color: color-mix(in srgb, var(--nz-primary) 45%, var(--nz-border));
+  color: var(--nz-primary-deep);
 }
 
-.progress li[data-done="true"] {
+.statusBadge[data-status="complete"] {
+  background: color-mix(in srgb, var(--nz-primary) 12%, white);
   border-color: var(--nz-primary);
   color: var(--nz-primary-deep);
+}
+
+.statusBadge[data-status="action_required"] {
+  border-color: var(--nz-danger);
+  color: var(--nz-danger);
+}
+
+.completePanel {
+  margin: 16px 0;
+  padding: 16px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--nz-primary) 10%, white);
+}
+
+.completePanel h3 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+}
+
+.completePanel p {
+  margin: 0;
 }
 
 .card {
@@ -145,6 +219,12 @@
   padding: 10px 12px;
   font: inherit;
   background: #fff;
+}
+
+.field input:disabled,
+.field select:disabled {
+  background: var(--nz-soft);
+  color: var(--nz-muted);
 }
 
 .field input:focus,
@@ -256,10 +336,23 @@
   border: 1px solid var(--nz-border);
 }
 
+.btnBlock {
+  width: 100%;
+}
+
 .checks {
   display: grid;
   gap: 12px;
   margin: 16px 0;
+  border: 0;
+  padding: 0;
+  min-inline-size: 0;
+}
+
+.checks legend {
+  padding: 0;
+  margin: 0 0 8px;
+  font-weight: 700;
 }
 
 .check {
@@ -314,5 +407,23 @@
   .hero {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .section {
+    padding: 22px 18px;
+  }
+
+  .review {
+    grid-template-columns: 1fr;
+  }
+
+  .review dd {
+    text-align: left;
+    margin-bottom: 10px;
+  }
+
+  .btnBlock,
+  .actions .btnPrimary {
+    width: 100%;
   }
 }

@@ -14,8 +14,8 @@ OLI course page
 StudentPay-hosted OLI-branded checkout
 https://enrol.studentpay.co.nz/enrol/oli/{courseSlug}
         ↓  course already selected
-Your details → Payment option → Your plan → Review
-        → Direct debit → Agreement → Complete
+single-page checkout:
+        payment plan → student details → direct debit → review & confirm
 ```
 
 The 64-course page at `/enrol/oli` is a fallback for direct entry and internal
