@@ -1,0 +1,514 @@
+[
+  {
+    "courseName": "Certificate in Psychology & Counselling",
+    "courseCode": "PSY101",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-psychology-counselling/",
+    "studentPaySlug": "certificate-in-psychology-counselling",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-psychology-counselling",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-psychology-counselling"
+  },
+  {
+    "courseName": "Certificate in Disability Support",
+    "courseCode": "PSY102",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-disability-support/",
+    "studentPaySlug": "certificate-in-disability-support",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-disability-support",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-disability-support"
+  },
+  {
+    "courseName": "Certificate in Development & Behavioural Support",
+    "courseCode": "PSY103",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-development-behavioural-support/",
+    "studentPaySlug": "certificate-in-development-behavioural-support",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-development-behavioural-support",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-development-behavioural-support"
+  },
+  {
+    "courseName": "Certificate in Aged Care & Counselling",
+    "courseCode": "PSY104",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-aged-care-counselling/",
+    "studentPaySlug": "certificate-in-aged-care-counselling",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-aged-care-counselling",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-aged-care-counselling"
+  },
+  {
+    "courseName": "Certificate in Health & Wellbeing",
+    "courseCode": "PSY105",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-health-wellbeing/",
+    "studentPaySlug": "certificate-in-health-wellbeing",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-health-wellbeing",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-health-wellbeing"
+  },
+  {
+    "courseName": "Certificate in Family Wellbeing",
+    "courseCode": "PSY106",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-family-wellbeing/",
+    "studentPaySlug": "certificate-in-family-wellbeing",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-family-wellbeing",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-family-wellbeing"
+  },
+  {
+    "courseName": "Certificate in Mental Health",
+    "courseCode": "PSY107",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-mental-health/",
+    "studentPaySlug": "certificate-in-mental-health",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-mental-health",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-mental-health"
+  },
+  {
+    "courseName": "Certificate in Life Coaching",
+    "courseCode": "PSY108",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-life-coaching/",
+    "studentPaySlug": "certificate-in-life-coaching",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-life-coaching",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-life-coaching"
+  },
+  {
+    "courseName": "Certificate in Child Psychology & Counselling",
+    "courseCode": "PSY109",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-child-psychology-counselling/",
+    "studentPaySlug": "certificate-in-child-psychology-counselling",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-child-psychology-counselling",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-child-psychology-counselling"
+  },
+  {
+    "courseName": "Certificate in Stress Management & Emotional Intelligence",
+    "courseCode": "PSY110",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-stress-management-emotional-intelligence/",
+    "studentPaySlug": "certificate-in-stress-management-emotional-intelligence",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-stress-management-emotional-intelligence",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-stress-management-emotional-intelligence"
+  },
+  {
+    "courseName": "Certificate in Offender Rehabilitation",
+    "courseCode": "PSY111",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-offender-rehabilitation/",
+    "studentPaySlug": "certificate-in-offender-rehabilitation",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-offender-rehabilitation",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-offender-rehabilitation"
+  },
+  {
+    "courseName": "Certificate in Criminal Psychology",
+    "courseCode": "PSY112",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-criminal-psychology/",
+    "studentPaySlug": "certificate-in-criminal-psychology",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-criminal-psychology",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-criminal-psychology"
+  },
+  {
+    "courseName": "Diploma in Psychology & Counselling",
+    "courseCode": "PSY113",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/diploma-in-psychology-counselling/",
+    "studentPaySlug": "diploma-in-psychology-counselling",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/diploma-in-psychology-counselling",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/diploma-in-psychology-counselling"
+  },
+  {
+    "courseName": "Diploma in Aged Care & Disability Support",
+    "courseCode": "PSY114",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/diploma-in-aged-care-disability-support/",
+    "studentPaySlug": "diploma-in-aged-care-disability-support",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/diploma-in-aged-care-disability-support",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/diploma-in-aged-care-disability-support"
+  },
+  {
+    "courseName": "Diploma in Child & Youth Counselling",
+    "courseCode": "PSY115",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/diploma-in-child-youth-counselling/",
+    "studentPaySlug": "diploma-in-child-youth-counselling",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/diploma-in-child-youth-counselling",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/diploma-in-child-youth-counselling"
+  },
+  {
+    "courseName": "Diploma in Health Care & Wellbeing",
+    "courseCode": "PSY116",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/diploma-in-health-care-wellbeing/",
+    "studentPaySlug": "diploma-in-health-care-wellbeing",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/diploma-in-health-care-wellbeing",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/diploma-in-health-care-wellbeing"
+  },
+  {
+    "courseName": "Manicure & Pedicure, Nail Technology",
+    "courseCode": "BEA101",
+    "websiteUrl": null,
+    "studentPaySlug": "manicure-pedicure-nail-technology",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/manicure-pedicure-nail-technology",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/manicure-pedicure-nail-technology"
+  },
+  {
+    "courseName": "Manicure & Pedicure, Nail Technology, Nail Art & Design",
+    "courseCode": "BEA102",
+    "websiteUrl": null,
+    "studentPaySlug": "manicure-pedicure-nail-technology-nail-art-design",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/manicure-pedicure-nail-technology-nail-art-design",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/manicure-pedicure-nail-technology-nail-art-design"
+  },
+  {
+    "courseName": "Eyelash Business Bundle + Kit",
+    "courseCode": "BEA103",
+    "websiteUrl": null,
+    "studentPaySlug": "eyelash-business-bundle-kit",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/eyelash-business-bundle-kit",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/eyelash-business-bundle-kit"
+  },
+  {
+    "courseName": "Brow Mastery Course + Deluxe Kit",
+    "courseCode": "BEA104",
+    "websiteUrl": null,
+    "studentPaySlug": "brow-mastery-course-deluxe-kit",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/brow-mastery-course-deluxe-kit",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/brow-mastery-course-deluxe-kit"
+  },
+  {
+    "courseName": "Makeup Artistry + Standard Kit",
+    "courseCode": "BEA105",
+    "websiteUrl": null,
+    "studentPaySlug": "makeup-artistry-standard-kit",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/makeup-artistry-standard-kit",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/makeup-artistry-standard-kit"
+  },
+  {
+    "courseName": "Certificate in Business Administration",
+    "courseCode": "ADM101",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-business-administration/",
+    "studentPaySlug": "certificate-in-business-administration",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-business-administration",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-business-administration"
+  },
+  {
+    "courseName": "Certificate in Reception & Office Support",
+    "courseCode": "ADM102",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-reception-office-support/",
+    "studentPaySlug": "certificate-in-reception-office-support",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-reception-office-support",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-reception-office-support"
+  },
+  {
+    "courseName": "Certificate in Medical Reception & Office Support",
+    "courseCode": "ADM103",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-medical-reception-office-support/",
+    "studentPaySlug": "certificate-in-medical-reception-office-support",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-medical-reception-office-support",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-medical-reception-office-support"
+  },
+  {
+    "courseName": "Certificate in Legal Reception & Office Support",
+    "courseCode": "ADM104",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-legal-reception-office-support/",
+    "studentPaySlug": "certificate-in-legal-reception-office-support",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-legal-reception-office-support",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-legal-reception-office-support"
+  },
+  {
+    "courseName": "Diploma in Business Administration",
+    "courseCode": "ADM105",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/diploma-in-business-administration/",
+    "studentPaySlug": "diploma-in-business-administration",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/diploma-in-business-administration",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/diploma-in-business-administration"
+  },
+  {
+    "courseName": "Certificate in Small Business Management",
+    "courseCode": "BUS101",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-small-business-management/",
+    "studentPaySlug": "certificate-in-small-business-management",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-small-business-management",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-small-business-management"
+  },
+  {
+    "courseName": "Small Business Startup Program",
+    "courseCode": "BUS102",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/small-business-startup-program/",
+    "studentPaySlug": "small-business-startup-program",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/small-business-startup-program",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/small-business-startup-program"
+  },
+  {
+    "courseName": "Diploma in Business",
+    "courseCode": "BUS103",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/diploma-in-business/",
+    "studentPaySlug": "diploma-in-business",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/diploma-in-business",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/diploma-in-business"
+  },
+  {
+    "courseName": "Certificate in Digital Marketing",
+    "courseCode": "MAR101",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-digital-marketing/",
+    "studentPaySlug": "certificate-in-digital-marketing",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-digital-marketing",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-digital-marketing"
+  },
+  {
+    "courseName": "Certificate in Sales Skills",
+    "courseCode": "MAR102",
+    "websiteUrl": null,
+    "studentPaySlug": "certificate-in-sales-skills",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-sales-skills",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-sales-skills"
+  },
+  {
+    "courseName": "Diploma in Sales & Team Leadership",
+    "courseCode": "MAR103",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/diploma-in-sales-team-leadership/",
+    "studentPaySlug": "diploma-in-sales-team-leadership",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/diploma-in-sales-team-leadership",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/diploma-in-sales-team-leadership"
+  },
+  {
+    "courseName": "Diploma in Digital Marketing Management",
+    "courseCode": "MAR104",
+    "websiteUrl": null,
+    "studentPaySlug": "diploma-in-digital-marketing-management",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/diploma-in-digital-marketing-management",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/diploma-in-digital-marketing-management"
+  },
+  {
+    "courseName": "Certificate in Management Fundamentals",
+    "courseCode": "MAN101",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-management-fundamentals/",
+    "studentPaySlug": "certificate-in-management-fundamentals",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-management-fundamentals",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-management-fundamentals"
+  },
+  {
+    "courseName": "Certificate in Human Resource Management",
+    "courseCode": "MAN102",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-human-resource-management/",
+    "studentPaySlug": "certificate-in-human-resource-management",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-human-resource-management",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-human-resource-management"
+  },
+  {
+    "courseName": "Certificate in Workplace Health & Safety Management",
+    "courseCode": "MAN103",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-workplace-health-safety-management/",
+    "studentPaySlug": "certificate-in-workplace-health-safety-management",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-workplace-health-safety-management",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-workplace-health-safety-management"
+  },
+  {
+    "courseName": "Certificate in Business Operations Management",
+    "courseCode": "MAN104",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-business-operations-management/",
+    "studentPaySlug": "certificate-in-business-operations-management",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-business-operations-management",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-business-operations-management"
+  },
+  {
+    "courseName": "Diploma in Business Operations Management",
+    "courseCode": "MAN105",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/diploma-in-business-operations-management/",
+    "studentPaySlug": "diploma-in-business-operations-management",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/diploma-in-business-operations-management",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/diploma-in-business-operations-management"
+  },
+  {
+    "courseName": "Diploma in Human Resource Management & Leadership",
+    "courseCode": "MAN106",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/diploma-in-human-resource-management-leadership/",
+    "studentPaySlug": "diploma-in-human-resource-management-leadership",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/diploma-in-human-resource-management-leadership",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/diploma-in-human-resource-management-leadership"
+  },
+  {
+    "courseName": "Diploma in Management & Team Leadership",
+    "courseCode": "MAN107",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/diploma-in-management-team-leadership/",
+    "studentPaySlug": "diploma-in-management-team-leadership",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/diploma-in-management-team-leadership",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/diploma-in-management-team-leadership"
+  },
+  {
+    "courseName": "Diploma in Project Management & Team Leadership",
+    "courseCode": "MAN108",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/diploma-in-project-management-team-leadership/",
+    "studentPaySlug": "diploma-in-project-management-team-leadership",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/diploma-in-project-management-team-leadership",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/diploma-in-project-management-team-leadership"
+  },
+  {
+    "courseName": "Certificate in Personal Training",
+    "courseCode": "TRA101",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-personal-training/",
+    "studentPaySlug": "certificate-in-personal-training",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-personal-training",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-personal-training"
+  },
+  {
+    "courseName": "Certificate in Health & Wellness Coaching",
+    "courseCode": "TRA102",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-health-wellness-coaching/",
+    "studentPaySlug": "certificate-in-health-wellness-coaching",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-health-wellness-coaching",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-health-wellness-coaching"
+  },
+  {
+    "courseName": "Certificate in Nutrition & Weight Management",
+    "courseCode": "TRA103",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-nutrition-weight-management/",
+    "studentPaySlug": "certificate-in-nutrition-weight-management",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-nutrition-weight-management",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-nutrition-weight-management"
+  },
+  {
+    "courseName": "Diploma in Personal Training & Nutrition Coaching",
+    "courseCode": "TRA104",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/diploma-in-personal-training-nutrition-coaching/",
+    "studentPaySlug": "diploma-in-personal-training-nutrition-coaching",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/diploma-in-personal-training-nutrition-coaching",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/diploma-in-personal-training-nutrition-coaching"
+  },
+  {
+    "courseName": "Certificate in Animal Grooming",
+    "courseCode": "ANI101",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-animal-grooming/",
+    "studentPaySlug": "certificate-in-animal-grooming",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-animal-grooming",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-animal-grooming"
+  },
+  {
+    "courseName": "Certificate in Animal Care & Welfare",
+    "courseCode": "ANI102",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-animal-care-welfare/",
+    "studentPaySlug": "certificate-in-animal-care-welfare",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-animal-care-welfare",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-animal-care-welfare"
+  },
+  {
+    "courseName": "Certificate in Dog Training, Psychology & Behaviour",
+    "courseCode": "ANI103",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-dog-training-psychology-behaviour/",
+    "studentPaySlug": "certificate-in-dog-training-psychology-behaviour",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-dog-training-psychology-behaviour",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-dog-training-psychology-behaviour"
+  },
+  {
+    "courseName": "Certificate in Horse Care & Breeding",
+    "courseCode": "ANI104",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-horse-care-breeding/",
+    "studentPaySlug": "certificate-in-horse-care-breeding",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-horse-care-breeding",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-horse-care-breeding"
+  },
+  {
+    "courseName": "Certificate in Pet Therapy & Companion Animal Care",
+    "courseCode": "ANI105",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-pet-therapy-companion-animal-care/",
+    "studentPaySlug": "certificate-in-pet-therapy-companion-animal-care",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-pet-therapy-companion-animal-care",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-pet-therapy-companion-animal-care"
+  },
+  {
+    "courseName": "Diploma in Veterinary Assistance & Animal Health",
+    "courseCode": "ANI106",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/diploma-in-veterinary-assistance-animal-health/",
+    "studentPaySlug": "diploma-in-veterinary-assistance-animal-health",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/diploma-in-veterinary-assistance-animal-health",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/diploma-in-veterinary-assistance-animal-health"
+  },
+  {
+    "courseName": "Diploma in Wildlife Conservation & Management",
+    "courseCode": "ANI107",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/diploma-in-wildlife-conservation-management/",
+    "studentPaySlug": "diploma-in-wildlife-conservation-management",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/diploma-in-wildlife-conservation-management",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/diploma-in-wildlife-conservation-management"
+  },
+  {
+    "courseName": "Diploma in Zoology & Wildlife Management",
+    "courseCode": "ANI108",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/diploma-in-zoology-wildlife-management/",
+    "studentPaySlug": "diploma-in-zoology-wildlife-management",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/diploma-in-zoology-wildlife-management",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/diploma-in-zoology-wildlife-management"
+  },
+  {
+    "courseName": "Certificate in Events Management",
+    "courseCode": "HOS101",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-events-management/",
+    "studentPaySlug": "certificate-in-events-management",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-events-management",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-events-management"
+  },
+  {
+    "courseName": "Certificate in Events Management & Wedding Planning",
+    "courseCode": "HOS102",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-events-management-wedding-planning/",
+    "studentPaySlug": "certificate-in-events-management-wedding-planning",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-events-management-wedding-planning",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-events-management-wedding-planning"
+  },
+  {
+    "courseName": "Certificate in Hospitality Operations",
+    "courseCode": "HOS103",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-hospitality-operations/",
+    "studentPaySlug": "certificate-in-hospitality-operations",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-hospitality-operations",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-hospitality-operations"
+  },
+  {
+    "courseName": "Diploma in Hospitality Management",
+    "courseCode": "HOS104",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/diploma-in-hospitality-management/",
+    "studentPaySlug": "diploma-in-hospitality-management",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/diploma-in-hospitality-management",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/diploma-in-hospitality-management"
+  },
+  {
+    "courseName": "Diploma in Hotel Operations Management",
+    "courseCode": "HOS105",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/diploma-in-hotel-operations-management/",
+    "studentPaySlug": "diploma-in-hotel-operations-management",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/diploma-in-hotel-operations-management",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/diploma-in-hotel-operations-management"
+  },
+  {
+    "courseName": "Diploma in Travel & Tourism Management",
+    "courseCode": "HOS106",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/diploma-in-travel-tourism-management/",
+    "studentPaySlug": "diploma-in-travel-tourism-management",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/diploma-in-travel-tourism-management",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/diploma-in-travel-tourism-management"
+  },
+  {
+    "courseName": "Certificate in Carpentry & Construction Skills",
+    "courseCode": "TRA101",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-carpentry-construction-skills/",
+    "studentPaySlug": "certificate-in-carpentry-construction-skills",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-carpentry-construction-skills",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-carpentry-construction-skills"
+  },
+  {
+    "courseName": "Certificate in Mechanics & Machine Systems",
+    "courseCode": "TRA102",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-mechanics-machine-systems/",
+    "studentPaySlug": "certificate-in-mechanics-machine-systems",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-mechanics-machine-systems",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-mechanics-machine-systems"
+  },
+  {
+    "courseName": "Certificate in Small Equipment & Appliance Repair",
+    "courseCode": "TRA103",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-small-equipment-appliance-repair/",
+    "studentPaySlug": "certificate-in-small-equipment-appliance-repair",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-small-equipment-appliance-repair",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-small-equipment-appliance-repair"
+  },
+  {
+    "courseName": "Certificate in Electronics & Electrical Fundamentals",
+    "courseCode": "TRA104",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-electronics-electrical-fundamentals/",
+    "studentPaySlug": "certificate-in-electronics-electrical-fundamentals",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-electronics-electrical-fundamentals",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-electronics-electrical-fundamentals"
+  },
+  {
+    "courseName": "Certificate in Computer-Aided Design (CAD)",
+    "courseCode": "TRA105",
+    "websiteUrl": "https://onlinelearninginstitute.co.nz/course/certificate-in-computer-aided-design-cad/",
+    "studentPaySlug": "certificate-in-computer-aided-design-cad",
+    "currentDeepLink": "https://enrol.studentpay.co.nz/enrol/oli/certificate-in-computer-aided-design-cad",
+    "futureProviderDomainDeepLink": "https://enrol.onlinelearninginstitute.co.nz/certificate-in-computer-aided-design-cad"
+  }
+]

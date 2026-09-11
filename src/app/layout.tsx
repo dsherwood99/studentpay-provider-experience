@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Caveat, Inter, Plus_Jakarta_Sans, Poppins } from "next/font/google";
 import { PlatformFooter } from "@/components/layout/PlatformFooter";
 import { PlatformHeader } from "@/components/layout/PlatformHeader";
+import { isNzEnrolmentProductAvailable } from "@/lib/nz-enrolment/environment";
+import { listActiveNzTenants } from "@/lib/nz-enrolment/tenants";
 import { getPlatformBrand } from "@/lib/provider-experience/branding";
 import "./globals.css";
 import "../styles/studentpay-platform.css";
@@ -32,6 +34,19 @@ const inter = Inter({
 
 export function generateMetadata(): Metadata {
   const brand = getPlatformBrand();
+
+  if (isNzEnrolmentProductAvailable()) {
+    const tenant = listActiveNzTenants().find((item) => !item.sandboxOnly);
+    if (tenant) {
+      return {
+        title: {
+          default: `${tenant.displayName} | Enrolment`,
+          template: `%s`,
+        },
+        description: `Enrol with ${tenant.displayName} using a StudentPay NZ payment plan.`,
+      };
+    }
+  }
 
   if (brand === "academy-australia") {
     return {
@@ -71,12 +86,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const brand = getPlatformBrand();
+  const nzEnrolment = isNzEnrolmentProductAvailable();
   const bodyClassName =
     brand === "academy-australia"
       ? `${plusJakarta.variable} ${caveat.variable} platform--academy-australia`
       : brand === "bela-beauty-college"
         ? `${poppins.variable} ${inter.variable} platform--bela-beauty-college`
-        : `${poppins.variable} ${inter.variable} platform--studentpay`;
+        : nzEnrolment
+          ? `${poppins.variable} ${inter.variable} platform--nz-enrolment`
+          : `${poppins.variable} ${inter.variable} platform--studentpay`;
 
   return (
     <html lang="en">

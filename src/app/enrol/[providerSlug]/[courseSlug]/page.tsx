@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { CatalogueUnavailable } from "@/components/courses/CatalogueUnavailable";
 import { EnrolmentWizard } from "@/components/enrolment/EnrolmentWizard";
+import { NzCourseNotFound } from "@/components/nz-enrolment/CourseNotFound";
 import { NzEnrolmentCheckout } from "@/components/nz-enrolment/EnrolmentCheckout";
 import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
@@ -24,18 +25,46 @@ type EnrolmentPageProps = {
   }>;
 };
 
+export async function generateMetadata({ params }: EnrolmentPageProps) {
+  const { providerSlug, courseSlug } = await params;
+  if (!isNzEnrolmentProductAvailable()) {
+    return {};
+  }
+  const tenant = getNzTenantBySlug(providerSlug);
+  const course = tenant ? getNzCourse(providerSlug, courseSlug) : undefined;
+  if (!tenant || !course) {
+    return {
+      title: tenant ? `Course not found | ${tenant.displayName}` : "Enrolment",
+    };
+  }
+  return {
+    title: `${course.name} | ${tenant.displayName}`,
+    description: `Enrol in ${course.name} with a StudentPay NZ payment plan from ${tenant.displayName}.`,
+  };
+}
+
 export default async function EnrolmentPage({
   params,
   searchParams,
 }: EnrolmentPageProps) {
   const { providerSlug, courseSlug } = await params;
   const { payment, dda } = await searchParams;
-  const nzTenant = isNzEnrolmentProductAvailable()
-    ? getNzTenantBySlug(providerSlug)
-    : undefined;
-  const nzCourse = nzTenant ? getNzCourse(providerSlug, courseSlug) : undefined;
+  if (isNzEnrolmentProductAvailable()) {
+    const nzTenant = getNzTenantBySlug(providerSlug);
+    if (!nzTenant) {
+      notFound();
+    }
 
-  if (nzTenant && nzCourse) {
+    const nzCourse = getNzCourse(providerSlug, courseSlug);
+    if (!nzCourse) {
+      return (
+        <NzCourseNotFound
+          tenant={toPublicTenant(nzTenant)}
+          courseSlug={courseSlug}
+        />
+      );
+    }
+
     const ddaReturn = dda === "return" || dda === "cancelled" ? dda : null;
     return (
       <NzEnrolmentCheckout
