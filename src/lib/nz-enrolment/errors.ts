@@ -14,6 +14,14 @@ const SAFE_MESSAGES: Record<string, string> = {
   SESSION_EXPIRED: "Your enrolment session expired. Please start again.",
   TENANT_MISMATCH: "This enrolment belongs to a different provider.",
   PAY_IN_FULL_UNAVAILABLE: "Pay in full is not available yet. Choose a payment plan to continue.",
+  ENROLMENT_PAY_IN_FULL_DISABLED:
+    "Pay in Full is not available for this enrolment. Choose a payment plan to continue.",
+  PAYMENT_PROCESSING:
+    "Payment is being processed. Do not pay again — this page will update when enrolment is confirmed.",
+  PAYMENT_FAILED: "Payment not completed. You can try again without creating a new enrolment.",
+  STRIPE_TEST_KEY_REQUIRED: "This enrolment page is not configured yet. Please try again later.",
+  IDEMPOTENCY_CONFLICT:
+    "This enrolment already exists with different details. Continue the original checkout or start a new one.",
   NZ_HOSTED_PRODUCT_DISABLED: "This enrolment page is not available on this host.",
   STUDENTPAY_ENV_REQUIRED: "This enrolment page is not configured yet. Please try again later.",
   NZ_API_BASE_REQUIRED: "This enrolment page is not configured yet. Please try again later.",

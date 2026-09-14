@@ -108,6 +108,58 @@ export const NZ_TENANTS: readonly NzTenant[] = [
     active: true,
     sandboxOnly: true,
   },
+  {
+    slug: "bela-nz",
+    providerCode: "BELA_NZ",
+    displayName: "Bela Beauty College",
+    legalName: "Bela Beauty College",
+    supportEmail: "hello@belabeautycollege.com",
+    privacyUrl: "https://belabeautycollege.com/policies/privacy-policy",
+    termsUrl: "https://belabeautycollege.com/policies/terms-of-service",
+    websiteUrl: "https://belabeautycollege.com",
+    branding: {
+      logoPath: "",
+      primaryColour: "#5A332B",
+      accentColour: "#FBD2D3",
+      backgroundColour: "#FAF7F4",
+      surfaceColour: "#ffffff",
+      headingColour: "#5A332B",
+      mutedTextColour: "#7a5a52",
+      textColour: "#5A332B",
+      fontFamily: "Arial, sans-serif",
+      buttonRadius: "medium",
+      headerStyle: "provider-native",
+      footerStyle: "provider-native",
+    },
+    presentation: defaultPresentation({
+      allowedHosts: ["belabeautycollege.com", "www.belabeautycollege.com"],
+      returnToProviderUrl: "https://belabeautycollege.com",
+      returnToProviderLabel: "Return to Bela Beauty College",
+      courseUrlPattern:
+        "https://belabeautycollege.com/products/the-ultimate-lash-business-bundle",
+      knownCourseWebsiteSlugs: ["lash-business-bundle"],
+      headerLinks: [
+        { label: "Courses", href: "https://belabeautycollege.com" },
+      ],
+    }),
+    checkout: {
+      paymentOptions: {
+        interest_free_payment_plan: { enabled: true },
+        pay_in_full: { enabled: true, comingSoon: false },
+      },
+      availableFrequencies: ["Weekly"],
+      defaultFrequency: "Weekly",
+      wording: {
+        ddaLead:
+          "You are setting up a Direct Debit authority with StudentPay NZ so instalments can be collected under your payment plan. This is not a card payment.",
+        supportNote:
+          "Questions about this enrolment can be sent to Bela Beauty College or StudentPay NZ support.",
+      },
+    },
+    apiKeyEnv: "PROVIDER_API_KEY_BELA_NZ",
+    active: true,
+    sandboxOnly: true,
+  },
 ];
 
 function tenantVisible(tenant: NzTenant): boolean {

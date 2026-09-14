@@ -73,6 +73,15 @@ describe("NZ enrolment tenant configuration", () => {
     assert.equal("providerCode" in pub, false);
   });
 
+  it("loads the sandbox-only Bela NZ tenant for E13 Hosted Preview", () => {
+    const bela = getNzTenantBySlug("bela-nz");
+    assert.ok(bela);
+    assert.equal(bela?.providerCode, "BELA_NZ");
+    const course = getNzCourse("bela-nz", "lash-business-bundle");
+    assert.equal(course?.courseCode, "BELA_LASH_BUSINESS_BUNDLE");
+    assert.equal(course?.paymentInFullCourseFeeCents, 280_000);
+  });
+
   it("isolates courses by provider slug", () => {
     const oliCourses = getNzCoursesForProvider("oli");
     const fixtureCourses = getNzCoursesForProvider("fixture-institute");

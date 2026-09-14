@@ -312,7 +312,19 @@ Hosted 4xx messages are mapped. Raw Salesforce ids, stack traces, and API keys
 must not appear in the browser. Server logs may include `request_id`,
 `checkout_id`, and `provider_order_id`.
 
-Pay in full is modelled as **Payment in Full of Course Fees** (`comingSoon`) and
-must not block launch. It is not a payment-plan upfront payment. No Stripe or
-other pay-in-full processor is included.
+Pay in full is modelled as **Payment in Full of Course Fees**. On Production
+OLI Hosted Checkout it remains unavailable (`comingSoon`) and must not block
+the payment-plan journey.
+
+Sandbox Preview may enable **Pay in Full** only when all of these are true:
+
+1. `STUDENTPAY_ENV=sandbox` and the NZ API base is not `https://api.studentpay.co.nz`
+2. the provider tenant has Pay in Full enabled (Bela NZ sandbox tenant)
+3. the course catalogue `enrolmentPaymentOptions` includes `pay_in_full`
+
+Hosted Preview for E13 must call the sandbox-certified E13 API (studentpay-nz-api
+PR #80 SHA `8f8f2f6cb66b80f763c3fb3910e2b4a774305e70`), not Production Stripe.
+Do not assign `enrol.studentpay.co.nz` to this branch.
+
+See `docs/nz-enrolment-e13-hosted-checkout.md`.
 
