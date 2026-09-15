@@ -316,14 +316,17 @@ Pay in full is modelled as **Payment in Full of Course Fees**. On Production
 OLI Hosted Checkout it remains unavailable (`comingSoon`) and must not block
 the payment-plan journey.
 
-Sandbox Preview may enable **Pay in Full** only when all of these are true:
+Hosted may enable **Pay in Full** only when all of these are true:
 
-1. `STUDENTPAY_ENV=sandbox` and the NZ API base is not `https://api.studentpay.co.nz`
-2. the provider tenant has Pay in Full enabled (Bela NZ sandbox tenant)
-3. the course catalogue `enrolmentPaymentOptions` includes `pay_in_full`
+1. `STUDENTPAY_ENV` matches the NZ API base (`sandbox` or Production `https://api.studentpay.co.nz`)
+2. the Stripe publishable key matches that environment (`pk_test_` / `pk_live_`)
+3. the provider tenant has Pay in Full enabled
+4. the course catalogue `enrolmentPaymentOptions` includes `pay_in_full`
 
-Hosted Preview for E13 must call the sandbox-certified E13 API (studentpay-nz-api
-PR #80 SHA `8f8f2f6cb66b80f763c3fb3910e2b4a774305e70`), not Production Stripe.
+OLI remains plan-only. Bela remains sandbox-only. The internal `$1`
+Production canary is hidden unless `E13_INTERNAL_CANARY_HOSTED_ENABLED=true`.
+Hosted is built against studentpay-nz-api SHA
+`78b2e4439b0ad31e5c766793b8bc1f85523293c6`. Do not merge Hosted PR #12.
 Do not assign `enrol.studentpay.co.nz` to this branch.
 
 See `docs/nz-enrolment-e13-hosted-checkout.md`.

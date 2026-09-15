@@ -41,6 +41,18 @@ export function allowSandboxFixtures(): boolean {
   return getStudentpayEnv() === "sandbox";
 }
 
+/**
+ * Hosted internal $1 Production canary. Off unless explicitly enabled.
+ * Never listed as the default Production tenant.
+ */
+export function isInternalE13CanaryHostedEnabled(): boolean {
+  const flag = process.env.E13_INTERNAL_CANARY_HOSTED_ENABLED?.trim().toLowerCase();
+  if (flag !== "true" && flag !== "1" && flag !== "yes" && flag !== "on") {
+    return false;
+  }
+  return getStudentpayEnv() === "production";
+}
+
 export function getHostedProductMode(): HostedProductMode {
   const configured = process.env.HOSTED_PRODUCT_MODE?.trim().toLowerCase();
   if (configured === "nz_enrolment") {

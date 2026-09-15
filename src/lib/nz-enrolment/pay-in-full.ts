@@ -11,20 +11,22 @@ import type {
   NzTenant,
 } from "./types.ts";
 
-export const HOSTED_E13_API_SHA = "8f8f2f6cb66b80f763c3fb3910e2b4a774305e70";
+export const HOSTED_E13_API_SHA = "78b2e4439b0ad31e5c766793b8bc1f85523293c6";
+export const HOSTED_E13_PRODUCTIONISATION = true;
 
 export const DEFAULT_ENROLMENT_PAYMENT_OPTIONS: readonly NzEnrolmentPaymentOption[] =
   ["payment_plan"];
 
 export function isHostedPayInFullEnvironmentAllowed(): boolean {
-  if (getStudentpayEnv() !== "sandbox") {
-    return false;
-  }
+  const env = getStudentpayEnv();
   const api = resolveNzApiBaseUrl();
-  if (api.error || !api.url) {
+  if (!env || api.error || !api.url) {
     return false;
   }
-  return api.url !== NZ_PRODUCTION_API_BASE_URL;
+  if (env === "sandbox") {
+    return api.url !== NZ_PRODUCTION_API_BASE_URL;
+  }
+  return api.url === NZ_PRODUCTION_API_BASE_URL;
 }
 
 export function isTestStripePublishableKey(
@@ -33,10 +35,26 @@ export function isTestStripePublishableKey(
   return Boolean(key?.startsWith("pk_test_"));
 }
 
+export function isLiveStripePublishableKey(
+  key: string | null | undefined,
+): boolean {
+  return Boolean(key?.startsWith("pk_live_"));
+}
+
 export function hostedStripePublishableKeyIsSafe(
   key: string | null | undefined,
 ): boolean {
-  return isHostedPayInFullEnvironmentAllowed() && isTestStripePublishableKey(key);
+  if (!isHostedPayInFullEnvironmentAllowed()) {
+    return false;
+  }
+  const env = getStudentpayEnv();
+  if (env === "sandbox") {
+    return isTestStripePublishableKey(key) && !isLiveStripePublishableKey(key);
+  }
+  if (env === "production") {
+    return isLiveStripePublishableKey(key) && !isTestStripePublishableKey(key);
+  }
+  return false;
 }
 
 export function courseEnrolmentPaymentOptions(
@@ -69,12 +87,15 @@ export function resolveHostedPayInFullEligibility(input: {
   const environmentAllowed = isHostedPayInFullEnvironmentAllowed();
   const providerEnabled = providerAllowsPayInFull(input.tenant);
   const courseAllows = courseAllowsPayInFull(input.course);
+  const paymentPlanAvailable =
+    courseEnrolmentPaymentOptions(input.course).includes("payment_plan") &&
+    input.tenant.checkout.paymentOptions.interest_free_payment_plan.enabled === true;
   return {
     environmentAllowed,
     providerEnabled,
     courseAllows,
     payInFullAvailable: environmentAllowed && providerEnabled && courseAllows,
-    paymentPlanAvailable: true,
+    paymentPlanAvailable,
   };
 }
 

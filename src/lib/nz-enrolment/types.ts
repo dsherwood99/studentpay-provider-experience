@@ -47,7 +47,7 @@ export type NzTenantPresentation = {
 
 export type NzPaymentOptions = {
   interest_free_payment_plan: {
-    enabled: true;
+    enabled: boolean;
   };
   pay_in_full: {
     enabled: boolean;
@@ -104,6 +104,8 @@ export type NzTenant = {
   apiKeyEnv: string;
   active: boolean;
   sandboxOnly?: boolean;
+  /** Hidden unless E13_INTERNAL_CANARY_HOSTED_ENABLED=true in Production. */
+  internalCanary?: boolean;
 };
 
 export type NzCoursePlanDefaults = {
@@ -133,6 +135,7 @@ export type NzCourse = {
   enrolmentPaymentOptions?: readonly NzEnrolmentPaymentOption[];
   status: "active" | "inactive";
   sandboxOnly?: boolean;
+  internalCanary?: boolean;
   duration?: string;
   planPolicy: NzPlanPolicy;
   sourceRow?: number;

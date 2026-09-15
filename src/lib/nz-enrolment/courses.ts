@@ -1,4 +1,4 @@
-import { allowSandboxFixtures } from "./environment.ts";
+import { allowSandboxFixtures, isInternalE13CanaryHostedEnabled } from "./environment.ts";
 import { courseEnrolmentPaymentOptions } from "./pay-in-full.ts";
 import oliProduction from "./catalogues/oli-production.json" with { type: "json" };
 import type {
@@ -66,6 +66,26 @@ const SANDBOX_FIXTURE_COURSES: readonly NzCourse[] = [
       upfrontAmountCents: 1000,
     },
   },
+  {
+    courseCode: "E13_PROD_CANARY_001",
+    slug: "e13-prod-canary-001",
+    providerSlug: "studentpay-internal-e13",
+    name: "E13 Production Canary $1.00 (internal — not a student offering)",
+    description:
+      "Dedicated StudentPay internal Production Pay in Full canary. Not a live education-provider course.",
+    paymentPlanCourseFeeCents: 100,
+    paymentInFullCourseFeeCents: 100,
+    enrolmentPaymentOptions: ["pay_in_full"],
+    status: "active",
+    internalCanary: true,
+    duration: "Internal canary",
+    planPolicy: {
+      mode: "derived_regular",
+      frequency: "Weekly",
+      regularInstalmentCents: 100,
+      upfrontAmountCents: 0,
+    },
+  },
 ];
 
 function asCourse(row: {
@@ -80,6 +100,7 @@ function asCourse(row: {
   enrolmentPaymentOptions?: readonly NzEnrolmentPaymentOption[];
   status: "active" | "inactive";
   sandboxOnly?: boolean;
+  internalCanary?: boolean;
   sourceRow?: number;
   planPolicy: NzPlanPolicy;
 }): NzCourse {
@@ -95,6 +116,7 @@ function asCourse(row: {
     enrolmentPaymentOptions: row.enrolmentPaymentOptions,
     status: row.status,
     sandboxOnly: row.sandboxOnly,
+    internalCanary: row.internalCanary,
     sourceRow: row.sourceRow,
     planPolicy: row.planPolicy,
   };
@@ -107,6 +129,9 @@ const OLI_PRODUCTION_COURSES: readonly NzCourse[] = (
 function courseVisible(course: NzCourse): boolean {
   if (course.status !== "active") {
     return false;
+  }
+  if (course.internalCanary) {
+    return isInternalE13CanaryHostedEnabled();
   }
   if (course.sandboxOnly) {
     return allowSandboxFixtures();

@@ -20,6 +20,7 @@ const managed = [
   "STUDENTPAY_PROVIDER_CODE",
   "ACADEMY_PROVIDER_CODE",
   "PROVIDER_API_KEY_OLI_NZ",
+  "E13_INTERNAL_CANARY_HOSTED_ENABLED",
 ];
 
 const previous: Record<string, string | undefined> = {};
@@ -121,6 +122,20 @@ describe("NZ hosted product and environment isolation", () => {
     process.env.STUDENTPAY_ENV = "sandbox";
     assert.ok(getNzTenantBySlug("bela-nz"));
     assert.equal(getNzTenantBySlug("bela-nz")?.providerCode, "BELA_NZ");
+  });
+
+  it("I3. internal E13 canary is Production-flagged and not the default tenant", () => {
+    process.env.STUDENTPAY_ENV = "production";
+    process.env.HOSTED_PRODUCT_MODE = "nz_enrolment";
+    process.env.NZ_STUDENTPAY_API_BASE_URL = "https://api.studentpay.co.nz";
+    assert.equal(getNzTenantBySlug("studentpay-internal-e13"), undefined);
+    process.env.E13_INTERNAL_CANARY_HOSTED_ENABLED = "true";
+    assert.equal(
+      getNzTenantBySlug("studentpay-internal-e13")?.providerCode,
+      "STUDENTPAY_INTERNAL_E13_CANARY",
+    );
+    assert.equal(getNzCourse("studentpay-internal-e13", "e13-prod-canary-001")?.courseCode, "E13_PROD_CANARY_001");
+    assert.equal(getNzCoursesForProvider("oli").length, 64);
   });
 
   it("J. sandbox certification fixture is unavailable in production", () => {

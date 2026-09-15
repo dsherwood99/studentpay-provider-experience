@@ -34,7 +34,13 @@ export function PayInFullCardForm({
     let paymentElement: { unmount: () => void } | null = null;
 
     async function mount() {
-      if (!clientSecret || !publishableKey.startsWith("pk_test_")) {
+      if (
+        !clientSecret ||
+        !(
+          publishableKey.startsWith("pk_test_") ||
+          publishableKey.startsWith("pk_live_")
+        )
+      ) {
         onErrorRef.current?.("Card payment is not available.");
         return;
       }

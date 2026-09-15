@@ -18,6 +18,7 @@ import {
 import {
   HOSTED_E13_API_SHA,
   authoritativePayInFullPriceCents,
+  isLiveStripePublishableKey,
   hostedStripePublishableKeyIsSafe,
   isHostedPayInFullEnvironmentAllowed,
   isTestStripePublishableKey,
@@ -35,7 +36,7 @@ import {
   shouldCreatePayInFullCheckout,
   shouldReuseProviderOrderId,
 } from "./pay-in-full-flow.ts";
-import { getNzTenantBySlug } from "./tenants.ts";
+import { getDefaultProductionNzTenantSlug, getNzTenantBySlug } from "./tenants.ts";
 
 const srcRoot = fileURLToPath(new URL("../../", import.meta.url));
 const managed = [
@@ -43,6 +44,7 @@ const managed = [
   "STUDENTPAY_ENV",
   "NZ_STUDENTPAY_API_BASE_URL",
   "NZ_ENROLMENT_SESSION_SECRET",
+  "E13_INTERNAL_CANARY_HOSTED_ENABLED",
 ];
 const previous: Record<string, string | undefined> = {};
 
@@ -112,10 +114,10 @@ describe("Hosted E13 eligibility", () => {
     assert.equal(toPublicCourse(course).enrolmentPaymentOptions.includes("payment_plan"), true);
   });
 
-  it("does not enable Pay in Full in production Hosted", () => {
+  it("does not expose Pay in Full on OLI or Bela in production Hosted", () => {
     process.env.STUDENTPAY_ENV = "production";
     process.env.NZ_STUDENTPAY_API_BASE_URL = "https://api.studentpay.co.nz";
-    assert.equal(isHostedPayInFullEnvironmentAllowed(), false);
+    assert.equal(isHostedPayInFullEnvironmentAllowed(), true);
     assert.equal(getNzTenantBySlug("bela-nz"), undefined);
     const oli = getNzTenantBySlug("oli")!;
     const course = getNzCoursesForProvider("oli")[0]!;
@@ -123,6 +125,7 @@ describe("Hosted E13 eligibility", () => {
       resolveHostedPayInFullEligibility({ tenant: oli, course }).payInFullAvailable,
       false,
     );
+    assert.equal(getNzTenantBySlug("studentpay-internal-e13"), undefined);
   });
 });
 
@@ -193,11 +196,16 @@ describe("Hosted E13 price and create contract", () => {
 });
 
 describe("Hosted E13 Stripe and completion", () => {
-  it("8. initialises Stripe Elements only with a TEST publishable key", () => {
+  it("8. initialises Stripe Elements only with the env-matching publishable key", () => {
     assert.equal(isTestStripePublishableKey("pk_test_abc"), true);
     assert.equal(isTestStripePublishableKey("pk_live_abc"), false);
+    assert.equal(isLiveStripePublishableKey("pk_live_abc"), true);
     assert.equal(hostedStripePublishableKeyIsSafe("pk_test_abc"), true);
     assert.equal(hostedStripePublishableKeyIsSafe("pk_live_abc"), false);
+    process.env.STUDENTPAY_ENV = "production";
+    process.env.NZ_STUDENTPAY_API_BASE_URL = "https://api.studentpay.co.nz";
+    assert.equal(hostedStripePublishableKeyIsSafe("pk_live_abc"), true);
+    assert.equal(hostedStripePublishableKeyIsSafe("pk_test_abc"), false);
     const cardForm = fs.readFileSync(
       path.join(srcRoot, "components/nz-enrolment/PayInFullCardForm.tsx"),
       "utf8",
@@ -205,6 +213,7 @@ describe("Hosted E13 Stripe and completion", () => {
     assert.match(cardForm, /@stripe\/stripe-js/);
     assert.match(cardForm, /elements\.create\("payment"/);
     assert.match(cardForm, /pk_test_/);
+    assert.match(cardForm, /pk_live_/);
   });
 
   it("9-10. Stripe success polls the server and is not enrolment completion", () => {
@@ -391,7 +400,7 @@ describe("Hosted E13 success and payment-plan regression", () => {
   });
 
   it("records the E13 API SHA Hosted was built against", () => {
-    assert.equal(HOSTED_E13_API_SHA, "8f8f2f6cb66b80f763c3fb3910e2b4a774305e70");
+    assert.equal(HOSTED_E13_API_SHA, "78b2e4439b0ad31e5c766793b8bc1f85523293c6");
   });
 
   it("does not put Stripe payment ids in the public card payload helper", () => {
@@ -408,5 +417,50 @@ describe("Hosted E13 success and payment-plan regression", () => {
       information_confirmed: true,
       privacy_consent_accepted: true,
     }), true);
+  });
+
+  it("internal Production canary is hidden until explicitly enabled", () => {
+    process.env.STUDENTPAY_ENV = "production";
+    process.env.NZ_STUDENTPAY_API_BASE_URL = "https://api.studentpay.co.nz";
+    assert.equal(getNzTenantBySlug("studentpay-internal-e13"), undefined);
+    assert.equal(
+      getNzCourse("studentpay-internal-e13", "e13-prod-canary-001"),
+      undefined,
+    );
+    assert.equal(getDefaultProductionNzTenantSlug(), "oli");
+  });
+
+  it("internal Production canary is eligible only when Hosted flag, env, provider, and catalogue align", () => {
+    process.env.STUDENTPAY_ENV = "production";
+    process.env.NZ_STUDENTPAY_API_BASE_URL = "https://api.studentpay.co.nz";
+    process.env.E13_INTERNAL_CANARY_HOSTED_ENABLED = "true";
+    const tenant = getNzTenantBySlug("studentpay-internal-e13")!;
+    const course = getNzCourse("studentpay-internal-e13", "e13-prod-canary-001")!;
+    const eligibility = resolveHostedPayInFullEligibility({ tenant, course });
+    assert.equal(tenant.internalCanary, true);
+    assert.equal(course.paymentInFullCourseFeeCents, 100);
+    assert.equal(
+      authoritativePayInFullPriceCents({
+        catalogueCents: course.paymentInFullCourseFeeCents,
+        serverCoursePrice: 1,
+      }),
+      100,
+    );
+    assert.equal(eligibility.environmentAllowed, true);
+    assert.equal(eligibility.providerEnabled, true);
+    assert.equal(eligibility.courseAllows, true);
+    assert.equal(eligibility.payInFullAvailable, true);
+    assert.equal(eligibility.paymentPlanAvailable, false);
+    assert.equal(getDefaultProductionNzTenantSlug(), "oli");
+    const payload = buildPayInFullCreatePayload({
+      tenant,
+      course,
+      student,
+      providerOrderId: "HOSTED-E13-CANARY-UNIT",
+      successUrl: "https://example.test/enrol/studentpay-internal-e13/e13-prod-canary-001",
+      cancelUrl: "https://example.test/enrol/studentpay-internal-e13/e13-prod-canary-001",
+    });
+    assert.equal(payload.payment_option, "pay_in_full");
+    assert.equal("pricing" in payload, false);
   });
 });

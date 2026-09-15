@@ -1,13 +1,14 @@
-# NZ Enrolment E13 — Hosted Checkout (Preview / Sandbox)
+# NZ Enrolment E13 — Hosted Checkout (fail-closed Production support)
 
-**Date:** 14 September 2026  
-**NZ_ENROLMENT_E13_HOSTED_CHECKOUT = IMPLEMENTED** (Preview only; no Hosted sandbox canary)  
+**Date:** 15 September 2026  
+**NZ_ENROLMENT_E13_HOSTED_CHECKOUT = PRODUCTIONISED** (gated; not globally exposed)  
 **E13 STATUS = SANDBOX_CERTIFIED_CORE** (not MET)  
 **NZ ENROLMENT SCORE = 10 / 13 MET**  
-**PRODUCTION_DEPLOYMENT = NONE**
+**PRODUCTION_DEPLOYMENT = NONE**  
+**READY_FOR_E13_PRODUCTION_CANARY = NO**
 
 Do not mark E13 MET. Do not Promote Production. Do not assign
-`enrol.studentpay.co.nz` to this branch.
+`enrol.studentpay.co.nz` to this branch. Do not enable Bela Production PIF.
 
 ---
 
@@ -28,9 +29,12 @@ The two journeys do not share DDA / mandate / PPA state.
 
 ## API contract
 
-Built against studentpay-nz-api PR #80 SHA:
+Built against studentpay-nz-api productionisation SHA:
 
-`8f8f2f6cb66b80f763c3fb3910e2b4a774305e70`
+`78b2e4439b0ad31e5c766793b8bc1f85523293c6`
+
+Successor of sandbox implementation SHA
+`8f8f2f6cb66b80f763c3fb3910e2b4a774305e70`. Do not merge API PR #80.
 
 Create:
 
@@ -48,14 +52,20 @@ Confirm:
 
 ## Environment safety
 
-Pay in Full is available only when `STUDENTPAY_ENV=sandbox` and
-`NZ_STUDENTPAY_API_BASE_URL` is not `https://api.studentpay.co.nz`.
+Pay in Full is available when the Hosted product is `nz_enrolment` and the
+API base matches `STUDENTPAY_ENV`:
 
-Preview must use the PR #80 sandbox API (or later sandbox E13) and TEST Stripe
-publishable keys (`pk_test_`). Live Stripe keys are rejected.
+- sandbox + sandbox API + `pk_test_`
+- production + `https://api.studentpay.co.nz` + `pk_live_`
 
-Do not set `NZ_ENROLMENT_PUBLIC_BASE_URL=https://enrol.studentpay.co.nz` on this
-Preview deployment.
+Never accept `pk_test_` in production or `pk_live_` in sandbox.
+
+Production still does **not** globally expose Pay in Full. OLI remains
+plan-only. Bela remains sandbox-only. The internal `$1` canary tenant is
+hidden unless `E13_INTERNAL_CANARY_HOSTED_ENABLED=true` in Production.
+
+Do not assign `enrol.studentpay.co.nz` until Auto-assign Custom Production
+Domains is confirmed OFF.
 
 ---
 
@@ -63,19 +73,24 @@ Preview deployment.
 
 Server-side only:
 
-1. Hosted E13 environment kill switch (sandbox, non-production API)
-2. Provider tenant `pay_in_full.enabled` (Bela NZ sandbox)
+1. Hosted E13 environment (sandbox or production API match)
+2. Provider tenant `pay_in_full.enabled`
 3. Course `enrolmentPaymentOptions` includes `pay_in_full`
 
-OLI Production courses remain payment-plan only. The disabled “coming soon”
-radio is unchanged there.
+OLI Production courses remain payment-plan only. Bela Production remains
+disabled (`sandboxOnly`). Internal canary requires an explicit Hosted flag.
 
 ---
 
 ## Canary
 
-Do **not** complete a Hosted Stripe TEST card payment until:
+Do **not** complete a Hosted Stripe LIVE card payment until:
 
-`APPROVE_E13_HOSTED_SANDBOX_CANARY`
+`APPROVE_E13_PRODUCTION_CANARY`
+
+The internal Production tenant `studentpay-internal-e13` / course
+`e13-prod-canary-001` stays hidden unless
+`E13_INTERNAL_CANARY_HOSTED_ENABLED=true`. Do not enable Bela Production
+PIF in the same step.
 
 Do not mutate `CERT-E13-BELA-NZ-20260914-002`.
