@@ -38,9 +38,14 @@ export async function generateMetadata({ params }: EnrolmentPageProps) {
       title: tenant ? `Course not found | ${tenant.displayName}` : "Enrolment",
     };
   }
+  const eligibility = resolveHostedPayInFullEligibility({ tenant, course });
+  const paymentLabel =
+    eligibility.payInFullAvailable && !eligibility.paymentPlanAvailable
+      ? "StudentPay NZ"
+      : "a StudentPay NZ payment plan";
   return {
     title: `${course.name} | ${tenant.displayName}`,
-    description: `Enrol in ${course.name} with a StudentPay NZ payment plan from ${tenant.displayName}.`,
+    description: `Enrol in ${course.name} with ${paymentLabel} from ${tenant.displayName}.`,
   };
 }
 
@@ -77,6 +82,7 @@ export default async function EnrolmentPage({
         course={toPublicCourse(nzCourse)}
         ddaReturn={ddaReturn}
         payInFullAvailable={eligibility.payInFullAvailable}
+        paymentPlanAvailable={eligibility.paymentPlanAvailable}
       />
     );
   }

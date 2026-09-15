@@ -187,6 +187,7 @@ export const NZ_TENANTS: readonly NzTenant[] = [
       returnToProviderLabel: "Return to StudentPay",
       knownCourseWebsiteSlugs: ["e13-prod-canary-001"],
       headerLinks: [{ label: "StudentPay", href: "https://studentpay.co.nz" }],
+      attributionLabel: "Payments powered by StudentPay NZ",
     }),
     checkout: {
       paymentOptions: {

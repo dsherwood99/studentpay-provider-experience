@@ -8,7 +8,6 @@ import {
   NZ_DIRECT_DEBIT_COPY,
   NZ_DIRECT_DEBIT_CTA,
   NZ_PAYMENT_PLAN_CHOICE_COPY,
-  NZ_PAYMENT_PLAN_COPY,
   NZ_PAY_IN_FULL_COPY,
   NZ_REVIEW_COPY,
   NZ_STUDENT_DETAILS_COPY,
@@ -24,6 +23,15 @@ import {
   studentDetailsAreValid,
   studentDetailsStarted,
 } from "@/lib/nz-enrolment/checkout-ui";
+import {
+  hostedCheckoutConfirmDeclarations,
+  hostedCheckoutCopy,
+  hostedCheckoutCreatePlan,
+  hostedCheckoutRenderFlags,
+  initialHostedPaymentOption,
+  resolveHostedPaymentMode,
+  resolveHostedPaymentOption,
+} from "@/lib/nz-enrolment/checkout-payment-mode";
 import {
   defaultFirstPaymentDate,
   formatNzdFromCents,
@@ -64,6 +72,7 @@ type Props = {
   course: NzPublicCourse;
   ddaReturn?: "return" | "cancelled" | null;
   payInFullAvailable?: boolean;
+  paymentPlanAvailable?: boolean;
 };
 
 const emptyStudent: NzStudentDetails = {
@@ -158,7 +167,12 @@ export function NzEnrolmentCheckout({
   course,
   ddaReturn = null,
   payInFullAvailable = false,
+  paymentPlanAvailable = true,
 }: Props) {
+  const paymentMode = resolveHostedPaymentMode({
+    paymentPlanAvailable,
+    payInFullAvailable,
+  });
   const studentSectionRef = useRef<HTMLElement | null>(null);
   const ddaSectionRef = useRef<HTMLElement | null>(null);
   const reviewSectionRef = useRef<HTMLElement | null>(null);
@@ -199,7 +213,7 @@ export function NzEnrolmentCheckout({
     privacy_consent_accepted: false,
   });
   const [paymentOption, setPaymentOption] = useState<NzPaymentOptionId>(
-    "interest_free_payment_plan",
+    () => initialHostedPaymentOption(paymentMode) ?? "interest_free_payment_plan",
   );
   const [paymentChoiceTouched, setPaymentChoiceTouched] = useState(false);
   const [clientSecret, setClientSecret] = useState("");
@@ -238,7 +252,23 @@ export function NzEnrolmentCheckout({
       : firstPaymentDate;
 
   const derivedPlan = course.planPolicy.mode === "derived_regular";
+  const payInFullEligible = payInFullAvailable;
+  const resolvedPaymentOption: NzPaymentOptionId =
+    resolveHostedPaymentOption({
+      mode: paymentMode,
+      selected: paymentOption,
+      paymentChoiceTouched,
+      storedDraftOption: storedDraft?.paymentOption,
+    }) ?? paymentOption;
+  const isPayInFull = payInFullEligible && isPayInFullOption(resolvedPaymentOption);
+  const renderFlags = hostedCheckoutRenderFlags({
+    mode: paymentMode,
+    selectedOption: resolvedPaymentOption,
+  });
   const preview: NzPlanPreview | null = useMemo(() => {
+    if (!renderFlags.allowPlanPreview) {
+      return null;
+    }
     try {
       if (course.planPolicy.mode === "derived_regular") {
         return previewPlan({
@@ -261,6 +291,7 @@ export function NzEnrolmentCheckout({
     }
   }, [
     course,
+    renderFlags.allowPlanPreview,
     resolvedFirstPaymentDate,
     resolvedFrequency,
     resolvedInstalments,
@@ -279,21 +310,18 @@ export function NzEnrolmentCheckout({
   const alreadyConfirmed = confirmed || isConfirmedCheckoutStatus(checkoutStatus || undefined);
   const accepted = declarationsAccepted(declarations);
   const planLocked = alreadyCreated;
-  const payInFull = tenant.checkout.paymentOptions.pay_in_full;
-  const payInFullEligible = payInFullAvailable;
-  const resolvedPaymentOption: NzPaymentOptionId =
-    !paymentChoiceTouched &&
-    storedDraft?.paymentOption === "pay_in_full" &&
-    payInFullEligible
-      ? "pay_in_full"
-      : paymentOption;
-  const isPayInFull = payInFullEligible && isPayInFullOption(resolvedPaymentOption);
   const courseWebsiteUrl = providerCourseWebsiteUrl(tenant, course);
   const returnToProviderUrl = safeReturnToProviderUrl(tenant);
   const attribution = tenant.presentation.attributionLabel;
   const displayedCoursePriceCents = isPayInFull
     ? authoritativePriceCents
     : course.paymentPlanCourseFeeCents;
+  const copy = hostedCheckoutCopy({
+    mode: paymentMode,
+    selectedOption: resolvedPaymentOption,
+    amountCents: displayedCoursePriceCents,
+    tenantAttribution: attribution,
+  });
   const pifDeclarationsOk = payInFullDeclarationsAccepted(declarations);
   const pifPhase = payInFullPhase({
     confirmed: alreadyConfirmed,
@@ -352,20 +380,22 @@ export function NzEnrolmentCheckout({
     confirmed: alreadyConfirmed,
   });
 
-  const canCreate = isPayInFull
-    ? shouldCreatePayInFullCheckout({
-        eligible: payInFullEligible,
-        studentValid,
-        alreadyCreated,
-        userClickedContinue: true,
-        busy: false,
-      })
-    : shouldCreateCheckout({
-        studentValid,
-        alreadyCreated,
-        userClickedDirectDebit: true,
-        busy: false,
-      });
+  const canCreate =
+    renderFlags.allowCheckoutCreate &&
+    (isPayInFull
+      ? shouldCreatePayInFullCheckout({
+          eligible: payInFullEligible,
+          studentValid,
+          alreadyCreated,
+          userClickedContinue: true,
+          busy: false,
+        })
+      : shouldCreateCheckout({
+          studentValid,
+          alreadyCreated,
+          userClickedDirectDebit: true,
+          busy: false,
+        }));
   const canConfirm = isPayInFull
     ? pifDeclarationsOk && studentValid && !alreadyConfirmed && Boolean(clientSecret)
     : confirmEnabled({
@@ -550,7 +580,20 @@ export function NzEnrolmentCheckout({
       return;
     }
     const nextErrors = validateStudentDetails(resolvedStudent);
-    const allowed = isPayInFull
+    const createPlan = hostedCheckoutCreatePlan({
+      mode: paymentMode,
+      selectedOption: resolvedPaymentOption,
+      plan: {
+        upfrontAmountCents: resolvedUpfront,
+        frequency: resolvedFrequency,
+        numberOfInstalments: resolvedInstalments,
+        firstPaymentDate: resolvedFirstPaymentDate,
+      },
+    });
+    const allowed =
+      Boolean(createPlan) &&
+      renderFlags.allowCheckoutCreate &&
+      (isPayInFull
       ? shouldCreatePayInFullCheckout({
           eligible: payInFullEligible,
           studentValid: Object.keys(nextErrors).length === 0,
@@ -563,7 +606,7 @@ export function NzEnrolmentCheckout({
           alreadyCreated,
           userClickedDirectDebit: true,
           busy,
-        });
+        }));
     if (!allowed) {
       if (Object.keys(nextErrors).length > 0) {
         setFieldErrors(nextErrors);
@@ -585,6 +628,9 @@ export function NzEnrolmentCheckout({
     setError("");
     setSectionErrors((current) => ({ ...current, student: undefined, dda: undefined }));
     persistDraft();
+    if (!createPlan) {
+      return;
+    }
     try {
       const response = await fetch("/api/enrolment-checkout", {
         method: "POST",
@@ -594,15 +640,7 @@ export function NzEnrolmentCheckout({
           providerSlug: tenant.slug,
           courseSlug: course.slug,
           student: resolvedStudent,
-          plan: isPayInFull
-            ? { paymentOption: "pay_in_full" }
-            : {
-                paymentOption: "interest_free_payment_plan",
-                upfrontAmountCents: resolvedUpfront,
-                frequency: resolvedFrequency,
-                numberOfInstalments: resolvedInstalments,
-                firstPaymentDate: resolvedFirstPaymentDate,
-              },
+          plan: createPlan,
         }),
       });
       const json = (await response.json().catch(() => ({}))) as StatusPayload & {
@@ -640,15 +678,19 @@ export function NzEnrolmentCheckout({
   }
 
   async function confirmPayInFullFromServer() {
+    const confirmDeclarations = hostedCheckoutConfirmDeclarations({
+      selectedOption: resolvedPaymentOption,
+      declarations,
+    });
+    if (!confirmDeclarations) {
+      return;
+    }
     const response = await fetch("/api/enrolment-checkout/confirm", {
       method: "POST",
       credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        declarations: {
-          information_confirmed: declarations.information_confirmed,
-          privacy_consent_accepted: declarations.privacy_consent_accepted,
-        },
+        declarations: confirmDeclarations,
       }),
     });
     const json = (await response.json().catch(() => ({}))) as StatusPayload & {
@@ -793,11 +835,18 @@ export function NzEnrolmentCheckout({
     setError("");
     setSectionErrors((current) => ({ ...current, review: undefined }));
     try {
+      const confirmDeclarations = hostedCheckoutConfirmDeclarations({
+        selectedOption: resolvedPaymentOption,
+        declarations,
+      });
+      if (!confirmDeclarations) {
+        return;
+      }
       const response = await fetch("/api/enrolment-checkout/confirm", {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ declarations }),
+        body: JSON.stringify({ declarations: confirmDeclarations }),
       });
       const json = (await response.json().catch(() => ({}))) as StatusPayload & {
         success?: boolean;
@@ -819,6 +868,27 @@ export function NzEnrolmentCheckout({
     } finally {
       setBusy(false);
     }
+  }
+
+  if (paymentMode === "neither" && !alreadyConfirmed) {
+    return (
+      <div
+        className={styles.page}
+        data-testid="nz-enrolment-unavailable"
+        style={tenantCssVars(tenant) as CSSProperties}
+      >
+        <div className={styles.shell}>
+          <section className={styles.form} aria-labelledby="nz-enrolment-unavailable-heading">
+            <div className={styles.section}>
+              <h1 id="nz-enrolment-unavailable-heading">Enrolment unavailable</h1>
+              <p className={styles.lead}>
+                This course has no eligible payment option on this checkout.
+              </p>
+            </div>
+          </section>
+        </div>
+      </div>
+    );
   }
 
   if (alreadyConfirmed) {
@@ -902,7 +972,7 @@ export function NzEnrolmentCheckout({
                   </a>
                 </div>
               ) : null}
-              <p className={styles.powered}>{attribution}</p>
+              <p className={styles.powered}>{copy.journeyAttribution}</p>
             </div>
           </section>
         </div>
@@ -914,6 +984,8 @@ export function NzEnrolmentCheckout({
     <div
       className={styles.page}
       data-testid="nz-enrolment-single-page"
+      data-payment-mode={paymentMode}
+      data-selected-option={resolvedPaymentOption}
       style={tenantCssVars(tenant) as CSSProperties}
     >
       <div className={styles.shell}>
@@ -923,7 +995,7 @@ export function NzEnrolmentCheckout({
             <h1>{course.name}</h1>
             <p className={styles.fee}>{formatNzdFromCents(displayedCoursePriceCents)}</p>
             <p className={styles.lead}>
-              Course already selected · {tenant.presentation.attributionLabel}
+              Course already selected · {copy.journeyAttribution}
             </p>
             {courseWebsiteUrl ? (
               <p>
@@ -944,12 +1016,12 @@ export function NzEnrolmentCheckout({
         <div className={styles.form}>
           <CheckoutSection
             number={1}
-            title={isPayInFull ? NZ_PAY_IN_FULL_COPY.heading : NZ_PAYMENT_PLAN_COPY.heading}
+            title={copy.paymentSectionTitle}
             status={planStatus}
             testId="nz-section-plan"
           >
             <p className={styles.lead}>
-              {isPayInFull ? NZ_PAY_IN_FULL_COPY.choiceLead : NZ_PAYMENT_PLAN_COPY.intro}
+              {copy.paymentSectionLead}
             </p>
             <dl className={styles.review}>
               <dt>Course</dt>
@@ -960,14 +1032,14 @@ export function NzEnrolmentCheckout({
                   isPayInFull ? displayedCoursePriceCents : course.paymentPlanCourseFeeCents,
                 )}
               </dd>
-              {isPayInFull ? (
+              {renderFlags.showPayInFullSummary ? (
                 <>
                   <dt>Pay in Full</dt>
                   <dd data-testid="nz-pay-in-full-today">
                     {formatNzdFromCents(displayedCoursePriceCents)} today
                   </dd>
                 </>
-              ) : (
+              ) : renderFlags.showPlanSchedule ? (
                 <>
                   <dt>Payment plan</dt>
                   <dd>
@@ -988,10 +1060,10 @@ export function NzEnrolmentCheckout({
                   <dt>Total</dt>
                   <dd>{display?.totalLabel}</dd>
                 </>
-              )}
+              ) : null}
             </dl>
 
-            {derivedPlan || isPayInFull ? null : (
+            {derivedPlan || !renderFlags.showPlanSchedule ? null : (
               <div className={styles.grid}>
                 <TextField
                   label="Payment-plan deposit (NZD)"
@@ -1030,9 +1102,10 @@ export function NzEnrolmentCheckout({
               </div>
             )}
 
-            {payInFullEligible ? (
+            {renderFlags.showPaymentMethodRadios ? (
               <fieldset className={styles.options} data-testid="nz-pay-in-full-secondary">
                 <legend className={styles.kicker}>How would you like to pay?</legend>
+                {renderFlags.showPaymentPlanChoice ? (
                 <label
                   className={styles.option}
                   data-selected={!isPayInFull ? "true" : undefined}
@@ -1055,6 +1128,8 @@ export function NzEnrolmentCheckout({
                     StudentPay instalments.
                   </span>
                 </label>
+                ) : null}
+                {renderFlags.showPayInFullChoice ? (
                 <label
                   className={styles.option}
                   data-selected={isPayInFull ? "true" : undefined}
@@ -1076,31 +1151,10 @@ export function NzEnrolmentCheckout({
                     {formatNzdFromCents(course.paymentInFullCourseFeeCents)} today.
                   </span>
                 </label>
+                ) : null}
               </fieldset>
-            ) : (
-              <div className={styles.options} data-testid="nz-pay-in-full-secondary">
-                <label className={styles.option}>
-                  <input type="radio" name="payment-option" defaultChecked readOnly />
-                  <span>
-                    <strong>Interest-free payment plan</strong>
-                    Pay the Payment Plan Course Fee of{" "}
-                    {formatNzdFromCents(course.paymentPlanCourseFeeCents)} in scheduled
-                    StudentPay instalments.
-                  </span>
-                </label>
-                <div className={styles.option} data-disabled="true">
-                  <input type="radio" name="payment-option-full" disabled />
-                  <span>
-                    <strong>Payment in Full of Course Fees</strong>{" "}
-                    {formatNzdFromCents(course.paymentInFullCourseFeeCents)}.
-                    {payInFull.comingSoon
-                      ? " Informational only. Not available on this checkout."
-                      : " Unavailable."}
-                  </span>
-                </div>
-              </div>
-            )}
-            {!preview && !isPayInFull ? (
+            ) : null}
+            {!preview && renderFlags.allowPlanPreview ? (
               <p className={styles.error} role="alert">
                 This plan cannot be reconciled in integer cents.
               </p>
@@ -1115,7 +1169,7 @@ export function NzEnrolmentCheckout({
             sectionRef={studentSectionRef}
           >
             <p className={styles.lead}>
-              {isPayInFull ? NZ_PAY_IN_FULL_COPY.studentLead : NZ_STUDENT_DETAILS_COPY.lead}
+              {copy.studentLead}
             </p>
             {sectionErrors.student ? (
               <p className={styles.error} role="alert">
@@ -1219,7 +1273,7 @@ export function NzEnrolmentCheckout({
             </div>
           </CheckoutSection>
 
-          {isPayInFull ? (
+          {renderFlags.showPayInFullSummary ? (
             <CheckoutSection
               number={3}
               title={NZ_PAY_IN_FULL_COPY.cardHeading}
@@ -1247,7 +1301,7 @@ export function NzEnrolmentCheckout({
                     disabled={!canCreate || busy}
                     onClick={() => void createCheckout()}
                   >
-                    {busy ? "Preparing card payment…" : NZ_PAY_IN_FULL_COPY.continueCta}
+                    {busy ? "Preparing card payment…" : copy.continueCta}
                   </button>
                 </div>
               ) : null}
@@ -1280,7 +1334,7 @@ export function NzEnrolmentCheckout({
                 </p>
               ) : null}
             </CheckoutSection>
-          ) : (
+          ) : renderFlags.showDdaSection ? (
           <CheckoutSection
             number={3}
             title={NZ_DIRECT_DEBIT_COPY.heading}
@@ -1292,6 +1346,7 @@ export function NzEnrolmentCheckout({
               {tenant.checkout.wording?.ddaLead ||
                 "You are setting up a Direct Debit authority with StudentPay NZ. This is not a card payment."}
             </p>
+            {renderFlags.showFirstPaymentDate ? (
             <div className={styles.grid}>
               <TextField
                 label="First payment date"
@@ -1302,6 +1357,7 @@ export function NzEnrolmentCheckout({
                 onChange={setFirstPaymentDate}
               />
             </div>
+            ) : null}
             {setupComplete ? (
               <div className={styles.completePanel} data-testid="nz-dda-complete" role="status">
                 <h3>{NZ_DIRECT_DEBIT_COPY.authorisedTitle}</h3>
@@ -1347,7 +1403,7 @@ export function NzEnrolmentCheckout({
               </p>
             ) : null}
           </CheckoutSection>
-          )}
+          ) : null}
 
           <CheckoutSection
             number={4}
@@ -1359,20 +1415,22 @@ export function NzEnrolmentCheckout({
             <dl className={styles.review}>
               <dt>Course</dt>
               <dd>{course.name}</dd>
-              <dt>{isPayInFull ? "Course price" : "Course fee"}</dt>
+              <dt>{renderFlags.showPayInFullSummary ? "Course price" : "Course fee"}</dt>
               <dd>
                 {formatNzdFromCents(
-                  isPayInFull ? displayedCoursePriceCents : course.paymentPlanCourseFeeCents,
+                  renderFlags.showPayInFullSummary
+                    ? displayedCoursePriceCents
+                    : course.paymentPlanCourseFeeCents,
                 )}
               </dd>
-              {isPayInFull ? (
+              {renderFlags.showPayInFullSummary ? (
                 <>
                   <dt>Pay in Full</dt>
                   <dd>{formatNzdFromCents(displayedCoursePriceCents)} today</dd>
                   <dt>Payment method</dt>
                   <dd>Card</dd>
                 </>
-              ) : (
+              ) : renderFlags.showPlanSchedule ? (
                 <>
                   <dt>Payment plan</dt>
                   <dd>
@@ -1391,10 +1449,14 @@ export function NzEnrolmentCheckout({
                       <dd>{formatNzdFromCents(preview.finalInstalmentAmountCents)}</dd>
                     </>
                   ) : null}
-                  <dt>First payment date</dt>
-                  <dd>{resolvedFirstPaymentDate}</dd>
+                  {renderFlags.showFirstPaymentDate ? (
+                    <>
+                      <dt>First payment date</dt>
+                      <dd>{resolvedFirstPaymentDate}</dd>
+                    </>
+                  ) : null}
                 </>
-              )}
+              ) : null}
               <dt>Student</dt>
               <dd>
                 {resolvedStudent.firstName} {resolvedStudent.lastName}
@@ -1403,7 +1465,7 @@ export function NzEnrolmentCheckout({
             </dl>
             <fieldset className={styles.checks}>
               <legend>Agreements</legend>
-              {isPayInFull ? (
+              {renderFlags.showPayInFullSummary ? (
                 <label className={styles.check}>
                   <input
                     type="checkbox"
@@ -1424,7 +1486,7 @@ export function NzEnrolmentCheckout({
                     {tenant.legalName} and StudentPay NZ to use them for this enrolment.
                   </span>
                 </label>
-              ) : (
+              ) : renderFlags.showPaymentPlanAccepted ? (
                 <label className={styles.check}>
                   <input
                     type="checkbox"
@@ -1441,27 +1503,35 @@ export function NzEnrolmentCheckout({
                     <a href={tenant.termsUrl} target="_blank" rel="noreferrer">
                       {tenant.displayName} terms
                     </a>
-                    , the{" "}
-                    <a
-                      href="/api/enrolment-checkout/legal?kind=payment-plan"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      StudentPay Payment Plan Agreement
-                    </a>
-                    , and the{" "}
-                    <a
-                      href="/api/enrolment-checkout/legal?kind=direct-debit"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Direct Debit Service Agreement
-                    </a>
+                    {renderFlags.showPpaLink ? (
+                      <>
+                        , the{" "}
+                        <a
+                          href="/api/enrolment-checkout/legal?kind=payment-plan"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          StudentPay Payment Plan Agreement
+                        </a>
+                      </>
+                    ) : null}
+                    {renderFlags.showDdsaLink ? (
+                      <>
+                        , and the{" "}
+                        <a
+                          href="/api/enrolment-checkout/legal?kind=direct-debit"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Direct Debit Service Agreement
+                        </a>
+                      </>
+                    ) : null}
                     .
                   </span>
                 </label>
-              )}
-              {isPayInFull ? null : (
+              ) : null}
+              {renderFlags.showPayInFullSummary ? null : (
                 <label className={styles.check}>
                   <input
                     type="checkbox"
@@ -1500,7 +1570,7 @@ export function NzEnrolmentCheckout({
               </label>
             </fieldset>
             <p id={confirmHelpId} className={styles.lead}>
-              {isPayInFull
+              {renderFlags.showPayInFullSummary
                 ? !studentValid
                   ? "Complete your details before paying."
                   : !clientSecret
@@ -1531,7 +1601,7 @@ export function NzEnrolmentCheckout({
                 type="button"
                 className={`${styles.btn} ${styles.btnPrimary} ${styles.btnBlock}`}
                 disabled={
-                  isPayInFull
+                  renderFlags.showPayInFullSummary
                     ? busy ||
                       alreadyConfirmed ||
                       !clientSecret ||
@@ -1543,15 +1613,15 @@ export function NzEnrolmentCheckout({
                 }
                 aria-describedby={confirmHelpId}
                 onClick={() =>
-                  void (isPayInFull ? payInFullNow() : confirmCheckout())
+                  void (renderFlags.showPayInFullSummary ? payInFullNow() : confirmCheckout())
                 }
               >
-                {isPayInFull
+                {renderFlags.showPayInFullSummary
                   ? busy
                     ? stripeSucceeded
                       ? "Confirming enrolment…"
                       : "Processing payment…"
-                    : NZ_PAY_IN_FULL_COPY.confirmCta
+                    : copy.confirmCta
                   : busy
                     ? "Confirming…"
                     : NZ_CONFIRM_CTA}
@@ -1560,7 +1630,7 @@ export function NzEnrolmentCheckout({
           </CheckoutSection>
         </div>
         <p className={styles.powered}>
-          {attribution}
+          {copy.journeyAttribution}
           {tenant.checkout.wording?.supportNote
             ? ` · ${tenant.checkout.wording.supportNote}`
             : null}
