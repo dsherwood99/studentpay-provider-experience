@@ -1,9 +1,11 @@
 import {
   buildCanonicalConfirmPayload,
+  buildPayInFullConfirmPayload,
   canonicalConfirm,
 } from "@/lib/nz-enrolment/canonical";
 import { jsonError } from "@/lib/nz-enrolment/errors";
 import { logNzEnrolmentEvent } from "@/lib/nz-enrolment/observability";
+import { isPayInFullOption, payInFullDeclarationsAccepted } from "@/lib/nz-enrolment/pay-in-full-flow";
 import {
   readNzSession,
   requireNzApiBaseUrl,
@@ -35,13 +37,27 @@ export async function POST(request: Request) {
     return jsonError(400, "VALIDATION_ERROR", "Invalid JSON.");
   }
 
+  const session = await readNzSession();
+  if (!session?.checkoutId || !session.providerSlug || !session.courseSlug) {
+    return jsonError(409, "SESSION_EXPIRED");
+  }
+
+  const payInFull = isPayInFullOption(session.paymentOption || session.plan?.paymentOption);
+
   const declarations = {
     payment_plan_accepted: Boolean(body.declarations?.payment_plan_accepted),
     information_confirmed: Boolean(body.declarations?.information_confirmed),
     privacy_consent_accepted: Boolean(body.declarations?.privacy_consent_accepted),
   };
 
-  if (
+  if (payInFull) {
+    if (!payInFullDeclarationsAccepted(declarations)) {
+      return jsonError(400, "DECLARATIONS_REQUIRED");
+    }
+    if (!session.opportunityId && !session.checkoutId) {
+      return jsonError(409, "SESSION_EXPIRED");
+    }
+  } else if (
     !declarations.payment_plan_accepted ||
     !declarations.information_confirmed ||
     !declarations.privacy_consent_accepted
@@ -49,13 +65,7 @@ export async function POST(request: Request) {
     return jsonError(400, "DECLARATIONS_REQUIRED");
   }
 
-  const session = await readNzSession();
-  if (
-    !session?.checkoutId ||
-    !session.checkoutToken ||
-    !session.opportunityId ||
-    !session.ddaId
-  ) {
+  if (!payInFull && (!session.checkoutToken || !session.opportunityId || !session.ddaId)) {
     return jsonError(409, "SESSION_EXPIRED");
   }
 
@@ -74,21 +84,33 @@ export async function POST(request: Request) {
     return apiBase.error;
   }
 
-  logNzEnrolmentEvent("confirm_started", {
+  logNzEnrolmentEvent(payInFull ? "pay_in_full_payment_started" : "confirm_started", {
     provider_slug: session.providerSlug,
     checkout_id: session.checkoutId,
+    payment_option: payInFull ? "pay_in_full" : "payment_plan",
   });
 
-  const payload = buildCanonicalConfirmPayload({
-    tenant: resolved.tenant,
-    providerOrderId: session.providerOrderId,
-    checkoutId: session.checkoutId,
-    checkoutToken: session.checkoutToken,
-    opportunityId: session.opportunityId,
-    ddaId: session.ddaId,
-    firstPaymentDate: session.plan?.firstPaymentDate || "",
-    declarations,
-  });
+  const payload = payInFull
+    ? buildPayInFullConfirmPayload({
+        tenant: resolved.tenant,
+        providerOrderId: session.providerOrderId,
+        checkoutId: session.checkoutId,
+        opportunityId: session.opportunityId,
+        declarations: {
+          information_confirmed: declarations.information_confirmed,
+          privacy_consent_accepted: declarations.privacy_consent_accepted,
+        },
+      })
+    : buildCanonicalConfirmPayload({
+        tenant: resolved.tenant,
+        providerOrderId: session.providerOrderId,
+        checkoutId: session.checkoutId,
+        checkoutToken: session.checkoutToken || "",
+        opportunityId: session.opportunityId || "",
+        ddaId: session.ddaId || "",
+        firstPaymentDate: session.plan?.firstPaymentDate || "",
+        declarations,
+      });
 
   const upstream = await canonicalConfirm({
     apiBaseUrl: apiBase.url,
@@ -98,16 +120,29 @@ export async function POST(request: Request) {
   });
 
   if (!upstream.body.success) {
-    logNzEnrolmentEvent("checkout_failed", {
-      provider_slug: session.providerSlug,
-      checkout_id: session.checkoutId,
-      error_code: upstream.body.error?.code || null,
-      http_status: upstream.httpStatus,
-      request_id: upstream.body.requestId || null,
-    });
+    const code = upstream.body.error?.code || "VALIDATION_ERROR";
+    if (payInFull && code === "PAYMENT_PROCESSING") {
+      logNzEnrolmentEvent("pay_in_full_payment_processing", {
+        provider_slug: session.providerSlug,
+        checkout_id: session.checkoutId,
+      });
+    } else if (payInFull && code === "PAYMENT_FAILED") {
+      logNzEnrolmentEvent("pay_in_full_payment_failed", {
+        provider_slug: session.providerSlug,
+        checkout_id: session.checkoutId,
+      });
+    } else {
+      logNzEnrolmentEvent("checkout_failed", {
+        provider_slug: session.providerSlug,
+        checkout_id: session.checkoutId,
+        error_code: code,
+        http_status: upstream.httpStatus,
+        request_id: upstream.body.requestId || null,
+      });
+    }
     return jsonError(
       upstream.httpStatus || 502,
-      upstream.body.error?.code || "VALIDATION_ERROR",
+      code,
       upstream.body.error?.message,
       { request_id: upstream.body.requestId },
     );
@@ -115,20 +150,22 @@ export async function POST(request: Request) {
 
   await writeNzSession(session);
 
-  logNzEnrolmentEvent("checkout_confirmed", {
+  const alreadyConfirmed = Boolean(
+    upstream.body.already_confirmed || upstream.body.alreadyConfirmed,
+  );
+
+  logNzEnrolmentEvent(payInFull ? "pay_in_full_confirmed" : "checkout_confirmed", {
     provider_slug: session.providerSlug,
     checkout_id: session.checkoutId,
-    already_confirmed: Boolean(
-      upstream.body.already_confirmed || upstream.body.alreadyConfirmed,
-    ),
-    agreement_number: upstream.body.agreement?.number || null,
+    already_confirmed: alreadyConfirmed,
+    agreement_number: payInFull ? null : upstream.body.agreement?.number || null,
+    payment_option: payInFull ? "pay_in_full" : "payment_plan",
   });
 
   return Response.json({
     success: true,
-    already_confirmed: Boolean(
-      upstream.body.already_confirmed || upstream.body.alreadyConfirmed,
-    ),
+    already_confirmed: alreadyConfirmed,
+    payment_option: payInFull ? "pay_in_full" : "payment_plan",
     checkout: {
       checkout_id: session.checkoutId,
       status: upstream.body.checkout?.status || "confirmed",
@@ -136,9 +173,18 @@ export async function POST(request: Request) {
     enrolment: {
       status: upstream.body.enrolment?.status || "complete",
     },
-    agreement: {
-      number: upstream.body.agreement?.number || null,
-      pdf_generated: Boolean(upstream.body.agreement?.pdf_generated),
-    },
+    payment: payInFull
+      ? {
+          status: upstream.body.payment?.status || "posted",
+          amount: upstream.body.payment?.amount ?? null,
+          ledger_posted: Boolean(upstream.body.payment?.ledger_posted),
+        }
+      : undefined,
+    agreement: payInFull
+      ? null
+      : {
+          number: upstream.body.agreement?.number || null,
+          pdf_generated: Boolean(upstream.body.agreement?.pdf_generated),
+        },
   });
 }

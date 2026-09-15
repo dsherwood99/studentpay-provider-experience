@@ -1,6 +1,12 @@
 import { allowSandboxFixtures } from "./environment.ts";
+import { courseEnrolmentPaymentOptions } from "./pay-in-full.ts";
 import oliProduction from "./catalogues/oli-production.json" with { type: "json" };
-import type { NzCourse, NzPlanPolicy, NzPublicCourse } from "./types.ts";
+import type {
+  NzCourse,
+  NzEnrolmentPaymentOption,
+  NzPlanPolicy,
+  NzPublicCourse,
+} from "./types.ts";
 
 const SANDBOX_FIXTURE_COURSES: readonly NzCourse[] = [
   {
@@ -40,6 +46,26 @@ const SANDBOX_FIXTURE_COURSES: readonly NzCourse[] = [
       upfrontAmountCents: 0,
     },
   },
+  {
+    courseCode: "BELA_LASH_BUSINESS_BUNDLE",
+    slug: "lash-business-bundle",
+    providerSlug: "bela-nz",
+    name: "Lash Business Bundle",
+    description:
+      "StudentPay NZ sandbox course for Bela Beauty College hosted Pay in Full and payment-plan enrolment. Matches E3 catalogue BELA_LASH_BUSINESS_BUNDLE.",
+    paymentPlanCourseFeeCents: 280_000,
+    paymentInFullCourseFeeCents: 280_000,
+    enrolmentPaymentOptions: ["payment_plan", "pay_in_full"],
+    status: "active",
+    sandboxOnly: true,
+    duration: "Self-paced",
+    planPolicy: {
+      mode: "derived_regular",
+      frequency: "Weekly",
+      regularInstalmentCents: 1500,
+      upfrontAmountCents: 1000,
+    },
+  },
 ];
 
 function asCourse(row: {
@@ -51,6 +77,7 @@ function asCourse(row: {
   description: string;
   paymentInFullCourseFeeCents: number;
   paymentPlanCourseFeeCents: number;
+  enrolmentPaymentOptions?: readonly NzEnrolmentPaymentOption[];
   status: "active" | "inactive";
   sandboxOnly?: boolean;
   sourceRow?: number;
@@ -65,6 +92,7 @@ function asCourse(row: {
     description: row.description,
     paymentInFullCourseFeeCents: row.paymentInFullCourseFeeCents,
     paymentPlanCourseFeeCents: row.paymentPlanCourseFeeCents,
+    enrolmentPaymentOptions: row.enrolmentPaymentOptions,
     status: row.status,
     sandboxOnly: row.sandboxOnly,
     sourceRow: row.sourceRow,
@@ -135,5 +163,6 @@ export function toPublicCourse(course: NzCourse): NzPublicCourse {
     duration: course.duration,
     planPolicy: course.planPolicy,
     planDefaults,
+    enrolmentPaymentOptions: courseEnrolmentPaymentOptions(course),
   };
 }

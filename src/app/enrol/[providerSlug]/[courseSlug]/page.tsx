@@ -7,6 +7,7 @@ import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
 import { getNzCourse, toPublicCourse } from "@/lib/nz-enrolment/courses";
 import { isNzEnrolmentProductAvailable } from "@/lib/nz-enrolment/environment";
+import { resolveHostedPayInFullEligibility } from "@/lib/nz-enrolment/pay-in-full";
 import { getNzTenantBySlug, toPublicTenant } from "@/lib/nz-enrolment/tenants";
 import { isCatalogueProvider } from "@/lib/provider-experience/catalogue";
 import { getCatalogueCourse } from "@/lib/provider-experience/catalogue-server";
@@ -66,11 +67,16 @@ export default async function EnrolmentPage({
     }
 
     const ddaReturn = dda === "return" || dda === "cancelled" ? dda : null;
+    const eligibility = resolveHostedPayInFullEligibility({
+      tenant: nzTenant,
+      course: nzCourse,
+    });
     return (
       <NzEnrolmentCheckout
         tenant={toPublicTenant(nzTenant)}
         course={toPublicCourse(nzCourse)}
         ddaReturn={ddaReturn}
+        payInFullAvailable={eligibility.payInFullAvailable}
       />
     );
   }

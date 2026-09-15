@@ -37,6 +37,23 @@ export const NZ_CONFIRMATION_COPY = {
   heading: "Enrolment confirmed",
 } as const;
 
+export const NZ_PAY_IN_FULL_COPY = {
+  heading: "Pay in Full",
+  choiceTitle: "Pay in Full",
+  choiceLead:
+    "Pay the full course price in one card payment, securely with Stripe. No ongoing instalments.",
+  cardHeading: "Card payment",
+  confirmCta: "Pay in Full and confirm enrolment",
+  continueCta: "Continue to card payment",
+  studentLead: "We'll use these details to set up your enrolment.",
+} as const;
+
+export const NZ_PAYMENT_PLAN_CHOICE_COPY = {
+  title: "Payment plan",
+  lead: "Pay with an interest-free StudentPay payment plan and Direct Debit.",
+} as const;
+
+export const NZ_PAY_IN_FULL_CONFIRM_CTA = NZ_PAY_IN_FULL_COPY.confirmCta;
 export const NZ_CONFIRM_CTA = "Confirm enrolment & activate payment plan";
 export const NZ_DIRECT_DEBIT_CTA = "Set up Direct Debit";
 

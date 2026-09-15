@@ -114,6 +114,15 @@ describe("NZ hosted product and environment isolation", () => {
     assert.equal(getNzCourse("fixture-institute", "example-certificate"), undefined);
   });
 
+  it("I2. Bela NZ hosted tenant is sandbox-only", () => {
+    process.env.STUDENTPAY_ENV = "production";
+    assert.equal(getNzTenantBySlug("bela-nz"), undefined);
+    assert.equal(getNzCourse("bela-nz", "lash-business-bundle"), undefined);
+    process.env.STUDENTPAY_ENV = "sandbox";
+    assert.ok(getNzTenantBySlug("bela-nz"));
+    assert.equal(getNzTenantBySlug("bela-nz")?.providerCode, "BELA_NZ");
+  });
+
   it("J. sandbox certification fixture is unavailable in production", () => {
     process.env.STUDENTPAY_ENV = "production";
     assert.equal(getNzCourse("oli", "certification-course"), undefined);
