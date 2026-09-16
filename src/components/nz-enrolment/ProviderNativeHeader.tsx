@@ -1,24 +1,23 @@
 import {
-  safeHeaderLinks,
+  cataloguePath,
+  providerCourseWebsiteUrl,
   safeProviderUrl,
-  safeStudentPayUrl,
 } from "@/lib/nz-enrolment/presentation";
-import type { NzPublicTenant } from "@/lib/nz-enrolment/types";
-import { cataloguePath } from "@/lib/nz-enrolment/presentation";
+import type { NzPublicCourse, NzPublicTenant } from "@/lib/nz-enrolment/types";
 import styles from "./provider-chrome.module.css";
 
 type Props = {
   tenant: NzPublicTenant;
+  course?: Pick<NzPublicCourse, "slug">;
 };
 
-export function ProviderNativeHeader({ tenant }: Props) {
+export function ProviderNativeHeader({ tenant, course }: Props) {
   const websiteUrl = safeProviderUrl(tenant.websiteUrl, tenant);
-  const headerLinks = safeHeaderLinks(tenant);
-  const studentPayUrl = safeStudentPayUrl(tenant);
   const homeHref = websiteUrl || cataloguePath(tenant);
+  const courseUrl = course ? providerCourseWebsiteUrl(tenant, course) : null;
 
   return (
-    <header className={styles.header}>
+    <header className={styles.header} data-testid="nz-provider-header">
       <div className={styles.headerInner}>
         <a className={styles.brand} href={homeHref} aria-label={`${tenant.displayName} home`}>
           {tenant.branding.logoPath ? (
@@ -35,22 +34,18 @@ export function ProviderNativeHeader({ tenant }: Props) {
         </a>
 
         <nav className={styles.nav} aria-label={`${tenant.displayName} enrolment`}>
-          {headerLinks.map((item) => (
-            <a key={`${item.label}-${item.href}`} href={item.href}>
-              {item.label}
+          {courseUrl ? (
+            <a className={styles.backLink} href={courseUrl}>
+              Back to course
             </a>
-          ))}
+          ) : null}
           {tenant.supportPhone ? (
-            <a className={styles.phone} href={`tel:${tenant.supportPhone.replace(/\s+/g, "")}`}>
-              {tenant.supportPhone}
+            <a className={styles.help} href={`tel:${tenant.supportPhone.replace(/\s+/g, "")}`}>
+              <span className={styles.helpLabel}>Need help?</span>
+              <span className={styles.helpNumber}>{tenant.supportPhone}</span>
             </a>
           ) : null}
         </nav>
-      </div>
-      <div className={styles.headerSupport}>
-        <p className={styles.attribution}>
-          <a href={studentPayUrl}>{tenant.presentation.attributionLabel}</a>
-        </p>
       </div>
     </header>
   );

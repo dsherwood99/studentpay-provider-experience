@@ -91,6 +91,20 @@
   text-underline-offset: 2px;
 }
 
+.courseLink {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+}
+
+.hero .courseLink a {
+  color: var(--nz-muted);
+  font-weight: 500;
+}
+
+.hero .courseLink a:hover {
+  color: var(--nz-cta, var(--nz-primary-deep));
+}
+
 .heroCard {
   background: var(--nz-surface);
   border: 1px solid var(--nz-border);
@@ -112,10 +126,30 @@
   color: var(--nz-heading);
 }
 
-.feeHint {
-  margin: 0;
+.feeLabel {
+  margin: 0 0 12px;
   color: var(--nz-muted);
-  font-size: var(--nz-form-size);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.planAmount {
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--nz-border);
+  font-family: var(--nz-heading-font, var(--nz-font, Inter, "Segoe UI", sans-serif));
+  font-size: 1.12rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--nz-heading);
+}
+
+.feeHint {
+  margin: 4px 0 0;
+  color: var(--nz-muted);
+  font-size: 0.9rem;
 }
 
 .form {
@@ -194,31 +228,35 @@
 .statusBadge {
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
-  padding: 0 10px;
-  border-radius: 999px;
-  border: 1px solid var(--nz-border);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--nz-muted);
+  color: color-mix(in srgb, var(--nz-muted) 72%, white);
+}
+
+.statusBadge[data-status="not_started"] {
+  color: color-mix(in srgb, var(--nz-muted) 70%, white);
+  font-weight: 600;
 }
 
 .statusBadge[data-status="ready"] {
-  border-color: color-mix(in srgb, var(--nz-primary) 45%, var(--nz-border));
-  color: var(--nz-primary);
+  color: var(--nz-cta, var(--nz-primary));
+  font-weight: 700;
 }
 
 .statusBadge[data-status="complete"] {
-  background: color-mix(in srgb, var(--nz-primary) 12%, white);
-  border-color: var(--nz-primary);
-  color: var(--nz-primary);
+  color: var(--nz-cta, var(--nz-primary));
+  font-weight: 700;
 }
 
 .statusBadge[data-status="action_required"] {
-  border-color: var(--nz-danger);
   color: var(--nz-danger);
+  font-weight: 700;
 }
 
 .completePanel {
@@ -434,9 +472,38 @@
 
 .reviewSplit {
   display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
-  gap: 18px 28px;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 20px 28px;
   align-items: start;
+}
+
+.reviewConfirm {
+  order: 1;
+  min-width: 0;
+}
+
+.summaryCard {
+  order: 2;
+  min-width: 0;
+  background: var(--nz-soft);
+  border: 1px solid var(--nz-border);
+  border-radius: 14px;
+  padding: 18px 18px 16px;
+  box-shadow: none;
+}
+
+.summaryCard h3 {
+  margin: 0 0 12px;
+  font-family: var(--nz-heading-font, var(--nz-font, Inter, "Segoe UI", sans-serif));
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--nz-muted);
+}
+
+.summaryCard .review {
+  margin: 0;
 }
 
 .reviewConfirm .lead {
@@ -484,13 +551,13 @@
 }
 
 .btnPrimary {
-  background: var(--nz-primary);
+  background: var(--nz-cta, var(--nz-primary));
   color: #fff;
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--nz-primary) 24%, transparent);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--nz-cta, var(--nz-primary)) 24%, transparent);
 }
 
 .btnPrimary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--nz-primary) 82%, #111);
+  background: color-mix(in srgb, var(--nz-cta, var(--nz-primary)) 82%, #111);
 }
 
 .btnGhost {
@@ -580,6 +647,14 @@
   .options,
   .ddaRow {
     grid-template-columns: 1fr;
+  }
+
+  .summaryCard {
+    order: 1;
+  }
+
+  .reviewConfirm {
+    order: 2;
   }
 
   .reviewSplit .review {

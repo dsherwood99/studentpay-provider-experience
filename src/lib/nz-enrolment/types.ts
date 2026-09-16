@@ -25,6 +25,7 @@ export type NzTenantBranding = {
   textColour: string;
   fontFamily: string;
   headingFontFamily?: string;
+  ctaColour?: string;
   buttonRadius?: NzButtonRadius;
   headerStyle?: "provider-native" | "minimal";
   footerStyle?: "provider-native" | "minimal";

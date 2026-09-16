@@ -20,7 +20,7 @@ export const NZ_STUDENT_DETAILS_COPY = {
 
 export const NZ_PAYMENT_PLAN_COPY = {
   heading: "Your payment plan",
-  intro: "This course is already selected. The weekly plan is calculated from the course fee.",
+  intro: "The weekly plan is calculated from the course fee.",
 } as const;
 
 export const NZ_DIRECT_DEBIT_COPY = {
@@ -66,6 +66,13 @@ export function studentDetailsStarted(student: Partial<NzStudentDetails>): boole
       student.region?.trim() ||
       (student.country?.trim() && student.country.trim() !== "New Zealand"),
   );
+}
+
+export function isPayInFullChoiceVisible(payInFull: {
+  enabled: boolean;
+  comingSoon: boolean;
+}): boolean {
+  return payInFull.enabled === true && payInFull.comingSoon !== true;
 }
 
 export function declarationsAccepted(declarations: {

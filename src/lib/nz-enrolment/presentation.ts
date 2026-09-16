@@ -174,6 +174,7 @@ export function tenantCssVars(tenant: NzPublicTenant): Record<string, string> {
     "--nz-button-radius": radius,
     "--nz-font": branding.fontFamily,
     "--nz-heading-font": branding.headingFontFamily || branding.fontFamily,
+    "--nz-cta": branding.ctaColour || branding.primaryColour,
   };
 }
 

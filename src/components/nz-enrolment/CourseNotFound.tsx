@@ -1,3 +1,4 @@
+import { ProviderNativeHeader } from "@/components/nz-enrolment/ProviderNativeHeader";
 import {
   cataloguePath,
   safeReturnToProviderUrl,
@@ -14,7 +15,9 @@ export function NzCourseNotFound({ tenant, courseSlug }: Props) {
   const returnUrl = safeReturnToProviderUrl(tenant);
 
   return (
-    <section className={styles.missing}>
+    <>
+      <ProviderNativeHeader tenant={tenant} />
+      <section className={styles.missing}>
       <h1>Course not found</h1>
       <p>
         We could not find an enrolment checkout for{" "}
@@ -32,5 +35,6 @@ export function NzCourseNotFound({ tenant, courseSlug }: Props) {
         ) : null}
       </div>
     </section>
+    </>
   );
 }

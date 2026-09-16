@@ -51,6 +51,11 @@ describe("generic provider branding and presentation", () => {
     assert.equal(pub.branding.backgroundColour, "#f9f7f3");
     assert.match(pub.branding.headingFontFamily || "", /Montserrat/);
     assert.match(tenantCssVars(pub)["--nz-heading-font"], /Montserrat/);
+    assert.equal(pub.branding.ctaColour, "#2f7474");
+    assert.equal(tenantCssVars(pub)["--nz-cta"], "#2f7474");
+    assert.equal(oli.checkout.paymentOptions.pay_in_full.enabled, false);
+    assert.equal(oli.checkout.paymentOptions.pay_in_full.comingSoon, true);
+    assert.equal(oli.checkout.paymentOptions.interest_free_payment_plan.enabled, true);
     assert.equal(pub.websiteUrl, "https://onlinelearninginstitute.co.nz/");
     assert.equal(pub.supportEmail, "info@onlinelearninginstitute.co.nz");
     assert.equal("apiKeyEnv" in pub, false);
@@ -99,9 +104,13 @@ describe("course-specific deep links", () => {
   it("maps PSY101 and BEA101 without changing certified prices", () => {
     const psy = getNzCourse("oli", "certificate-in-psychology-counselling")!;
     const bea = getNzCourse("oli", "manicure-pedicure-nail-technology")!;
+    const adm = getNzCourse("oli", "certificate-in-business-administration")!;
     assert.equal(psy.courseCode, "PSY101");
     assert.equal(psy.paymentPlanCourseFeeCents, 183425);
     assert.equal(psy.paymentInFullCourseFeeCents, 160425);
+    assert.equal(adm.courseCode, "ADM101");
+    assert.equal(adm.paymentPlanCourseFeeCents, 183425);
+    assert.equal(adm.paymentInFullCourseFeeCents, 160425);
     assert.equal(bea.courseCode, "BEA101");
     assert.equal(bea.paymentPlanCourseFeeCents, 402500);
   });

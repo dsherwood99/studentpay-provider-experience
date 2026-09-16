@@ -1,5 +1,4 @@
 import { ProviderNativeFooter } from "@/components/nz-enrolment/ProviderNativeFooter";
-import { ProviderNativeHeader } from "@/components/nz-enrolment/ProviderNativeHeader";
 import { isNzEnrolmentProductAvailable } from "@/lib/nz-enrolment/environment";
 import type { CSSProperties, ReactNode } from "react";
 import { tenantCssVars, usesProviderNativeChrome } from "@/lib/nz-enrolment/presentation";
@@ -33,7 +32,6 @@ export default async function NzEnrolProviderLayout({
 
   return (
     <div className={styles.frame} style={tenantCssVars(publicTenant) as CSSProperties}>
-      <ProviderNativeHeader tenant={publicTenant} />
       <div className={styles.main}>{children}</div>
       <ProviderNativeFooter tenant={publicTenant} />
     </div>

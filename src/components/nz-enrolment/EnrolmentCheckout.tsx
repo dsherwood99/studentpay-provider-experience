@@ -13,6 +13,7 @@ import {
   confirmEnabled,
   declarationsAccepted,
   isConfirmedCheckoutStatus,
+  isPayInFullChoiceVisible,
   planDisplay,
   sectionStatus,
   sectionStatusLabel,
@@ -39,6 +40,7 @@ import type {
   NzStudentDetails,
 } from "@/lib/nz-enrolment/types";
 import { validateStudentDetails } from "@/lib/nz-enrolment/validation";
+import { ProviderNativeHeader } from "@/components/nz-enrolment/ProviderNativeHeader";
 import styles from "./enrolment-checkout.module.css";
 
 type Props = {
@@ -225,6 +227,7 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
   const accepted = declarationsAccepted(declarations);
   const planLocked = alreadyCreated;
   const payInFull = tenant.checkout.paymentOptions.pay_in_full;
+  const showPayInFullChoice = isPayInFullChoiceVisible(payInFull);
   const courseWebsiteUrl = providerCourseWebsiteUrl(tenant, course);
   const returnToProviderUrl = safeReturnToProviderUrl(tenant);
   const attribution = tenant.presentation.attributionLabel;
@@ -527,6 +530,8 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
 
   if (alreadyConfirmed) {
     return (
+      <>
+      <ProviderNativeHeader tenant={tenant} course={course} />
       <div
         className={styles.page}
         data-testid="nz-enrolment-confirmed"
@@ -586,10 +591,13 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
           </section>
         </div>
       </div>
+      </>
     );
   }
 
   return (
+    <>
+    <ProviderNativeHeader tenant={tenant} course={course} />
     <div
       className={styles.page}
       data-testid="nz-enrolment-single-page"
@@ -602,10 +610,10 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
             {course.category ? <p className={styles.category}>{course.category}</p> : null}
             <h1>{course.name}</h1>
             <p className={styles.lead}>
-              Course already selected · {tenant.presentation.attributionLabel}
+              Complete your enrolment and set up your StudentPay payment plan below.
             </p>
             {courseWebsiteUrl ? (
-              <p>
+              <p className={styles.courseLink}>
                 <a href={courseWebsiteUrl}>
                   View this course on the {tenant.displayName} website
                 </a>
@@ -614,7 +622,11 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
           </div>
           <aside className={styles.heroCard} aria-label="Course fee">
             <p className={styles.fee}>{formatNzdFromCents(course.paymentPlanCourseFeeCents)}</p>
-            <p className={styles.feeHint}>{display?.regularLabel || "Interest-free payment plan"}</p>
+            <p className={styles.feeLabel}>Course fee</p>
+            <p className={styles.planAmount}>
+              {display?.regularLabel || "Weekly payment plan"}
+            </p>
+            <p className={styles.feeHint}>StudentPay payment plan</p>
           </aside>
         </header>
 
@@ -692,6 +704,7 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
               </div>
             )}
 
+            {showPayInFullChoice ? (
             <div className={styles.options} data-testid="nz-pay-in-full-secondary">
               <label className={styles.option}>
                 <input type="radio" name="payment-option" defaultChecked readOnly />
@@ -713,6 +726,7 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
                 </span>
               </div>
             </div>
+            ) : null}
             {!preview ? (
               <p className={styles.error} role="alert">
                 This plan cannot be reconciled in integer cents.
@@ -904,36 +918,32 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
             sectionRef={reviewSectionRef}
           >
             <div className={styles.reviewSplit}>
-            <dl className={styles.review}>
-              <dt>Course</dt>
-              <dd>{course.name}</dd>
-              <dt>Course fee</dt>
-              <dd>{formatNzdFromCents(course.paymentPlanCourseFeeCents)}</dd>
-              <dt>Payment plan</dt>
-              <dd>
-                {display?.regularLabel}
-                {display?.finalPaymentLabel ? ` · ${display.finalPaymentLabel}` : ""}
-              </dd>
-              <dt>Regular instalment</dt>
-              <dd>
-                {preview
-                  ? formatNzdFromCents(preview.regularInstalmentAmountCents)
-                  : "—"}
-              </dd>
-              {preview?.hasResidualFinal && preview.finalInstalmentAmountCents != null ? (
-                <>
-                  <dt>Final residual</dt>
-                  <dd>{formatNzdFromCents(preview.finalInstalmentAmountCents)}</dd>
-                </>
-              ) : null}
-              <dt>First payment date</dt>
-              <dd>{resolvedFirstPaymentDate}</dd>
-              <dt>Student</dt>
-              <dd>
-                {resolvedStudent.firstName} {resolvedStudent.lastName}
-                {resolvedStudent.email ? ` · ${resolvedStudent.email}` : ""}
-              </dd>
-            </dl>
+            <aside
+              className={styles.summaryCard}
+              aria-label="Enrolment summary"
+              data-testid="nz-enrolment-summary"
+            >
+              <h3>Your enrolment</h3>
+              <dl className={styles.review}>
+                <dt>Course</dt>
+                <dd>{course.name}</dd>
+                <dt>Course fee</dt>
+                <dd>{formatNzdFromCents(course.paymentPlanCourseFeeCents)}</dd>
+                <dt>Payment plan</dt>
+                <dd>
+                  {display?.regularLabel}
+                  {display?.finalPaymentLabel ? ` · ${display.finalPaymentLabel}` : ""}
+                </dd>
+                {preview?.hasResidualFinal && preview.finalInstalmentAmountCents != null ? (
+                  <>
+                    <dt>Final residual</dt>
+                    <dd>{formatNzdFromCents(preview.finalInstalmentAmountCents)}</dd>
+                  </>
+                ) : null}
+                <dt>First payment</dt>
+                <dd>{resolvedFirstPaymentDate}</dd>
+              </dl>
+            </aside>
             <div className={styles.reviewConfirm}>
             <fieldset className={styles.checks}>
               <legend>Agreements</legend>
@@ -1045,6 +1055,7 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
         </p>
       </div>
     </div>
+    </>
   );
 }
 
