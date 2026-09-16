@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { formatNzdFromCents } from "@/lib/nz-enrolment/plan-math";
 import { coursePath } from "@/lib/nz-enrolment/presentation";
 import type { NzPublicCourse, NzPublicTenant } from "@/lib/nz-enrolment/types";
+import { ProviderNativeHeader } from "@/components/nz-enrolment/ProviderNativeHeader";
 import styles from "./provider-chrome.module.css";
 
 type Props = {
@@ -29,7 +30,9 @@ export function NzCourseCatalogue({ tenant, courses }: Props) {
   }, [courses, query, category]);
 
   return (
-    <section className={styles.catalogue}>
+    <>
+      <ProviderNativeHeader tenant={tenant} />
+      <section className={styles.catalogue}>
       <p className={styles.catalogueKicker}>{tenant.displayName}</p>
       <h1>Choose your course</h1>
       <p className={styles.catalogueLead}>
@@ -80,5 +83,6 @@ export function NzCourseCatalogue({ tenant, courses }: Props) {
         )}
       </ul>
     </section>
+    </>
   );
 }

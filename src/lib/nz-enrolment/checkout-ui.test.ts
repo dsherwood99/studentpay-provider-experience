@@ -9,6 +9,7 @@ import {
   confirmEnabled,
   declarationsAccepted,
   isConfirmedCheckoutStatus,
+  isPayInFullChoiceVisible,
   planDisplay,
   sectionStatus,
   shouldConfirmCheckout,
@@ -18,6 +19,7 @@ import {
 } from "./checkout-ui.ts";
 import { getNzCourse } from "./courses.ts";
 import { previewCoursePlan } from "./canonical.ts";
+import { getNzTenantBySlug, toPublicTenant } from "./tenants.ts";
 
 const validStudent = {
   firstName: "Alex",
@@ -229,6 +231,30 @@ describe("single-page checkout presentation helpers", () => {
     assert.equal(isConfirmedCheckoutStatus("confirmed"), true);
     assert.equal(isConfirmedCheckoutStatus("CONFIRMED"), true);
     assert.equal(isConfirmedCheckoutStatus("setup_complete"), false);
+  });
+
+  it("hides Pay in Full when tenant availability already marks it unavailable", () => {
+    assert.equal(
+      isPayInFullChoiceVisible({ enabled: false, comingSoon: true }),
+      false,
+    );
+    assert.equal(
+      isPayInFullChoiceVisible({ enabled: false, comingSoon: false }),
+      false,
+    );
+    assert.equal(
+      isPayInFullChoiceVisible({ enabled: true, comingSoon: true }),
+      false,
+    );
+    assert.equal(
+      isPayInFullChoiceVisible({ enabled: true, comingSoon: false }),
+      true,
+    );
+    const oli = toPublicTenant(getNzTenantBySlug("oli")!);
+    assert.equal(
+      isPayInFullChoiceVisible(oli.checkout.paymentOptions.pay_in_full),
+      false,
+    );
   });
 });
 

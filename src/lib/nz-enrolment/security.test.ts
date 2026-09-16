@@ -75,7 +75,16 @@ describe("NZ enrolment checkout security", () => {
       assert.doesNotMatch(text, /Enrolment checkout/);
       assert.doesNotMatch(text, /Developers/);
     }
-    assert.match(header, /attributionLabel/);
+    assert.match(header, /Back to course/);
+    assert.match(header, /target="_blank"/);
+    assert.match(header, /safeHeaderPhone/);
+    assert.match(header, /safeHeaderLinks/);
+    assert.doesNotMatch(header, /0800 454 872/);
+    assert.doesNotMatch(header, /Afterpay/);
+    assert.doesNotMatch(header, /Mastercard/);
+    assert.doesNotMatch(header, /attributionLabel/);
+    assert.doesNotMatch(header, /powered by StudentPay/);
+    assert.match(footer, /attributionLabel/);
   });
 
   it("does not change BFF enrolment-checkout route files in this presentation layer", () => {
@@ -98,6 +107,10 @@ describe("NZ enrolment checkout security", () => {
     assert.match(checkout, /nz-section-review/);
     assert.match(checkout, /NZ_DIRECT_DEBIT_CTA/);
     assert.match(checkout, /NZ_CONFIRM_CTA/);
+    assert.match(checkout, /isPayInFullChoiceVisible/);
+    assert.match(checkout, /Complete your enrolment and set up your StudentPay payment plan below/);
+    assert.match(checkout, /nz-enrolment-summary/);
+    assert.doesNotMatch(checkout, /Course already selected/);
     assert.doesNotMatch(checkout, /styles\.progress/);
     assert.doesNotMatch(checkout, /NZ_ENROLMENT_STEPS/);
     assert.doesNotMatch(checkout, /Payment option/);

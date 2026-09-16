@@ -1,5 +1,6 @@
 import type {
   NzCourse,
+  NzHeaderSocialNetwork,
   NzPublicCourse,
   NzPublicTenant,
   NzTenantPresentation,
@@ -104,6 +105,67 @@ export function safeHeaderLinks(tenant: NzPublicTenant): NzHeaderNav[] {
 
 type NzHeaderNav = { label: string; href: string };
 
+const SOCIAL_HOSTS: Record<NzHeaderSocialNetwork, readonly string[]> = {
+  facebook: ["facebook.com", "www.facebook.com"],
+  instagram: ["instagram.com", "www.instagram.com"],
+  tiktok: ["tiktok.com", "www.tiktok.com"],
+};
+
+export function safeSocialUrl(
+  value: string | undefined,
+  network: NzHeaderSocialNetwork,
+): string | null {
+  if (!value) {
+    return null;
+  }
+  const parsed = isHttpsUrl(value);
+  if (!parsed) {
+    return null;
+  }
+  return SOCIAL_HOSTS[network].includes(parsed.hostname.toLowerCase()) ? value : null;
+}
+
+export function safeHeaderSocialLinks(
+  tenant: NzPublicTenant,
+): { label: string; href: string; network: NzHeaderSocialNetwork }[] {
+  return (tenant.presentation.headerSocialLinks || []).flatMap((item) => {
+    const href = safeSocialUrl(item.href, item.network);
+    if (!href || !item.label.trim()) {
+      return [];
+    }
+    return [{ label: item.label.trim(), href, network: item.network }];
+  });
+}
+
+export function safeHeaderSearchUrl(tenant: NzPublicTenant): string | null {
+  return (
+    safeProviderUrl(tenant.presentation.headerSearchUrl, tenant) ||
+    safeProviderUrl(tenant.websiteUrl, tenant)
+  );
+}
+
+export function safeHeaderPhone(
+  tenant: NzPublicTenant,
+): { display: string; href: string } | null {
+  const display = tenant.presentation.headerPhone?.trim();
+  if (!display) {
+    return null;
+  }
+  const configured = tenant.presentation.headerPhoneTel?.trim();
+  const tel =
+    configured && /^\+[0-9]{8,15}$/.test(configured)
+      ? configured
+      : display.replace(/[^\d+]/g, "");
+  if (!/^\+[0-9]{8,15}$/.test(tel)) {
+    return null;
+  }
+  return { display, href: `tel:${tel}` };
+}
+
+export function usesSiteHeader(tenant: NzPublicTenant): boolean {
+  return tenant.presentation.headerLayout === "site";
+}
+
 export function providerCourseWebsiteUrl(
   tenant: NzPublicTenant,
   course: Pick<NzPublicCourse, "slug">,
@@ -173,6 +235,8 @@ export function tenantCssVars(tenant: NzPublicTenant): Record<string, string> {
     "--nz-surface": branding.surfaceColour || "#ffffff",
     "--nz-button-radius": radius,
     "--nz-font": branding.fontFamily,
+    "--nz-heading-font": branding.headingFontFamily || branding.fontFamily,
+    "--nz-cta": branding.ctaColour || branding.primaryColour,
   };
 }
 

@@ -75,6 +75,7 @@ body.platform--nz-enrolment {
   background: #f9f7f3;
   color: #1c1c1c;
   font-family: var(--font-studentpay-body), Inter, "Segoe UI", sans-serif;
+  line-height: 1.5;
 }
 
 a {
