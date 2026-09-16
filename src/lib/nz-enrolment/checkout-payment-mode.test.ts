@@ -152,6 +152,7 @@ describe("Hosted payment-mode matrix", () => {
     assert.equal(selectedPif.flags.showPaymentPlanAccepted, false);
     assert.equal(selectedPif.flags.showPayInFullSummary, true);
     assert.equal(selectedPif.createPlan?.paymentOption, "pay_in_full");
+    assert.equal(selectedPif.copy.journeyAttribution, PIF_ONLY_JOURNEY_ATTRIBUTION);
     assert.equal(
       selectedPif.confirmDeclarations &&
         "payment_plan_accepted" in selectedPif.confirmDeclarations,

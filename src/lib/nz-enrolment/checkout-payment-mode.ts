@@ -196,7 +196,10 @@ export function hostedCheckoutCopy(input: {
         input.selectedOption === "pay_in_full"
           ? NZ_PAY_IN_FULL_COPY.confirmCta
           : NZ_CONFIRM_CTA,
-      journeyAttribution: input.tenantAttribution,
+      journeyAttribution:
+        input.selectedOption === "pay_in_full"
+          ? PIF_ONLY_JOURNEY_ATTRIBUTION
+          : input.tenantAttribution,
     };
   }
 
@@ -207,7 +210,7 @@ export function hostedCheckoutCopy(input: {
       studentLead: NZ_PAY_IN_FULL_COPY.studentLead,
       continueCta: NZ_PAY_IN_FULL_COPY.continueCta,
       confirmCta: NZ_PAY_IN_FULL_COPY.confirmCta,
-      journeyAttribution: input.tenantAttribution,
+      journeyAttribution: PIF_ONLY_JOURNEY_ATTRIBUTION,
     };
   }
 
