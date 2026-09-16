@@ -256,7 +256,7 @@ describe("single-page checkout presentation helpers", () => {
     const oli = toPublicTenant(getNzTenantBySlug("oli")!);
     assert.equal(
       isPayInFullChoiceVisible(oli.checkout.paymentOptions.pay_in_full),
-      false,
+      true,
     );
   });
 });

@@ -69,8 +69,8 @@ describe("generic provider branding and presentation", () => {
       "tel:+6498708980",
     );
     assert.equal(safeHeaderSearchUrl(pub), "https://onlinelearninginstitute.co.nz/");
-    assert.equal(oli.checkout.paymentOptions.pay_in_full.enabled, false);
-    assert.equal(oli.checkout.paymentOptions.pay_in_full.comingSoon, true);
+    assert.equal(oli.checkout.paymentOptions.pay_in_full.enabled, true);
+    assert.equal(oli.checkout.paymentOptions.pay_in_full.comingSoon, false);
     assert.equal(oli.checkout.paymentOptions.interest_free_payment_plan.enabled, true);
     assert.equal(pub.websiteUrl, "https://onlinelearninginstitute.co.nz/");
     assert.equal(pub.supportEmail, "info@onlinelearninginstitute.co.nz");

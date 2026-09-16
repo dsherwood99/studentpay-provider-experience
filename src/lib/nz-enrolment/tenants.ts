@@ -135,7 +135,7 @@ export const NZ_TENANTS: readonly NzTenant[] = [
     checkout: {
       paymentOptions: {
         interest_free_payment_plan: { enabled: true },
-        pay_in_full: { enabled: false, comingSoon: true },
+        pay_in_full: { enabled: true, comingSoon: false },
       },
       availableFrequencies: ["Weekly"],
       defaultFrequency: "Weekly",

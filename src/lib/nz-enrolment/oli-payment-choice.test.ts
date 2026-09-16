@@ -78,31 +78,26 @@ describe("OLI payment choice + footer", () => {
   it("exposes two cards only when Pay in Full is genuinely available", () => {
     const tenant = getNzTenantBySlug("oli")!;
     const course = getNzCourse("oli", "certificate-in-business-administration")!;
-    const closed = resolveHostedPayInFullEligibility({ tenant, course });
-    assert.equal(tenant.checkout.paymentOptions.pay_in_full.enabled, false);
-    assert.equal(tenant.checkout.paymentOptions.pay_in_full.comingSoon, true);
-    assert.equal(isPayInFullChoiceVisible(tenant.checkout.paymentOptions.pay_in_full), false);
-    assert.equal(closed.payInFullAvailable, false);
-    assert.equal(
-      hostedCheckoutViewModel({
-        paymentPlanAvailable: closed.paymentPlanAvailable,
-        payInFullAvailable: closed.payInFullAvailable,
-      }).flags.showPaymentMethodRadios,
-      false,
-    );
-
-    process.env.E13_SANDBOX_PAY_IN_FULL_HOSTED_PREVIEW = "true";
-    const preview = resolveHostedPayInFullEligibility({ tenant, course });
-    assert.equal(preview.payInFullAvailable, true);
+    assert.equal(tenant.checkout.paymentOptions.pay_in_full.enabled, true);
+    assert.equal(tenant.checkout.paymentOptions.pay_in_full.comingSoon, false);
+    assert.equal(isPayInFullChoiceVisible(tenant.checkout.paymentOptions.pay_in_full), true);
+    const available = resolveHostedPayInFullEligibility({ tenant, course });
+    assert.equal(available.payInFullAvailable, true);
     const view = hostedCheckoutViewModel({
-      paymentPlanAvailable: preview.paymentPlanAvailable,
-      payInFullAvailable: preview.payInFullAvailable,
+      paymentPlanAvailable: available.paymentPlanAvailable,
+      payInFullAvailable: available.payInFullAvailable,
     });
     assert.equal(view.flags.showPaymentMethodRadios, true);
     assert.equal(view.flags.showPayInFullChoice, true);
     assert.equal(view.flags.showPaymentPlanChoice, true);
     assert.equal(view.selectedOption, "interest_free_payment_plan");
     assert.equal(view.copy.paymentSectionLead, "Choose the payment option that works best for you.");
+
+    const hidden = hostedCheckoutViewModel({
+      paymentPlanAvailable: true,
+      payInFullAvailable: false,
+    });
+    assert.equal(hidden.flags.showPaymentMethodRadios, false);
   });
 
   it("uses live catalogue Pay Now and Payment Plan amounts", () => {
@@ -243,15 +238,16 @@ describe("OLI payment choice + footer", () => {
     assert.match(footer, /Payment services powered by StudentPay NZ/);
   });
 
-  it("does not enable OLI Production Pay Now from the sandbox preview flag", () => {
+  it("enables OLI Production Hosted Pay Now from tenant config, not the sandbox preview flag", () => {
     process.env.STUDENTPAY_ENV = "production";
     process.env.NZ_STUDENTPAY_API_BASE_URL = "https://api.studentpay.co.nz";
     process.env.E13_SANDBOX_PAY_IN_FULL_HOSTED_PREVIEW = "true";
     const tenant = getNzTenantBySlug("oli")!;
     const course = getNzCourse("oli", "certificate-in-business-administration")!;
+    assert.equal(tenant.checkout.paymentOptions.pay_in_full.enabled, true);
     assert.equal(
       resolveHostedPayInFullEligibility({ tenant, course }).payInFullAvailable,
-      false,
+      true,
     );
   });
 });

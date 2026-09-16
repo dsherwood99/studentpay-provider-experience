@@ -116,7 +116,7 @@ describe("Hosted E13 eligibility", () => {
     assert.equal(toPublicCourse(course).enrolmentPaymentOptions.includes("payment_plan"), true);
   });
 
-  it("does not expose Pay in Full on OLI or Bela in production Hosted", () => {
+  it("does not expose Pay in Full on Bela in production Hosted", () => {
     process.env.STUDENTPAY_ENV = "production";
     process.env.NZ_STUDENTPAY_API_BASE_URL = "https://api.studentpay.co.nz";
     assert.equal(isHostedPayInFullEnvironmentAllowed(), true);
@@ -125,7 +125,7 @@ describe("Hosted E13 eligibility", () => {
     const course = getNzCoursesForProvider("oli")[0]!;
     assert.equal(
       resolveHostedPayInFullEligibility({ tenant: oli, course }).payInFullAvailable,
-      false,
+      true,
     );
     assert.equal(getNzTenantBySlug("studentpay-internal-e13"), undefined);
   });
@@ -482,19 +482,19 @@ describe("Hosted E13 success and payment-plan regression", () => {
     assert.equal(confirm.payment.payment_method, "studentpay_payment_plan");
   });
 
-  it("19. OLI production Hosted stays fail-closed while catalogue carries both prices", () => {
+  it("19. OLI production Hosted exposes Pay Now while catalogue carries both prices", () => {
     process.env.STUDENTPAY_ENV = "production";
     process.env.NZ_STUDENTPAY_API_BASE_URL = "https://api.studentpay.co.nz";
     const tenant = getNzTenantBySlug("oli")!;
     const courses = getNzCoursesForProvider("oli");
     assert.equal(courses.length, 64);
-    assert.equal(tenant.checkout.paymentOptions.pay_in_full.enabled, false);
-    assert.equal(tenant.checkout.paymentOptions.pay_in_full.comingSoon, true);
+    assert.equal(tenant.checkout.paymentOptions.pay_in_full.enabled, true);
+    assert.equal(tenant.checkout.paymentOptions.pay_in_full.comingSoon, false);
     for (const course of courses) {
       assert.equal(course.paymentInFullCourseFeeCents > 0, true);
       assert.equal(
         resolveHostedPayInFullEligibility({ tenant, course }).payInFullAvailable,
-        false,
+        true,
       );
     }
     assert.equal(NZ_DIRECT_DEBIT_CTA, "Set up Direct Debit");
