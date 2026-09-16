@@ -31,6 +31,7 @@ export const NZ_TENANTS: readonly NzTenant[] = [
       mutedTextColour: "#515151",
       textColour: "#1c1c1c",
       fontFamily: 'Inter, "Segoe UI", sans-serif',
+      headingFontFamily: 'var(--font-nz-heading), Montserrat, Inter, sans-serif',
       buttonRadius: "medium",
       headerStyle: "provider-native",
       footerStyle: "provider-native",

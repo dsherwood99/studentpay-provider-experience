@@ -15,15 +15,15 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  background: color-mix(in srgb, var(--nz-surface, #fff) 92%, transparent);
+  background: color-mix(in srgb, var(--nz-surface, #fff) 94%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--nz-primary) 14%, #e6e2dc);
   backdrop-filter: blur(16px);
 }
 
 .headerInner {
-  width: min(calc(100% - 32px), 1120px);
+  width: min(calc(100% - 32px), 1080px);
   margin: 0 auto;
-  min-height: 76px;
+  min-height: 72px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -33,22 +33,43 @@
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   min-width: 0;
 }
 
 .logo {
-  height: 48px;
+  height: 44px;
   width: auto;
-  max-width: 210px;
+  max-width: 240px;
   object-fit: contain;
 }
 
 .brandName {
+  font-family: var(--nz-heading-font, var(--nz-font, Inter, "Segoe UI", sans-serif));
   font-size: 1.05rem;
   font-weight: 700;
   color: var(--nz-heading, var(--nz-text));
   letter-spacing: -0.02em;
+}
+
+.brandEnrol {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-left: 1px solid color-mix(in srgb, var(--nz-primary) 18%, #e6e2dc);
+  color: var(--nz-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.headerSupport {
+  width: min(calc(100% - 32px), 1080px);
+  margin: 0 auto;
+  padding: 0 0 10px;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .nav {
@@ -87,10 +108,11 @@
 }
 
 .attribution {
+  margin: 0;
   color: var(--nz-muted);
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 500;
-  white-space: nowrap;
+  line-height: 1.4;
 }
 
 .attribution a {
@@ -106,19 +128,31 @@
 }
 
 .footerInner {
-  width: min(calc(100% - 32px), 1120px);
+  width: min(calc(100% - 32px), 1080px);
   margin: 0 auto;
-  padding: 28px 0 18px;
+  padding: 24px 0 16px;
   display: grid;
   grid-template-columns: 1.4fr 1fr;
-  gap: 24px;
+  gap: 20px;
+}
+
+.footerBrand strong {
+  font-family: var(--nz-heading-font, var(--nz-font, Inter, "Segoe UI", sans-serif));
+  font-size: 1rem;
 }
 
 .footerBrand p {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   color: var(--nz-muted);
-  font-size: 0.92rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
   max-width: 36rem;
+}
+
+.footerBrand a {
+  color: var(--nz-primary-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .footerLinks {
@@ -140,9 +174,9 @@
 }
 
 .footerBottom {
-  width: min(calc(100% - 32px), 1120px);
+  width: min(calc(100% - 32px), 1080px);
   margin: 0 auto;
-  padding: 12px 0 22px;
+  padding: 10px 0 18px;
   display: flex;
   justify-content: space-between;
   gap: 12px;
@@ -152,7 +186,7 @@
 }
 
 .catalogue {
-  width: min(calc(100% - 32px), 1120px);
+  width: min(calc(100% - 32px), 1080px);
   margin: 0 auto;
   padding: 36px 0 80px;
 }
@@ -263,7 +297,7 @@
 }
 
 .missing {
-  width: min(calc(100% - 32px), 760px);
+  width: min(calc(100% - 32px), 720px);
   margin: 48px auto 80px;
   background: var(--nz-surface, #fff);
   border: 1px solid color-mix(in srgb, var(--nz-primary) 12%, #e4ebe8);
@@ -297,8 +331,13 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    padding: 12px 0;
+    padding: 12px 0 8px;
     min-height: 0;
+  }
+
+  .headerSupport {
+    justify-content: flex-start;
+    padding-bottom: 12px;
   }
 
   .nav {

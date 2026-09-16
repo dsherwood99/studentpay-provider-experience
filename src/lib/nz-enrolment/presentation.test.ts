@@ -9,6 +9,7 @@ import {
   providerCourseWebsiteUrl,
   safeProviderUrl,
   safeReturnToProviderUrl,
+  tenantCssVars,
 } from "./presentation.ts";
 import { getDefaultProductionNzTenantSlug, getNzTenantBySlug, toPublicTenant } from "./tenants.ts";
 
@@ -48,6 +49,8 @@ describe("generic provider branding and presentation", () => {
     );
     assert.equal(pub.branding.primaryColour, "#3a8f8f");
     assert.equal(pub.branding.backgroundColour, "#f9f7f3");
+    assert.match(pub.branding.headingFontFamily || "", /Montserrat/);
+    assert.match(tenantCssVars(pub)["--nz-heading-font"], /Montserrat/);
     assert.equal(pub.websiteUrl, "https://onlinelearninginstitute.co.nz/");
     assert.equal(pub.supportEmail, "info@onlinelearninginstitute.co.nz");
     assert.equal("apiKeyEnv" in pub, false);

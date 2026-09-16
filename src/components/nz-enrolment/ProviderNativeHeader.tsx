@@ -31,6 +31,7 @@ export function ProviderNativeHeader({ tenant }: Props) {
           ) : (
             <span className={styles.brandName}>{tenant.displayName}</span>
           )}
+          <span className={styles.brandEnrol}>Enrolment</span>
         </a>
 
         <nav className={styles.nav} aria-label={`${tenant.displayName} enrolment`}>
@@ -44,10 +45,12 @@ export function ProviderNativeHeader({ tenant }: Props) {
               {tenant.supportPhone}
             </a>
           ) : null}
-          <p className={styles.attribution}>
-            <a href={studentPayUrl}>{tenant.presentation.attributionLabel}</a>
-          </p>
         </nav>
+      </div>
+      <div className={styles.headerSupport}>
+        <p className={styles.attribution}>
+          <a href={studentPayUrl}>{tenant.presentation.attributionLabel}</a>
+        </p>
       </div>
     </header>
   );

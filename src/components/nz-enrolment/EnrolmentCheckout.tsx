@@ -597,10 +597,10 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
     >
       <div className={styles.shell}>
         <header className={styles.hero}>
-          <div>
+          <div className={styles.heroCopy}>
             <p className={styles.kicker}>{tenant.legalName}</p>
+            {course.category ? <p className={styles.category}>{course.category}</p> : null}
             <h1>{course.name}</h1>
-            <p className={styles.fee}>{formatNzdFromCents(course.paymentPlanCourseFeeCents)}</p>
             <p className={styles.lead}>
               Course already selected · {tenant.presentation.attributionLabel}
             </p>
@@ -612,6 +612,10 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
               </p>
             ) : null}
           </div>
+          <aside className={styles.heroCard} aria-label="Course fee">
+            <p className={styles.fee}>{formatNzdFromCents(course.paymentPlanCourseFeeCents)}</p>
+            <p className={styles.feeHint}>{display?.regularLabel || "Interest-free payment plan"}</p>
+          </aside>
         </header>
 
         {error && !sectionErrors.dda && !sectionErrors.review && !sectionErrors.student ? (
@@ -628,29 +632,25 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
             testId="nz-section-plan"
           >
             <p className={styles.lead}>{NZ_PAYMENT_PLAN_COPY.intro}</p>
-            <dl className={styles.review}>
-              <dt>Course</dt>
-              <dd>{course.name}</dd>
-              <dt>Course fee</dt>
-              <dd>{formatNzdFromCents(course.paymentPlanCourseFeeCents)}</dd>
-              <dt>Payment plan</dt>
-              <dd>
-                {display?.regularLabel || "Weekly payment plan"}
-                <br />
-                {display?.upfrontLabel || "$0.00 upfront"}
-              </dd>
-              <dt>Schedule</dt>
-              <dd>
-                {display?.regularCountLabel}
-                {display?.finalPaymentLabel ? (
-                  <>
-                    <br />
-                    {display.finalPaymentLabel}
-                  </>
-                ) : null}
-              </dd>
-              <dt>Total</dt>
-              <dd>{display?.totalLabel}</dd>
+            <dl className={styles.facts}>
+              <div>
+                <dt>Course fee</dt>
+                <dd>{formatNzdFromCents(course.paymentPlanCourseFeeCents)}</dd>
+              </div>
+              <div>
+                <dt>Payment plan</dt>
+                <dd>
+                  {display?.regularLabel || "Weekly payment plan"}
+                  {display?.upfrontLabel ? ` · ${display.upfrontLabel}` : ""}
+                </dd>
+              </div>
+              <div>
+                <dt>Schedule</dt>
+                <dd>
+                  {display?.regularCountLabel}
+                  {display?.finalPaymentLabel ? ` · ${display.finalPaymentLabel}` : ""}
+                </dd>
+              </div>
             </dl>
 
             {derivedPlan ? null : (
@@ -758,7 +758,6 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
                 autoComplete="email"
                 value={resolvedStudent.email}
                 error={fieldErrors.email}
-                span
                 onChange={(value) => updateStudent("email", value)}
               />
               <TextField
@@ -778,6 +777,14 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
                 value={resolvedStudent.dateOfBirth}
                 error={fieldErrors.dateOfBirth}
                 onChange={(value) => updateStudent("dateOfBirth", value)}
+              />
+              <TextField
+                label="Country"
+                name="country-name"
+                autoComplete="country-name"
+                value={resolvedStudent.country}
+                error={fieldErrors.country}
+                onChange={(value) => updateStudent("country", value)}
               />
               <TextField
                 label="Street address"
@@ -819,14 +826,6 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
                 error={fieldErrors.postcode}
                 onChange={(value) => updateStudent("postcode", value)}
               />
-              <TextField
-                label="Country"
-                name="country-name"
-                autoComplete="country-name"
-                value={resolvedStudent.country}
-                error={fieldErrors.country}
-                onChange={(value) => updateStudent("country", value)}
-              />
             </div>
           </CheckoutSection>
 
@@ -841,7 +840,7 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
               {tenant.checkout.wording?.ddaLead ||
                 "You are setting up a Direct Debit authority with StudentPay NZ. This is not a card payment."}
             </p>
-            <div className={styles.grid}>
+            <div className={styles.ddaRow}>
               <TextField
                 label="First payment date"
                 name="first-payment-date"
@@ -850,46 +849,46 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
                 disabled={planLocked}
                 onChange={setFirstPaymentDate}
               />
+              {setupComplete ? (
+                <div className={styles.completePanel} data-testid="nz-dda-complete" role="status">
+                  <h3>{NZ_DIRECT_DEBIT_COPY.authorisedTitle}</h3>
+                  <p>{NZ_DIRECT_DEBIT_COPY.authorisedBody}</p>
+                </div>
+              ) : (
+                <div className={styles.ddaSetup}>
+                  <p id={ddaHelpId} className={styles.note}>
+                    {studentValid
+                      ? alreadyCreated
+                        ? "Continue to StudentPay’s hosted bank setup (GoCardless BECS NZ). Come back here when it finishes."
+                        : "Your details are ready. Set up Direct Debit when you are ready to continue."
+                      : "Complete your details above before setting up Direct Debit."}
+                  </p>
+                  {!alreadyCreated ? (
+                    <div className={styles.actions}>
+                      <button
+                        type="button"
+                        className={`${styles.btn} ${styles.btnPrimary} ${styles.btnBlock}`}
+                        disabled={!canCreate || busy}
+                        aria-describedby={ddaHelpId}
+                        onClick={() => void createCheckout()}
+                      >
+                        {busy ? "Creating enrolment…" : NZ_DIRECT_DEBIT_CTA}
+                      </button>
+                    </div>
+                  ) : null}
+                  {setupUrl && !setupComplete ? (
+                    <div className={styles.actions}>
+                      <a
+                        className={`${styles.btn} ${styles.btnPrimary} ${styles.btnBlock}`}
+                        href={setupUrl}
+                      >
+                        Continue to Direct Debit setup
+                      </a>
+                    </div>
+                  ) : null}
+                </div>
+              )}
             </div>
-            {setupComplete ? (
-              <div className={styles.completePanel} data-testid="nz-dda-complete" role="status">
-                <h3>{NZ_DIRECT_DEBIT_COPY.authorisedTitle}</h3>
-                <p>{NZ_DIRECT_DEBIT_COPY.authorisedBody}</p>
-              </div>
-            ) : (
-              <>
-                <p id={ddaHelpId} className={styles.note}>
-                  {studentValid
-                    ? alreadyCreated
-                      ? "Continue to StudentPay’s hosted bank setup (GoCardless BECS NZ). Come back here when it finishes."
-                      : "Your details are ready. Set up Direct Debit when you are ready to continue."
-                    : "Complete your details above before setting up Direct Debit."}
-                </p>
-                {!alreadyCreated ? (
-                  <div className={styles.actions}>
-                    <button
-                      type="button"
-                      className={`${styles.btn} ${styles.btnPrimary} ${styles.btnBlock}`}
-                      disabled={!canCreate || busy}
-                      aria-describedby={ddaHelpId}
-                      onClick={() => void createCheckout()}
-                    >
-                      {busy ? "Creating enrolment…" : NZ_DIRECT_DEBIT_CTA}
-                    </button>
-                  </div>
-                ) : null}
-                {setupUrl && !setupComplete ? (
-                  <div className={styles.actions}>
-                    <a
-                      className={`${styles.btn} ${styles.btnPrimary} ${styles.btnBlock}`}
-                      href={setupUrl}
-                    >
-                      Continue to Direct Debit setup
-                    </a>
-                  </div>
-                ) : null}
-              </>
-            )}
             {ddaError ? (
               <p className={styles.error} role="alert">
                 {ddaError}
@@ -904,6 +903,7 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
             testId="nz-section-review"
             sectionRef={reviewSectionRef}
           >
+            <div className={styles.reviewSplit}>
             <dl className={styles.review}>
               <dt>Course</dt>
               <dd>{course.name}</dd>
@@ -934,6 +934,7 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
                 {resolvedStudent.email ? ` · ${resolvedStudent.email}` : ""}
               </dd>
             </dl>
+            <div className={styles.reviewConfirm}>
             <fieldset className={styles.checks}>
               <legend>Agreements</legend>
               <label className={styles.check}>
@@ -1032,6 +1033,8 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
                 {busy ? "Confirming…" : NZ_CONFIRM_CTA}
               </button>
             </div>
+            </div>
+            </div>
           </CheckoutSection>
         </div>
         <p className={styles.powered}>
@@ -1072,7 +1075,7 @@ function CheckoutSection({
     >
       <div className={styles.sectionHeading}>
         <p className={styles.kicker}>
-          <span>Section {number}</span>
+          <span className={styles.sectionIndex}>{number}</span>
           <span className={styles.statusBadge} data-status={status}>
             {sectionStatusLabel(status)}
           </span>
