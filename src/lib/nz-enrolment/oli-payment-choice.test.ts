@@ -17,7 +17,10 @@ import { getNzCourse, toPublicCourse } from "./courses.ts";
 import { getNzTenantBySlug, toPublicTenant } from "./tenants.ts";
 import {
   isPayInFullChoiceVisible,
+  payNowChoiceBody,
+  paymentPlanChoiceCopy,
 } from "./checkout-ui.ts";
+import { previewCoursePlan } from "./canonical.ts";
 import {
   resolveHostedPayInFullEligibility,
 } from "./pay-in-full.ts";
@@ -99,6 +102,7 @@ describe("OLI payment choice + footer", () => {
     assert.equal(view.flags.showPayInFullChoice, true);
     assert.equal(view.flags.showPaymentPlanChoice, true);
     assert.equal(view.selectedOption, "interest_free_payment_plan");
+    assert.equal(view.copy.paymentSectionLead, "Choose the payment option that works best for you.");
   });
 
   it("uses live catalogue Pay Now and Payment Plan amounts", () => {
@@ -108,6 +112,18 @@ describe("OLI payment choice + footer", () => {
     assert.equal(pub.paymentPlanCourseFeeCents, 183425);
     assert.ok(pub.enrolmentPaymentOptions.includes("pay_in_full"));
     assert.ok(pub.enrolmentPaymentOptions.includes("payment_plan"));
+
+    const preview = previewCoursePlan(course, { firstPaymentDate: "2026-10-01" });
+    const planCopy = paymentPlanChoiceCopy(preview);
+    assert.equal(
+      payNowChoiceBody({
+        paymentInFullCourseFeeCents: pub.paymentInFullCourseFeeCents,
+        paymentPlanCourseFeeCents: pub.paymentPlanCourseFeeCents,
+      }),
+      "Pay your course fee today and save 13% ($230.00) under our current Pay Now promotion.",
+    );
+    assert.equal(planCopy.weeklyAmountLabel, "$25.00");
+    assert.match(planCopy.body, /73 weekly payments of \$25\.00 and a final payment of \$9\.25/);
   });
 
   it("Payment Plan selection renders DDA/PPA and Pay Now does not", () => {
@@ -136,6 +152,19 @@ describe("OLI payment choice + footer", () => {
     assert.ok(payNow.absentTestIds.includes("nz-section-dda"));
     assert.equal(payNow.copy.journeyAttribution, "Payments powered by StudentPay NZ");
     assert.doesNotMatch(payNow.copy.journeyAttribution, /Payment plan/);
+  });
+
+  it("keeps Section 1 to heading, lead, and the two cards", () => {
+    const checkout = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/EnrolmentCheckout.tsx"),
+      "utf8",
+    );
+    assert.match(checkout, /showPaymentMethodRadios \? null/);
+    assert.match(checkout, /NZ_PAYMENT_CHOICE_LEAD/);
+    assert.match(checkout, /payNowChoiceBody/);
+    assert.match(checkout, /paymentPlanChoiceCopy/);
+    assert.match(checkout, /data-testid="nz-pay-now-body"/);
+    assert.match(checkout, /data-testid="nz-payment-plan-body"/);
   });
 
   it("switching before checkout creation is safe and locks after create", () => {

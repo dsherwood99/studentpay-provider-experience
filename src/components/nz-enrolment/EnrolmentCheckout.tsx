@@ -7,6 +7,7 @@ import {
   NZ_CONFIRMATION_COPY,
   NZ_DIRECT_DEBIT_COPY,
   NZ_DIRECT_DEBIT_CTA,
+  NZ_PAYMENT_CHOICE_LEAD,
   NZ_PAYMENT_PLAN_CHOICE_COPY,
   NZ_PAY_IN_FULL_COPY,
   NZ_REVIEW_COPY,
@@ -14,6 +15,8 @@ import {
   confirmEnabled,
   declarationsAccepted,
   isConfirmedCheckoutStatus,
+  payNowChoiceBody,
+  paymentPlanChoiceCopy,
   planDisplay,
   sectionStatus,
   sectionStatusLabel,
@@ -271,7 +274,7 @@ export function NzEnrolmentCheckout({
     selectedOption: resolvedPaymentOption,
   });
   const preview: NzPlanPreview | null = useMemo(() => {
-    if (!renderFlags.allowPlanPreview) {
+    if (!renderFlags.allowPlanPreview && !renderFlags.showPaymentPlanChoice) {
       return null;
     }
     try {
@@ -297,6 +300,7 @@ export function NzEnrolmentCheckout({
   }, [
     course,
     renderFlags.allowPlanPreview,
+    renderFlags.showPaymentPlanChoice,
     resolvedFirstPaymentDate,
     resolvedFrequency,
     resolvedInstalments,
@@ -304,6 +308,11 @@ export function NzEnrolmentCheckout({
   ]);
 
   const display = preview ? planDisplay(preview) : null;
+  const planChoice = preview ? paymentPlanChoiceCopy(preview) : null;
+  const payNowBody = payNowChoiceBody({
+    paymentInFullCourseFeeCents: course.paymentInFullCourseFeeCents,
+    paymentPlanCourseFeeCents: course.paymentPlanCourseFeeCents,
+  });
   const studentValid = studentDetailsAreValid(resolvedStudent);
   const studentStarted = studentDetailsStarted(resolvedStudent);
   const ddaError =
@@ -1079,8 +1088,11 @@ export function NzEnrolmentCheckout({
             testId="nz-section-plan"
           >
             <p className={styles.lead}>
-              {copy.paymentSectionLead}
+              {renderFlags.showPaymentMethodRadios
+                ? NZ_PAYMENT_CHOICE_LEAD
+                : copy.paymentSectionLead}
             </p>
+            {renderFlags.showPaymentMethodRadios ? null : (
             <dl className={styles.review}>
               <dt>Course</dt>
               <dd>{course.name}</dd>
@@ -1120,8 +1132,9 @@ export function NzEnrolmentCheckout({
                 </>
               ) : null}
             </dl>
+            )}
 
-            {derivedPlan || !renderFlags.showPlanSchedule ? null : (
+            {derivedPlan || !renderFlags.showPlanSchedule || renderFlags.showPaymentMethodRadios ? null : (
               <div className={styles.grid}>
                 <TextField
                   label="Payment-plan deposit (NZD)"
@@ -1179,9 +1192,18 @@ export function NzEnrolmentCheckout({
                   <span>
                     <strong>{NZ_PAY_IN_FULL_COPY.choiceTitle}</strong>
                     <em data-testid="nz-pay-now-amount">
-                      {formatNzdFromCents(course.paymentInFullCourseFeeCents)}
+                      <span data-testid="nz-authoritative-price">
+                        {formatNzdFromCents(course.paymentInFullCourseFeeCents)}
+                      </span>
                     </em>
-                    {NZ_PAY_IN_FULL_COPY.choiceLead}
+                    <span className={styles.choiceCardBody} data-testid="nz-pay-now-body">
+                      {payNowBody}
+                    </span>
+                    {isPayInFull ? (
+                      <span className={styles.srOnly} data-testid="nz-pay-in-full-today">
+                        {formatNzdFromCents(displayedCoursePriceCents)} today
+                      </span>
+                    ) : null}
                   </span>
                 </label>
                 ) : null}
@@ -1201,10 +1223,19 @@ export function NzEnrolmentCheckout({
                   <span>
                     <strong>{NZ_PAYMENT_PLAN_CHOICE_COPY.title}</strong>
                     <em data-testid="nz-payment-plan-amount">
-                      {formatNzdFromCents(course.paymentPlanCourseFeeCents)}
+                      {planChoice?.weeklyAmountLabel ||
+                        display?.regularLabel ||
+                        formatNzdFromCents(course.paymentPlanCourseFeeCents)}
+                      {planChoice ? (
+                        <span className={styles.choiceCardPeriod}> {planChoice.periodSuffix}</span>
+                      ) : null}
                     </em>
-                    {display?.regularLabel || "Weekly payment plan"}
-                    <small>{NZ_PAYMENT_PLAN_CHOICE_COPY.lead}</small>
+                    <span className={styles.choiceCardBody} data-testid="nz-payment-plan-body">
+                      {planChoice?.body || NZ_PAYMENT_PLAN_CHOICE_COPY.lead}
+                    </span>
+                    {planChoice ? (
+                      <small data-testid="nz-payment-plan-total">{planChoice.totalLine}</small>
+                    ) : null}
                   </span>
                 </label>
                 ) : null}

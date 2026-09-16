@@ -40,7 +40,7 @@ export const NZ_CONFIRMATION_COPY = {
 
 export const NZ_PAY_IN_FULL_COPY = {
   heading: "Pay now",
-  choiceTitle: "Pay now",
+  choiceTitle: "Pay Now",
   choiceLead: "Pay your course fee today and save.",
   cardHeading: "Payment details",
   confirmCta: "Pay now and confirm enrolment",
@@ -49,9 +49,12 @@ export const NZ_PAY_IN_FULL_COPY = {
 } as const;
 
 export const NZ_PAYMENT_PLAN_CHOICE_COPY = {
-  title: "Payment plan",
+  title: "Payment Plan",
   lead: "Interest-free payment plan",
 } as const;
+
+export const NZ_PAYMENT_CHOICE_LEAD =
+  "Choose the payment option that works best for you.";
 
 export const NZ_PAY_IN_FULL_CONFIRM_CTA = NZ_PAY_IN_FULL_COPY.confirmCta;
 export const NZ_CONFIRM_CTA = "Confirm enrolment & activate payment plan";
@@ -284,4 +287,59 @@ export function planDisplay(preview: NzPlanPreview): NzPlanDisplay {
 
 export function planDisplayRows(preview: NzPlanPreview): { label: string; value: string }[] {
   return planDisplay(preview).rows;
+}
+
+export function payNowSavingFromCatalogue(input: {
+  paymentInFullCourseFeeCents: number;
+  paymentPlanCourseFeeCents: number;
+}): { savingCents: number; percent: number } | null {
+  const payNow = input.paymentInFullCourseFeeCents;
+  const planTotal = input.paymentPlanCourseFeeCents;
+  if (!Number.isInteger(payNow) || !Number.isInteger(planTotal) || payNow <= 0 || planTotal <= 0) {
+    return null;
+  }
+  const savingCents = planTotal - payNow;
+  if (savingCents <= 0) {
+    return null;
+  }
+  const percent = Math.round((savingCents / planTotal) * 100);
+  if (percent <= 0) {
+    return null;
+  }
+  return { savingCents, percent };
+}
+
+export function payNowChoiceBody(input: {
+  paymentInFullCourseFeeCents: number;
+  paymentPlanCourseFeeCents: number;
+}): string {
+  const saving = payNowSavingFromCatalogue(input);
+  if (!saving) {
+    return "Pay your course fee today.";
+  }
+  return `Pay your course fee today and save ${saving.percent}% (${formatNzdFromCents(saving.savingCents)}) under our current Pay Now promotion.`;
+}
+
+export function paymentPlanChoiceCopy(preview: NzPlanPreview): {
+  weeklyAmountLabel: string;
+  periodSuffix: string;
+  body: string;
+  totalLine: string;
+} {
+  const amount = formatNzdFromCents(preview.regularInstalmentAmountCents);
+  const adjective = frequencyAdjective(preview.frequency);
+  const period = periodLabel(preview.frequency);
+  const regularCount = preview.hasResidualFinal
+    ? preview.fullRegularInstalmentCount
+    : preview.numberOfInstalments;
+  const residual =
+    preview.hasResidualFinal && preview.finalInstalmentAmountCents != null
+      ? ` and a final payment of ${formatNzdFromCents(preview.finalInstalmentAmountCents)}`
+      : "";
+  return {
+    weeklyAmountLabel: amount,
+    periodSuffix: `/ ${period}`,
+    body: `Interest-free payment plan of ${regularCount} ${adjective} payments of ${amount}${residual}.`,
+    totalLine: `Total paid over time: ${formatNzdFromCents(preview.totalPayableCents)}`,
+  };
 }

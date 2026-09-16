@@ -1,6 +1,7 @@
 import {
   NZ_CONFIRM_CTA,
   NZ_DIRECT_DEBIT_CTA,
+  NZ_PAYMENT_CHOICE_LEAD,
   NZ_PAYMENT_PLAN_COPY,
   NZ_PAY_IN_FULL_COPY,
   NZ_STUDENT_DETAILS_COPY,
@@ -180,10 +181,7 @@ export function hostedCheckoutCopy(input: {
   if (input.mode === "both_available") {
     return {
       paymentSectionTitle: "How would you like to pay?",
-      paymentSectionLead:
-        input.selectedOption === "pay_in_full"
-          ? NZ_PAY_IN_FULL_COPY.choiceLead
-          : NZ_PAYMENT_PLAN_COPY.intro,
+      paymentSectionLead: NZ_PAYMENT_CHOICE_LEAD,
       studentLead:
         input.selectedOption === "pay_in_full"
           ? NZ_PAY_IN_FULL_COPY.studentLead
