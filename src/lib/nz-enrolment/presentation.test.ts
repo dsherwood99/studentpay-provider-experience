@@ -7,9 +7,13 @@ import {
   currentCourseDeepLink,
   futureCourseDeepLink,
   providerCourseWebsiteUrl,
+  safeHeaderPhone,
+  safeHeaderSearchUrl,
   safeProviderUrl,
   safeReturnToProviderUrl,
+  safeSocialUrl,
   tenantCssVars,
+  usesSiteHeader,
 } from "./presentation.ts";
 import { getDefaultProductionNzTenantSlug, getNzTenantBySlug, toPublicTenant } from "./tenants.ts";
 
@@ -53,6 +57,18 @@ describe("generic provider branding and presentation", () => {
     assert.match(tenantCssVars(pub)["--nz-heading-font"], /Montserrat/);
     assert.equal(pub.branding.ctaColour, "#2f7474");
     assert.equal(tenantCssVars(pub)["--nz-cta"], "#2f7474");
+    assert.equal(usesSiteHeader(pub), true);
+    assert.equal(pub.presentation.headerPhone, "+64 9 870 8980");
+    assert.equal(pub.presentation.headerPhoneTel, "+6498708980");
+    assert.deepEqual(
+      pub.presentation.headerLinks?.map((item) => item.label),
+      ["Home", "About Us", "Find My Course", "Courses", "Contact", "FAQs"],
+    );
+    assert.equal(
+      safeHeaderPhone(pub)?.href,
+      "tel:+6498708980",
+    );
+    assert.equal(safeHeaderSearchUrl(pub), "https://onlinelearninginstitute.co.nz/");
     assert.equal(oli.checkout.paymentOptions.pay_in_full.enabled, false);
     assert.equal(oli.checkout.paymentOptions.pay_in_full.comingSoon, true);
     assert.equal(oli.checkout.paymentOptions.interest_free_payment_plan.enabled, true);
@@ -135,6 +151,12 @@ describe("safe return-to-provider URLs", () => {
       safeProviderUrl("https://onlinelearninginstitute.co.nz/contact/", tenant),
       "https://onlinelearninginstitute.co.nz/contact/",
     );
+    assert.equal(
+      safeSocialUrl("https://www.instagram.com/oli_onlinelearninginstitute/", "instagram"),
+      "https://www.instagram.com/oli_onlinelearninginstitute/",
+    );
+    assert.equal(safeSocialUrl("https://evil.example/steal", "facebook"), null);
+    assert.equal(safeSocialUrl("https://www.facebook.com/profile.php?id=1", "tiktok"), null);
   });
 
   it("only links to OLI course pages that exist on the public website", () => {

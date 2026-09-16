@@ -11,6 +11,16 @@ export type NzHeaderNavItem = {
   href: string;
 };
 
+export type NzHeaderSocialNetwork = "facebook" | "instagram" | "tiktok";
+
+export type NzHeaderSocialLink = {
+  label: string;
+  href: string;
+  network: NzHeaderSocialNetwork;
+};
+
+export type NzHeaderLayout = "site" | "compact";
+
 export type NzHostedPathStyle = "enrol-slug" | "provider-root";
 
 export type NzTenantBranding = {
@@ -42,6 +52,13 @@ export type NzTenantPresentation = {
   knownCourseWebsiteSlugs?: readonly string[];
   allowedHosts: readonly string[];
   headerLinks?: readonly NzHeaderNavItem[];
+  headerLayout?: NzHeaderLayout;
+  headerPhone?: string;
+  headerPhoneTel?: string;
+  headerSocialLinks?: readonly NzHeaderSocialLink[];
+  headerSearchUrl?: string;
+  headerSearchPlaceholder?: string;
+  headerContextLabel?: string;
   currentHostedOrigin: string;
   preferredHostedOrigin?: string;
   preferredPathStyle?: NzHostedPathStyle;

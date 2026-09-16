@@ -76,10 +76,14 @@ describe("NZ enrolment checkout security", () => {
       assert.doesNotMatch(text, /Developers/);
     }
     assert.match(header, /Back to course/);
+    assert.match(header, /target="_blank"/);
+    assert.match(header, /safeHeaderPhone/);
+    assert.match(header, /safeHeaderLinks/);
+    assert.doesNotMatch(header, /0800 454 872/);
+    assert.doesNotMatch(header, /Afterpay/);
+    assert.doesNotMatch(header, /Mastercard/);
     assert.doesNotMatch(header, /attributionLabel/);
     assert.doesNotMatch(header, /powered by StudentPay/);
-    assert.doesNotMatch(header, />Courses</);
-    assert.doesNotMatch(header, />Contact</);
     assert.match(footer, /attributionLabel/);
   });
 
