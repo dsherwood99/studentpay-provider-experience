@@ -36,7 +36,9 @@ export function generateMetadata(): Metadata {
   const brand = getPlatformBrand();
 
   if (isNzEnrolmentProductAvailable()) {
-    const tenant = listActiveNzTenants().find((item) => !item.sandboxOnly);
+    const tenant = listActiveNzTenants().find(
+      (item) => !item.sandboxOnly && !item.internalCanary,
+    );
     if (tenant) {
       return {
         title: {

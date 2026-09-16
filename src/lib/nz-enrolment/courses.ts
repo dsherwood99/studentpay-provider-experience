@@ -1,6 +1,12 @@
-import { allowSandboxFixtures } from "./environment.ts";
+import { allowSandboxFixtures, isInternalE13CanaryHostedEnabled } from "./environment.ts";
+import { courseEnrolmentPaymentOptions } from "./pay-in-full.ts";
 import oliProduction from "./catalogues/oli-production.json" with { type: "json" };
-import type { NzCourse, NzPlanPolicy, NzPublicCourse } from "./types.ts";
+import type {
+  NzCourse,
+  NzEnrolmentPaymentOption,
+  NzPlanPolicy,
+  NzPublicCourse,
+} from "./types.ts";
 
 const SANDBOX_FIXTURE_COURSES: readonly NzCourse[] = [
   {
@@ -40,6 +46,46 @@ const SANDBOX_FIXTURE_COURSES: readonly NzCourse[] = [
       upfrontAmountCents: 0,
     },
   },
+  {
+    courseCode: "BELA_LASH_BUSINESS_BUNDLE",
+    slug: "lash-business-bundle",
+    providerSlug: "bela-nz",
+    name: "Lash Business Bundle",
+    description:
+      "StudentPay NZ sandbox course for Bela Beauty College hosted Pay in Full and payment-plan enrolment. Matches E3 catalogue BELA_LASH_BUSINESS_BUNDLE.",
+    paymentPlanCourseFeeCents: 280_000,
+    paymentInFullCourseFeeCents: 280_000,
+    enrolmentPaymentOptions: ["payment_plan", "pay_in_full"],
+    status: "active",
+    sandboxOnly: true,
+    duration: "Self-paced",
+    planPolicy: {
+      mode: "derived_regular",
+      frequency: "Weekly",
+      regularInstalmentCents: 1500,
+      upfrontAmountCents: 1000,
+    },
+  },
+  {
+    courseCode: "E13_PROD_CANARY_001",
+    slug: "e13-prod-canary-001",
+    providerSlug: "studentpay-internal-e13",
+    name: "E13 Production Canary $1.00 (internal — not a student offering)",
+    description:
+      "Dedicated StudentPay internal Production Pay in Full canary. Not a live education-provider course.",
+    paymentPlanCourseFeeCents: 100,
+    paymentInFullCourseFeeCents: 100,
+    enrolmentPaymentOptions: ["pay_in_full"],
+    status: "active",
+    internalCanary: true,
+    duration: "Internal canary",
+    planPolicy: {
+      mode: "derived_regular",
+      frequency: "Weekly",
+      regularInstalmentCents: 100,
+      upfrontAmountCents: 0,
+    },
+  },
 ];
 
 function asCourse(row: {
@@ -51,8 +97,10 @@ function asCourse(row: {
   description: string;
   paymentInFullCourseFeeCents: number;
   paymentPlanCourseFeeCents: number;
+  enrolmentPaymentOptions?: readonly NzEnrolmentPaymentOption[];
   status: "active" | "inactive";
   sandboxOnly?: boolean;
+  internalCanary?: boolean;
   sourceRow?: number;
   planPolicy: NzPlanPolicy;
 }): NzCourse {
@@ -65,8 +113,10 @@ function asCourse(row: {
     description: row.description,
     paymentInFullCourseFeeCents: row.paymentInFullCourseFeeCents,
     paymentPlanCourseFeeCents: row.paymentPlanCourseFeeCents,
+    enrolmentPaymentOptions: row.enrolmentPaymentOptions,
     status: row.status,
     sandboxOnly: row.sandboxOnly,
+    internalCanary: row.internalCanary,
     sourceRow: row.sourceRow,
     planPolicy: row.planPolicy,
   };
@@ -79,6 +129,9 @@ const OLI_PRODUCTION_COURSES: readonly NzCourse[] = (
 function courseVisible(course: NzCourse): boolean {
   if (course.status !== "active") {
     return false;
+  }
+  if (course.internalCanary) {
+    return isInternalE13CanaryHostedEnabled();
   }
   if (course.sandboxOnly) {
     return allowSandboxFixtures();
@@ -135,5 +188,6 @@ export function toPublicCourse(course: NzCourse): NzPublicCourse {
     duration: course.duration,
     planPolicy: course.planPolicy,
     planDefaults,
+    enrolmentPaymentOptions: courseEnrolmentPaymentOptions(course),
   };
 }
