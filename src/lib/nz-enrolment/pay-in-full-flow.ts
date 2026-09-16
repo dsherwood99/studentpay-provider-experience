@@ -1,4 +1,5 @@
 import { isConfirmedCheckoutStatus } from "./checkout-ui.ts";
+import { hostedErrorMessage } from "./errors.ts";
 import type { NzPaymentOptionId } from "./types.ts";
 
 export type PayInFullUiPhase =
@@ -120,6 +121,19 @@ export function payInFullPhase(input: {
     return "card";
   }
   return "details";
+}
+
+export function payInFullReviewErrorAfterPayment(
+  message: string | undefined,
+): string | undefined {
+  const text = String(message || "").trim();
+  if (!text) {
+    return undefined;
+  }
+  if (text === hostedErrorMessage("VALIDATION_ERROR", text)) {
+    return undefined;
+  }
+  return text;
 }
 
 export function payInFullFailureCopy(phase: PayInFullUiPhase): {

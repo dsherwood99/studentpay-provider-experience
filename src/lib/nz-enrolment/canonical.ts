@@ -70,6 +70,7 @@ export type CanonicalPayInFullCreatePayload = {
 };
 
 export type CanonicalPayInFullConfirmPayload = {
+  payment_option: "pay_in_full";
   provider: {
     provider_code: string;
     provider_order_id: string;
@@ -252,6 +253,7 @@ export function buildPayInFullConfirmPayload(input: {
   };
 }): CanonicalPayInFullConfirmPayload {
   return {
+    payment_option: "pay_in_full",
     provider: {
       provider_code: input.tenant.providerCode,
       provider_order_id: input.providerOrderId,

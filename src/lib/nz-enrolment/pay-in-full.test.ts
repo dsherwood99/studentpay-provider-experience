@@ -30,12 +30,14 @@ import {
   payInFullDeclarationsAccepted,
   payInFullFailureCopy,
   payInFullPhase,
+  payInFullReviewErrorAfterPayment,
   payInFullSuccessContainsForbiddenCopy,
   payInFullSuccessCopy,
   sameCheckoutResume,
   shouldCreatePayInFullCheckout,
   shouldReuseProviderOrderId,
 } from "./pay-in-full-flow.ts";
+import { hostedErrorMessage } from "./errors.ts";
 import { getDefaultProductionNzTenantSlug, getNzTenantBySlug } from "./tenants.ts";
 
 const srcRoot = fileURLToPath(new URL("../../", import.meta.url));
@@ -187,11 +189,128 @@ describe("Hosted E13 price and create contract", () => {
         privacy_consent_accepted: true,
       },
     });
+    assert.equal(confirmPayload.payment_option, "pay_in_full");
     assert.equal("dda_id" in confirmPayload.checkout, false);
     assert.equal("payment_plan_accepted" in confirmPayload.declarations, false);
     assert.match(JSON.stringify(createPayload), /pay_in_full/);
     assert.doesNotMatch(JSON.stringify(createPayload), /direct_debit|gocardless|dda/i);
     assert.doesNotMatch(JSON.stringify(confirmPayload), /dda_id|payment_plan_accepted/);
+  });
+});
+
+describe("Hosted E13 Pay in Full confirm contract", () => {
+  const confirmPayload = () =>
+    buildPayInFullConfirmPayload({
+      tenant: getNzTenantBySlug("bela-nz")!,
+      providerOrderId: "HOSTED-BELA_NZ-UNIT",
+      checkoutId: "BELA_NZ-CHECKOUT",
+      opportunityId: "006UNIT",
+      declarations: {
+        information_confirmed: true,
+        privacy_consent_accepted: true,
+      },
+    });
+
+  it("includes payment_option=pay_in_full", () => {
+    assert.equal(confirmPayload().payment_option, "pay_in_full");
+  });
+
+  it("includes provider, checkout, opportunity, and PIF declarations", () => {
+    const payload = confirmPayload();
+    assert.equal(payload.provider.provider_code, "BELA_NZ");
+    assert.equal(payload.provider.provider_order_id, "HOSTED-BELA_NZ-UNIT");
+    assert.equal(payload.checkout.checkout_id, "BELA_NZ-CHECKOUT");
+    assert.equal(payload.checkout.opportunity_id, "006UNIT");
+    assert.equal(payload.declarations.information_confirmed, true);
+    assert.equal(payload.declarations.privacy_consent_accepted, true);
+  });
+
+  it("does not include payment-plan confirm fields", () => {
+    const serialized = JSON.stringify(confirmPayload());
+    assert.doesNotMatch(serialized, /checkout_token/);
+    assert.doesNotMatch(serialized, /dda_id/);
+    assert.doesNotMatch(serialized, /payment_method/);
+    assert.doesNotMatch(serialized, /first_payment_date/);
+    assert.doesNotMatch(serialized, /deposit_confirmed/);
+    assert.doesNotMatch(serialized, /payment_plan_accepted/);
+    assert.equal("payment" in confirmPayload(), false);
+    assert.equal("plan" in confirmPayload(), false);
+  });
+
+  it("leaves the payment-plan confirm payload unchanged", () => {
+    const confirm = buildCanonicalConfirmPayload({
+      tenant: getNzTenantBySlug("oli")!,
+      providerOrderId: "OLI-HOSTED-CERT-TEST",
+      checkoutId: "chk",
+      checkoutToken: "tok",
+      opportunityId: "006",
+      ddaId: "a0A",
+      firstPaymentDate: "2026-10-01",
+      declarations: {
+        payment_plan_accepted: true,
+        information_confirmed: true,
+        privacy_consent_accepted: true,
+      },
+    });
+    assert.equal("payment_option" in confirm, false);
+    assert.equal(confirm.checkout.checkout_token, "tok");
+    assert.equal(confirm.checkout.dda_id, "a0A");
+    assert.equal(confirm.payment.payment_method, "studentpay_payment_plan");
+    assert.equal(confirm.payment.first_payment_date, "2026-10-01");
+    assert.equal(confirm.payment.deposit_confirmed, true);
+    assert.equal(confirm.declarations.payment_plan_accepted, true);
+  });
+
+  it("Hosted confirm route forwards payment_option=pay_in_full for a PIF session", () => {
+    const confirmRoute = fs.readFileSync(
+      path.join(srcRoot, "app/api/enrolment-checkout/confirm/route.ts"),
+      "utf8",
+    );
+    assert.match(confirmRoute, /buildPayInFullConfirmPayload\(/);
+    assert.match(
+      confirmRoute,
+      /const payload = payInFull\s*\?[\s\S]*buildPayInFullConfirmPayload\([\s\S]*\)\s*:[\s\S]*buildCanonicalConfirmPayload/,
+    );
+    assert.match(
+      confirmRoute,
+      /canonicalConfirm\(\{[\s\S]*payload,[\s\S]*\}\)/,
+    );
+    assert.doesNotMatch(confirmRoute, /delete \(payload as \{[^}]*\}\)\.payment_option/);
+    assert.doesNotMatch(confirmRoute, /payload\.payment_option =/);
+    const builder = fs.readFileSync(
+      path.join(srcRoot, "lib/nz-enrolment/canonical.ts"),
+      "utf8",
+    );
+    assert.match(
+      builder,
+      /export function buildPayInFullConfirmPayload[\s\S]*return \{\s*payment_option: "pay_in_full"/,
+    );
+  });
+
+  it("does not show generic field-validation copy after a successful payment", () => {
+    const generic = hostedErrorMessage(
+      "VALIDATION_ERROR",
+      "Invalid provider checkout confirmation payload.",
+    );
+    assert.equal(generic, "Please check the highlighted fields and try again.");
+    assert.equal(payInFullReviewErrorAfterPayment(generic), undefined);
+    assert.equal(
+      payInFullReviewErrorAfterPayment("Your enrolment session expired. Please start again."),
+      "Your enrolment session expired. Please start again.",
+    );
+    const copy = payInFullFailureCopy("server_error_after_payment");
+    assert.equal(copy.title, "Payment received — enrolment still confirming");
+    assert.match(copy.body, /Do not pay again/);
+    const checkoutSource = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/EnrolmentCheckout.tsx"),
+      "utf8",
+    );
+    assert.match(checkoutSource, /payInFullReviewErrorAfterPayment/);
+    assert.match(checkoutSource, /let paymentReceived = stripeSucceeded/);
+    assert.match(
+      checkoutSource,
+      /if \(paymentReceived\) \{[\s\S]*review: payInFullReviewErrorAfterPayment\(message\)/,
+    );
   });
 });
 
@@ -358,6 +477,9 @@ describe("Hosted E13 success and payment-plan regression", () => {
     });
     assert.equal(confirm.checkout.dda_id, "a0A");
     assert.equal(confirm.declarations.payment_plan_accepted, true);
+    assert.equal("payment_option" in confirm, false);
+    assert.equal(confirm.checkout.checkout_token, "tok");
+    assert.equal(confirm.payment.payment_method, "studentpay_payment_plan");
   });
 
   it("19. OLI production courses remain plan-only", () => {

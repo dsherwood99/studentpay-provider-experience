@@ -46,6 +46,7 @@ import {
   payInFullDeclarationsAccepted,
   payInFullFailureCopy,
   payInFullPhase,
+  payInFullReviewErrorAfterPayment,
   payInFullSuccessCopy,
   shouldCreatePayInFullCheckout,
   shouldPollPayInFullStatus,
@@ -744,6 +745,7 @@ export function NzEnrolmentCheckout({
     setError("");
     setConfirmCode(null);
     setSectionErrors((current) => ({ ...current, review: undefined }));
+    let paymentReceived = stripeSucceeded;
     try {
       const result = await confirmPayInFullElementsPayment({
         stripe: api.stripe,
@@ -766,6 +768,7 @@ export function NzEnrolmentCheckout({
         throw new Error("Payment not completed.");
       }
       setStripeSucceeded(true);
+      paymentReceived = true;
       let posted = ledgerPosted;
       for (let attempt = 0; attempt < 8; attempt += 1) {
         const statusResponse = await fetch("/api/enrolment-checkout/status", {
@@ -799,10 +802,16 @@ export function NzEnrolmentCheckout({
     } catch (caught) {
       const message =
         caught instanceof Error ? caught.message : "Payment not completed.";
-      setError(message);
-      setSectionErrors((current) => ({ ...current, review: message }));
-      if (stripeSucceeded) {
+      if (paymentReceived) {
         setServerErrorAfterPayment(true);
+        setError("");
+        setSectionErrors((current) => ({
+          ...current,
+          review: payInFullReviewErrorAfterPayment(message),
+        }));
+      } else {
+        setError(message);
+        setSectionErrors((current) => ({ ...current, review: message }));
       }
       reviewSectionRef.current?.focus();
     } finally {
