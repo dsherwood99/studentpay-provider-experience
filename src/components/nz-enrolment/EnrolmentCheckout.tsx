@@ -50,6 +50,7 @@ import {
   shouldCreatePayInFullCheckout,
   shouldPollPayInFullStatus,
 } from "@/lib/nz-enrolment/pay-in-full-flow";
+import { confirmPayInFullElementsPayment } from "@/lib/nz-enrolment/pay-in-full-stripe";
 import { PayInFullCardForm } from "@/components/nz-enrolment/PayInFullCardForm";
 import type { Stripe, StripeElements } from "@stripe/stripe-js";
 import {
@@ -744,13 +745,11 @@ export function NzEnrolmentCheckout({
     setConfirmCode(null);
     setSectionErrors((current) => ({ ...current, review: undefined }));
     try {
-      const result = await api.stripe.confirmPayment({
+      const result = await confirmPayInFullElementsPayment({
+        stripe: api.stripe,
         elements: api.elements,
         clientSecret,
-        confirmParams: {
-          return_url: window.location.href,
-        },
-        redirect: "if_required",
+        returnUrl: window.location.href,
       });
       if (result.error) {
         setConfirmCode("PAYMENT_FAILED");
