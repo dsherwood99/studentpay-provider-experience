@@ -334,10 +334,6 @@
     max-width: 150px;
   }
 
-  .helpLabel {
-    display: none;
-  }
-
   .backLink {
     font-size: 0.82rem;
   }
@@ -371,6 +367,10 @@
   .brandEnrol {
     font-size: 0.7rem;
     padding: 2px 8px;
+  }
+
+  .helpLabel {
+    display: none;
   }
 
   .backLink {

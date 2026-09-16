@@ -930,10 +930,7 @@ export function NzEnrolmentCheckout({ tenant, course, ddaReturn = null }: Props)
                 <dt>Course fee</dt>
                 <dd>{formatNzdFromCents(course.paymentPlanCourseFeeCents)}</dd>
                 <dt>Payment plan</dt>
-                <dd>
-                  {display?.regularLabel}
-                  {display?.finalPaymentLabel ? ` · ${display.finalPaymentLabel}` : ""}
-                </dd>
+                <dd>{display?.regularLabel}</dd>
                 {preview?.hasResidualFinal && preview.finalInstalmentAmountCents != null ? (
                   <>
                     <dt>Final residual</dt>
