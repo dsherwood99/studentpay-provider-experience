@@ -74,6 +74,12 @@ describe("generic provider branding and presentation", () => {
     assert.equal(oli.checkout.paymentOptions.interest_free_payment_plan.enabled, true);
     assert.equal(pub.websiteUrl, "https://onlinelearninginstitute.co.nz/");
     assert.equal(pub.supportEmail, "info@onlinelearninginstitute.co.nz");
+    assert.deepEqual([...(pub.presentation.footerAddressLines || [])], [
+      "Ground Floor",
+      "26A Hobson Street",
+      "Auckland Central 1010",
+    ]);
+    assert.equal(pub.presentation.footerPhones?.[0]?.display, "+64 9 870 8980");
     assert.equal("apiKeyEnv" in pub, false);
     assert.equal("providerCode" in pub, false);
   });

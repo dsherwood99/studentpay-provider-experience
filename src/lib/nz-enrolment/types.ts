@@ -59,6 +59,13 @@ export type NzTenantPresentation = {
   headerSearchUrl?: string;
   headerSearchPlaceholder?: string;
   headerContextLabel?: string;
+  footerTagline?: string;
+  footerAddressLines?: readonly string[];
+  footerPhones?: readonly { display: string; href: string }[];
+  footerQuickLinks?: readonly NzHeaderNavItem[];
+  footerCourseLinks?: readonly NzHeaderNavItem[];
+  footerContactHeading?: string;
+  footerMapEmbedUrl?: string;
   currentHostedOrigin: string;
   preferredHostedOrigin?: string;
   preferredPathStyle?: NzHostedPathStyle;
@@ -66,7 +73,7 @@ export type NzTenantPresentation = {
 
 export type NzPaymentOptions = {
   interest_free_payment_plan: {
-    enabled: true;
+    enabled: boolean;
   };
   pay_in_full: {
     enabled: boolean;
@@ -123,6 +130,8 @@ export type NzTenant = {
   apiKeyEnv: string;
   active: boolean;
   sandboxOnly?: boolean;
+  /** Hidden unless E13_INTERNAL_CANARY_HOSTED_ENABLED=true in Production. */
+  internalCanary?: boolean;
 };
 
 export type NzCoursePlanDefaults = {
@@ -131,6 +140,8 @@ export type NzCoursePlanDefaults = {
   numberOfInstalments?: number;
   regularInstalmentCents?: number;
 };
+
+export type NzEnrolmentPaymentOption = "payment_plan" | "pay_in_full";
 
 export type NzCourse = {
   courseCode: string;
@@ -143,8 +154,14 @@ export type NzCourse = {
   paymentPlanCourseFeeCents: number;
   /** Payment in Full of Course Fees. Not a payment-plan upfront/deposit. */
   paymentInFullCourseFeeCents: number;
+  /**
+   * Server-authoritative catalogue options. Default payment_plan only.
+   * Hosted UI must still AND this with environment + provider gates.
+   */
+  enrolmentPaymentOptions?: readonly NzEnrolmentPaymentOption[];
   status: "active" | "inactive";
   sandboxOnly?: boolean;
+  internalCanary?: boolean;
   duration?: string;
   planPolicy: NzPlanPolicy;
   sourceRow?: number;
@@ -201,6 +218,8 @@ export type NzCheckoutSession = {
   setupUrl?: string;
   student?: NzStudentDetails;
   plan?: NzPlanSelection;
+  paymentOption?: NzPaymentOptionId;
+  authoritativePriceCents?: number;
 };
 
 export type NzPublicTenant = {
@@ -233,9 +252,28 @@ export type NzPublicCourse = {
   priceCents: number;
   paymentPlanCourseFeeCents: number;
   paymentInFullCourseFeeCents: number;
+  enrolmentPaymentOptions: readonly NzEnrolmentPaymentOption[];
   duration?: string;
   planPolicy: NzPlanPolicy;
   planDefaults: NzCoursePlanDefaults;
+};
+
+export type NzHostedEligibility = {
+  payInFullAvailable: boolean;
+  paymentPlanAvailable: boolean;
+  environmentAllowed: boolean;
+};
+
+export type CanonicalCardPayment = {
+  required?: boolean;
+  success?: boolean;
+  payment_id?: string | null;
+  payment_status?: string | null;
+  amount?: number | null;
+  client_secret?: string;
+  publishable_key?: string | null;
+  ledger_posted?: boolean;
+  stripe_status?: string | null;
 };
 
 export type CanonicalCheckoutResult = {
@@ -245,6 +283,7 @@ export type CanonicalCheckoutResult = {
   alreadyConfirmed?: boolean;
   already_confirmed?: boolean;
   requestId?: string;
+  payment_option?: string;
   error?: {
     code?: string;
     message?: string;
@@ -266,12 +305,20 @@ export type CanonicalCheckoutResult = {
     requires_direct_debit?: boolean;
     id?: string;
   };
+  pricing?: {
+    course_price?: number | null;
+    amount_paid?: number | null;
+    remaining_amount?: number | null;
+    currency?: string;
+  };
+  card_payment?: CanonicalCardPayment;
   direct_debit?: {
+    required?: boolean;
     setup_complete?: boolean;
     setup_url?: string;
     redirect_url?: string;
     token?: string;
-    dda_id?: string;
+    dda_id?: string | null;
     billing_request_status?: string;
     mandate_status?: string;
     authorised?: boolean;
@@ -285,6 +332,12 @@ export type CanonicalCheckoutResult = {
   };
   enrolment?: {
     status?: string;
+  };
+  payment?: {
+    status?: string;
+    payment_id?: string | null;
+    amount?: number | null;
+    ledger_posted?: boolean;
   };
   raw?: unknown;
 };

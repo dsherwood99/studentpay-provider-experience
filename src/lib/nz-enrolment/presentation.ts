@@ -94,7 +94,22 @@ export function safeReturnToProviderUrl(tenant: NzPublicTenant): string | null {
 }
 
 export function safeHeaderLinks(tenant: NzPublicTenant): NzHeaderNav[] {
-  return (tenant.presentation.headerLinks || []).flatMap((item) => {
+  return safeNavItems(tenant, tenant.presentation.headerLinks);
+}
+
+export function safeFooterQuickLinks(tenant: NzPublicTenant): NzHeaderNav[] {
+  return safeNavItems(tenant, tenant.presentation.footerQuickLinks);
+}
+
+export function safeFooterCourseLinks(tenant: NzPublicTenant): NzHeaderNav[] {
+  return safeNavItems(tenant, tenant.presentation.footerCourseLinks);
+}
+
+function safeNavItems(
+  tenant: NzPublicTenant,
+  items: readonly { label: string; href: string }[] | undefined,
+): NzHeaderNav[] {
+  return (items || []).flatMap((item) => {
     const href = safeProviderUrl(item.href, tenant);
     if (!href || !item.label.trim()) {
       return [];
@@ -164,6 +179,26 @@ export function safeHeaderPhone(
 
 export function usesSiteHeader(tenant: NzPublicTenant): boolean {
   return tenant.presentation.headerLayout === "site";
+}
+
+export function usesSiteFooter(tenant: NzPublicTenant): boolean {
+  return Boolean(
+    tenant.presentation.footerAddressLines?.length ||
+      tenant.presentation.footerQuickLinks?.length,
+  );
+}
+
+export function safeFooterPhones(
+  tenant: NzPublicTenant,
+): { display: string; href: string }[] {
+  return (tenant.presentation.footerPhones || []).flatMap((item) => {
+    const display = item.display.trim();
+    const href = item.href.trim();
+    if (!display || !/^tel:\+[0-9]{8,15}$/.test(href)) {
+      return [];
+    }
+    return [{ display, href }];
+  });
 }
 
 export function providerCourseWebsiteUrl(

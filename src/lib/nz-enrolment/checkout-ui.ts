@@ -31,12 +31,29 @@ export const NZ_DIRECT_DEBIT_COPY = {
 
 export const NZ_REVIEW_COPY = {
   heading: "Review & confirm",
+  payHeading: "Review & pay",
 } as const;
 
 export const NZ_CONFIRMATION_COPY = {
   heading: "Enrolment confirmed",
 } as const;
 
+export const NZ_PAY_IN_FULL_COPY = {
+  heading: "Pay now",
+  choiceTitle: "Pay now",
+  choiceLead: "Pay your course fee today and save.",
+  cardHeading: "Payment details",
+  confirmCta: "Pay now and confirm enrolment",
+  continueCta: "Continue to payment",
+  studentLead: "We'll use these details to set up your enrolment.",
+} as const;
+
+export const NZ_PAYMENT_PLAN_CHOICE_COPY = {
+  title: "Payment plan",
+  lead: "Interest-free payment plan",
+} as const;
+
+export const NZ_PAY_IN_FULL_CONFIRM_CTA = NZ_PAY_IN_FULL_COPY.confirmCta;
 export const NZ_CONFIRM_CTA = "Confirm enrolment & activate payment plan";
 export const NZ_DIRECT_DEBIT_CTA = "Set up Direct Debit";
 

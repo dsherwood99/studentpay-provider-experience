@@ -54,6 +54,55 @@ export type CanonicalCreatePayload = {
   };
 };
 
+export type CanonicalPayInFullCreatePayload = {
+  payment_option: "pay_in_full";
+  provider: {
+    provider_code: string;
+    provider_order_id: string;
+    provider_name: string;
+    success_url: string;
+    cancel_url: string;
+  };
+  student: CanonicalCreatePayload["student"];
+  course: {
+    course_code: string;
+  };
+};
+
+export type CanonicalPayInFullConfirmPayload = {
+  payment_option: "pay_in_full";
+  provider: {
+    provider_code: string;
+    provider_order_id: string;
+  };
+  checkout: {
+    checkout_id: string;
+    opportunity_id?: string;
+  };
+  declarations: {
+    information_confirmed: boolean;
+    privacy_consent_accepted: boolean;
+  };
+};
+
+function canonicalStudent(student: NzStudentDetails): CanonicalCreatePayload["student"] {
+  return {
+    first_name: student.firstName,
+    last_name: student.lastName,
+    email: student.email,
+    mobile: student.mobile,
+    date_of_birth: student.dateOfBirth,
+    address: {
+      street_address: student.streetAddress,
+      suburb: student.suburb,
+      city: student.city || student.suburb,
+      state: student.region,
+      postcode: student.postcode,
+      country: student.country || "New Zealand",
+    },
+  };
+}
+
 export function previewCoursePlan(
   course: NzCourse,
   selection: Partial<NzPlanSelection> & { firstPaymentDate: string },
@@ -121,21 +170,7 @@ export function buildCanonicalCreatePayload(input: {
       success_url: input.successUrl,
       cancel_url: input.cancelUrl,
     },
-    student: {
-      first_name: input.student.firstName,
-      last_name: input.student.lastName,
-      email: input.student.email,
-      mobile: input.student.mobile,
-      date_of_birth: input.student.dateOfBirth,
-      address: {
-        street_address: input.student.streetAddress,
-        suburb: input.student.suburb,
-        city: input.student.city || input.student.suburb,
-        state: input.student.region,
-        postcode: input.student.postcode,
-        country: input.student.country || "New Zealand",
-      },
-    },
+    student: canonicalStudent(input.student),
     course: {
       course_code: input.course.courseCode,
       course_name: input.course.name,
@@ -183,6 +218,57 @@ export function buildCanonicalConfirmPayload(input: {
   };
 }
 
+export function buildPayInFullCreatePayload(input: {
+  tenant: NzTenant;
+  course: NzCourse;
+  student: NzStudentDetails;
+  providerOrderId: string;
+  successUrl: string;
+  cancelUrl: string;
+}): CanonicalPayInFullCreatePayload {
+  return {
+    payment_option: "pay_in_full",
+    provider: {
+      provider_code: input.tenant.providerCode,
+      provider_order_id: input.providerOrderId,
+      provider_name: input.tenant.displayName,
+      success_url: input.successUrl,
+      cancel_url: input.cancelUrl,
+    },
+    student: canonicalStudent(input.student),
+    course: {
+      course_code: input.course.courseCode,
+    },
+  };
+}
+
+export function buildPayInFullConfirmPayload(input: {
+  tenant: NzTenant;
+  providerOrderId: string;
+  checkoutId: string;
+  opportunityId?: string;
+  declarations: {
+    information_confirmed: boolean;
+    privacy_consent_accepted: boolean;
+  };
+}): CanonicalPayInFullConfirmPayload {
+  return {
+    payment_option: "pay_in_full",
+    provider: {
+      provider_code: input.tenant.providerCode,
+      provider_order_id: input.providerOrderId,
+    },
+    checkout: {
+      checkout_id: input.checkoutId,
+      ...(input.opportunityId ? { opportunity_id: input.opportunityId } : {}),
+    },
+    declarations: {
+      information_confirmed: input.declarations.information_confirmed,
+      privacy_consent_accepted: input.declarations.privacy_consent_accepted,
+    },
+  };
+}
+
 function parseCanonicalBody(text: string): CanonicalCheckoutResult {
   try {
     return JSON.parse(text) as CanonicalCheckoutResult;
@@ -200,7 +286,7 @@ function parseCanonicalBody(text: string): CanonicalCheckoutResult {
 export async function canonicalCreate(input: {
   apiBaseUrl: string;
   apiKey: string;
-  payload: CanonicalCreatePayload;
+  payload: CanonicalCreatePayload | CanonicalPayInFullCreatePayload;
   idempotencyKey: string;
 }): Promise<{ httpStatus: number; body: CanonicalCheckoutResult }> {
   const response = await fetch(
@@ -245,7 +331,9 @@ export async function canonicalConfirm(input: {
   apiBaseUrl: string;
   apiKey: string;
   checkoutId: string;
-  payload: ReturnType<typeof buildCanonicalConfirmPayload>;
+  payload:
+    | ReturnType<typeof buildCanonicalConfirmPayload>
+    | CanonicalPayInFullConfirmPayload;
 }): Promise<{ httpStatus: number; body: CanonicalCheckoutResult }> {
   const response = await fetch(
     `${input.apiBaseUrl.replace(/\/$/, "")}/v1/provider-checkouts/${encodeURIComponent(input.checkoutId)}/confirm`,
