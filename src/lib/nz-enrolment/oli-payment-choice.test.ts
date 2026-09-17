@@ -238,6 +238,35 @@ describe("OLI payment choice + footer", () => {
     assert.match(footer, /Payment services powered by StudentPay NZ/);
   });
 
+  it("locks OLI site chrome to the 2026-09-17 forensic measurements", () => {
+    const chrome = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/provider-chrome.module.css"),
+      "utf8",
+    );
+    const header = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/ProviderNativeHeader.tsx"),
+      "utf8",
+    );
+    const footer = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/ProviderNativeFooter.tsx"),
+      "utf8",
+    );
+    assert.match(chrome, /max-width: 229px/);
+    assert.match(chrome, /max-width: 1500px/);
+    assert.match(chrome, /padding-left: 20px/);
+    assert.match(chrome, /width: 300px/);
+    assert.match(chrome, /width: 32px/);
+    assert.match(chrome, /width: 25px/);
+    assert.match(chrome, /max-width: 100px/);
+    assert.match(chrome, /width: 89px/);
+    assert.match(chrome, /\.siteFooter \{\n  background: #f9f7f3;/);
+    assert.match(chrome, /@media \(max-width: 991px\)/);
+    assert.match(chrome, /@media \(max-width: 479px\)/);
+    assert.match(header, /nz-enrolment\/oli\/fb-icon\.png|iconSrc/);
+    assert.match(footer, /footerLogoPath/);
+    assert.doesNotMatch(header, /from "lucide-react"/);
+  });
+
   it("enables OLI Production Hosted Pay Now from tenant config, not the sandbox preview flag", () => {
     process.env.STUDENTPAY_ENV = "production";
     process.env.NZ_STUDENTPAY_API_BASE_URL = "https://api.studentpay.co.nz";

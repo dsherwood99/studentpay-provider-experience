@@ -23,6 +23,7 @@ export const NZ_TENANTS: readonly NzTenant[] = [
     websiteUrl: "https://onlinelearninginstitute.co.nz/",
     branding: {
       logoPath: "/nz-enrolment/oli/logo.png",
+      footerLogoPath: "/nz-enrolment/oli/footer-logo.png",
       primaryColour: "#3a8f8f",
       secondaryColour: "#65bec2",
       accentColour: "#2c67c9",
@@ -52,22 +53,27 @@ export const NZ_TENANTS: readonly NzTenant[] = [
       headerPhoneTel: "+6498708980",
       headerContextLabel: "Enrolment",
       headerSearchUrl: "https://onlinelearninginstitute.co.nz/",
-      headerSearchPlaceholder: "Search for Courses",
+      headerSearchPlaceholder: "Search …",
+      headerPhoneIconSrc: "/nz-enrolment/oli/phone-icon-white.png",
+      headerSearchIconSrc: "/nz-enrolment/oli/iconamoon_search.png",
       headerSocialLinks: [
         {
           label: "Facebook",
           href: "https://www.facebook.com/profile.php?id=61587451054794",
           network: "facebook",
+          iconSrc: "/nz-enrolment/oli/fb-icon.png",
         },
         {
           label: "Instagram",
           href: "https://www.instagram.com/oli_onlinelearninginstitute/",
           network: "instagram",
+          iconSrc: "/nz-enrolment/oli/instagram-icon.png",
         },
         {
           label: "TikTok",
           href: "https://www.tiktok.com/@onlinelearninginstitute",
           network: "tiktok",
+          iconSrc: "/nz-enrolment/oli/tiktok-icon.png",
         },
       ],
       headerLinks: [
@@ -83,7 +89,8 @@ export const NZ_TENANTS: readonly NzTenant[] = [
       ],
       footerTagline:
         "With over 10 years experience supporting students across New Zealand",
-      footerContactHeading: "New Zealand",
+      footerContactHeading: "Get in Touch",
+      footerRegion: "New Zealand",
       footerAddressLines: [
         "Ground Floor",
         "26A Hobson Street",

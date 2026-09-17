@@ -35,7 +35,7 @@ const inter = Inter({
 const montserrat = Montserrat({
   variable: "--font-nz-heading",
   subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export function generateMetadata(): Metadata {

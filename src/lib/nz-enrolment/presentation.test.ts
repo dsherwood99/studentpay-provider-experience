@@ -10,7 +10,9 @@ import {
   providerCourseWebsiteUrl,
   safeHeaderPhone,
   safeHeaderSearchUrl,
+  safeHeaderSocialLinks,
   safeProviderUrl,
+  safePublicAssetPath,
   safeReturnToProviderUrl,
   safeSocialUrl,
   tenantCssVars,
@@ -70,6 +72,13 @@ describe("generic provider branding and presentation", () => {
       "tel:+6498708980",
     );
     assert.equal(safeHeaderSearchUrl(pub), "https://onlinelearninginstitute.co.nz/");
+    assert.equal(safePublicAssetPath("/nz-enrolment/oli/fb-icon.png"), "/nz-enrolment/oli/fb-icon.png");
+    assert.equal(safePublicAssetPath("/etc/passwd"), null);
+    assert.equal(safePublicAssetPath("/nz-enrolment/../secret.png"), null);
+    assert.equal(
+      safeHeaderSocialLinks(pub).map((item) => item.iconSrc).join(","),
+      "/nz-enrolment/oli/fb-icon.png,/nz-enrolment/oli/instagram-icon.png,/nz-enrolment/oli/tiktok-icon.png",
+    );
     assert.equal(oli.checkout.paymentOptions.pay_in_full.enabled, true);
     assert.equal(oli.checkout.paymentOptions.pay_in_full.comingSoon, false);
     assert.equal(oli.checkout.paymentOptions.interest_free_payment_plan.enabled, true);
