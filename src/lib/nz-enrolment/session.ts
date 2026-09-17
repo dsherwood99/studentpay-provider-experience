@@ -94,5 +94,6 @@ export function publicSessionView(session: NzCheckoutSession | null) {
     checkoutId: session.checkoutId || null,
     hasCheckout: Boolean(session.checkoutId),
     hasSetupUrl: Boolean(session.setupUrl),
+    paymentOption: session.paymentOption || session.plan?.paymentOption || null,
   };
 }

@@ -1,4 +1,5 @@
 import oliWebsiteSlugs from "./catalogues/oli-website-slugs.json" with { type: "json" };
+import { isInternalE13CanaryHostedEnabled } from "./environment.ts";
 import { defaultPresentation } from "./presentation.ts";
 import type { NzPublicTenant, NzTenant } from "./types.ts";
 
@@ -80,13 +81,61 @@ export const NZ_TENANTS: readonly NzTenant[] = [
         { label: "Contact", href: "https://onlinelearninginstitute.co.nz/contact/" },
         { label: "FAQs", href: "https://onlinelearninginstitute.co.nz/faq/" },
       ],
+      footerTagline:
+        "With over 10 years experience supporting students across New Zealand",
+      footerContactHeading: "New Zealand",
+      footerAddressLines: [
+        "Ground Floor",
+        "26A Hobson Street",
+        "Auckland Central 1010",
+      ],
+      footerPhones: [
+        { display: "+64 9 870 8980", href: "tel:+6498708980" },
+        { display: "0800 454 872", href: "tel:+64800454872" },
+      ],
+      footerQuickLinks: [
+        { label: "Home", href: "https://onlinelearninginstitute.co.nz/" },
+        { label: "About us", href: "https://onlinelearninginstitute.co.nz/about/" },
+        { label: "Courses", href: "https://onlinelearninginstitute.co.nz/courses/" },
+        { label: "FAQs", href: "https://onlinelearninginstitute.co.nz/faq/" },
+        {
+          label: "Privacy Policy",
+          href: "https://onlinelearninginstitute.co.nz/privacy-policy/",
+        },
+        {
+          label: "Terms & Conditions",
+          href: "https://onlinelearninginstitute.co.nz/terms-conditions/",
+        },
+      ],
+      footerCourseLinks: [
+        {
+          label: "Administration",
+          href: "https://onlinelearninginstitute.co.nz/courses/administration/",
+        },
+        {
+          label: "Animal Care & Wildlife",
+          href: "https://onlinelearninginstitute.co.nz/courses/animal-care-wildlife/",
+        },
+        {
+          label: "Business",
+          href: "https://onlinelearninginstitute.co.nz/courses/business/",
+        },
+        {
+          label: "Event Planning, Tourism & Hospitality",
+          href: "https://onlinelearninginstitute.co.nz/courses/event-planning-tourism-hospitality/",
+        },
+        {
+          label: "Management",
+          href: "https://onlinelearninginstitute.co.nz/courses/management/",
+        },
+      ],
       preferredHostedOrigin: "https://enrol.onlinelearninginstitute.co.nz",
       preferredPathStyle: "provider-root",
     }),
     checkout: {
       paymentOptions: {
         interest_free_payment_plan: { enabled: true },
-        pay_in_full: { enabled: false, comingSoon: true },
+        pay_in_full: { enabled: true, comingSoon: false },
       },
       availableFrequencies: ["Weekly"],
       defaultFrequency: "Weekly",
@@ -140,11 +189,110 @@ export const NZ_TENANTS: readonly NzTenant[] = [
     active: true,
     sandboxOnly: true,
   },
+  {
+    slug: "bela-nz",
+    providerCode: "BELA_NZ",
+    displayName: "Bela Beauty College",
+    legalName: "Bela Beauty College",
+    supportEmail: "hello@belabeautycollege.com",
+    privacyUrl: "https://belabeautycollege.com/policies/privacy-policy",
+    termsUrl: "https://belabeautycollege.com/policies/terms-of-service",
+    websiteUrl: "https://belabeautycollege.com",
+    branding: {
+      logoPath: "",
+      primaryColour: "#5A332B",
+      accentColour: "#FBD2D3",
+      backgroundColour: "#FAF7F4",
+      surfaceColour: "#ffffff",
+      headingColour: "#5A332B",
+      mutedTextColour: "#7a5a52",
+      textColour: "#5A332B",
+      fontFamily: "Arial, sans-serif",
+      buttonRadius: "medium",
+      headerStyle: "provider-native",
+      footerStyle: "provider-native",
+    },
+    presentation: defaultPresentation({
+      allowedHosts: ["belabeautycollege.com", "www.belabeautycollege.com"],
+      returnToProviderUrl: "https://belabeautycollege.com",
+      returnToProviderLabel: "Return to Bela Beauty College",
+      courseUrlPattern:
+        "https://belabeautycollege.com/products/the-ultimate-lash-business-bundle",
+      knownCourseWebsiteSlugs: ["lash-business-bundle"],
+      headerLinks: [
+        { label: "Courses", href: "https://belabeautycollege.com" },
+      ],
+    }),
+    checkout: {
+      paymentOptions: {
+        interest_free_payment_plan: { enabled: true },
+        pay_in_full: { enabled: true, comingSoon: false },
+      },
+      availableFrequencies: ["Weekly"],
+      defaultFrequency: "Weekly",
+      wording: {
+        ddaLead:
+          "You are setting up a Direct Debit authority with StudentPay NZ so instalments can be collected under your payment plan. This is not a card payment.",
+        supportNote:
+          "Questions about this enrolment can be sent to Bela Beauty College or StudentPay NZ support.",
+      },
+    },
+    apiKeyEnv: "PROVIDER_API_KEY_BELA_NZ",
+    active: true,
+    sandboxOnly: true,
+  },
+  {
+    slug: "studentpay-internal-e13",
+    providerCode: "STUDENTPAY_INTERNAL_E13_CANARY",
+    displayName: "StudentPay Internal E13 Canary",
+    legalName: "StudentPay NZ (internal E13 canary — not a student offering)",
+    supportEmail: "partners@studentpay.co.nz",
+    privacyUrl: "https://studentpay.co.nz/privacy",
+    termsUrl: "https://studentpay.co.nz/terms",
+    websiteUrl: "https://studentpay.co.nz",
+    branding: {
+      logoPath: "",
+      primaryColour: "#161b1a",
+      accentColour: "#8b79f1",
+      backgroundColour: "#ffffff",
+      textColour: "#161b1a",
+      fontFamily: 'Inter, "Segoe UI", sans-serif',
+      buttonRadius: "medium",
+      headerStyle: "provider-native",
+      footerStyle: "provider-native",
+    },
+    presentation: defaultPresentation({
+      allowedHosts: ["studentpay.co.nz", "www.studentpay.co.nz"],
+      returnToProviderUrl: "https://studentpay.co.nz",
+      returnToProviderLabel: "Return to StudentPay",
+      knownCourseWebsiteSlugs: ["e13-prod-canary-001"],
+      headerLinks: [{ label: "StudentPay", href: "https://studentpay.co.nz" }],
+      attributionLabel: "Payments powered by StudentPay NZ",
+    }),
+    checkout: {
+      paymentOptions: {
+        interest_free_payment_plan: { enabled: false },
+        pay_in_full: { enabled: true, comingSoon: false },
+      },
+      availableFrequencies: ["Weekly"],
+      defaultFrequency: "Weekly",
+      wording: {
+        supportNote:
+          "Internal StudentPay E13 Production canary. Not a public enrolment.",
+      },
+    },
+    apiKeyEnv: "PROVIDER_API_KEY_STUDENTPAY_INTERNAL_E13_CANARY",
+    active: true,
+    internalCanary: true,
+  },
 ];
 
 function tenantVisible(tenant: NzTenant): boolean {
   if (!tenant.active) {
     return false;
+  }
+  if (tenant.internalCanary) {
+    return isInternalE13CanaryHostedEnabled();
   }
   if (tenant.sandboxOnly) {
     return process.env.STUDENTPAY_ENV?.trim().toLowerCase() === "sandbox";
@@ -173,7 +321,9 @@ export function listActiveNzTenants(): NzTenant[] {
 export function getDefaultProductionNzTenantSlug(
   tenants: readonly NzTenant[] = listActiveNzTenants(),
 ): string | undefined {
-  return tenants.find((tenant) => tenant.active && !tenant.sandboxOnly)?.slug;
+  return tenants.find(
+    (tenant) => tenant.active && !tenant.sandboxOnly && !tenant.internalCanary,
+  )?.slug;
 }
 
 export function toPublicTenant(tenant: NzTenant): NzPublicTenant {

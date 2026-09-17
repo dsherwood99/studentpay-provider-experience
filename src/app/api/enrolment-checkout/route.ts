@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import {
   buildCanonicalCreatePayload,
+  buildPayInFullCreatePayload,
   canonicalCreate,
   extractCheckoutToken,
   extractSetupUrl,
@@ -9,6 +10,13 @@ import {
 import { jsonError } from "@/lib/nz-enrolment/errors";
 import { GENERIC_MAX_RECURRING_INSTALMENTS } from "@/lib/nz-enrolment/environment";
 import { logNzEnrolmentEvent } from "@/lib/nz-enrolment/observability";
+import {
+  authoritativePayInFullPriceCents,
+  hostedStripePublishableKeyIsSafe,
+  publicCardPayment,
+  resolveHostedPayInFullEligibility,
+} from "@/lib/nz-enrolment/pay-in-full";
+import { isPayInFullOption, shouldReuseProviderOrderId } from "@/lib/nz-enrolment/pay-in-full-flow";
 import { defaultFirstPaymentDate } from "@/lib/nz-enrolment/plan-math";
 import {
   assertSessionTenant,
@@ -28,9 +36,29 @@ import {
   sanitiseStudent,
   validateStudentDetails,
 } from "@/lib/nz-enrolment/validation";
-import type { NzPlanSelection } from "@/lib/nz-enrolment/types";
+import type { NzCourse, NzPlanSelection, NzTenant } from "@/lib/nz-enrolment/types";
 
 export const runtime = "nodejs";
+
+function hostedOrderId(tenant: NzTenant): string {
+  return `HOSTED-${tenant.providerCode}-${randomUUID()}`;
+}
+
+function eligibilityForCourse(tenant: NzTenant, course: NzCourse | undefined) {
+  if (!course) {
+    return {
+      payInFullAvailable: false,
+      paymentPlanAvailable: true,
+      environmentAllowed: false,
+    };
+  }
+  const resolved = resolveHostedPayInFullEligibility({ tenant, course });
+  return {
+    payInFullAvailable: resolved.payInFullAvailable,
+    paymentPlanAvailable: resolved.paymentPlanAvailable,
+    environmentAllowed: resolved.environmentAllowed,
+  };
+}
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -53,15 +81,20 @@ export async function GET(request: Request) {
     return mismatch;
   }
 
+  const course = courseSlug ? getNzCourse(providerSlug, courseSlug) : undefined;
+  const eligibility = eligibilityForCourse(tenant, course);
+
   logNzEnrolmentEvent("checkout_started", {
     provider_slug: tenant.slug,
     course_slug: courseSlug || null,
+    pay_in_full_available: eligibility.payInFullAvailable,
   });
 
   return Response.json({
     success: true,
     tenant: toPublicTenant(tenant),
-    courses: courses.map((course) => toPublicCourse(course!)),
+    courses: courses.map((item) => toPublicCourse(item!)),
+    eligibility,
     session: publicSessionView(
       session?.providerSlug === providerSlug ? session : null,
     ),
@@ -116,7 +149,10 @@ export async function POST(request: Request) {
     return key.error;
   }
 
-  if (body.plan?.paymentOption === "pay_in_full") {
+  const eligibility = resolveHostedPayInFullEligibility({ tenant, course });
+  const payInFullRequested = isPayInFullOption(body.plan?.paymentOption);
+
+  if (payInFullRequested && !eligibility.payInFullAvailable) {
     return jsonError(400, "PAY_IN_FULL_UNAVAILABLE");
   }
 
@@ -125,6 +161,32 @@ export async function POST(request: Request) {
   if (Object.keys(studentErrors).length > 0) {
     return jsonError(400, "INVALID_STUDENT", undefined, {
       invalid_fields: studentErrors,
+    });
+  }
+
+  const providerOrderId = shouldReuseProviderOrderId({
+    sessionProviderSlug: existing?.providerSlug,
+    sessionCourseSlug: existing?.courseSlug,
+    providerSlug,
+    courseSlug,
+    sessionProviderOrderId: existing?.providerOrderId,
+  })
+    ? existing!.providerOrderId
+    : body.providerOrderId?.trim() || hostedOrderId(tenant);
+
+  const origin = publicBaseUrl(request);
+  const returnPath = `/enrol/${tenant.slug}/${course.slug}`;
+
+  if (payInFullRequested) {
+    return createPayInFullCheckout({
+      tenant,
+      course,
+      student,
+      providerOrderId,
+      apiBaseUrl: apiBase.url,
+      apiKey: key.apiKey,
+      origin,
+      returnPath,
     });
   }
 
@@ -172,13 +234,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const providerOrderId =
-    (existing?.providerSlug === providerSlug && existing.providerOrderId) ||
-    body.providerOrderId?.trim() ||
-    `HOSTED-${tenant.providerCode}-${randomUUID()}`;
-
-  const origin = publicBaseUrl(request);
-  const returnPath = `/enrol/${tenant.slug}/${course.slug}`;
   const payload = buildCanonicalCreatePayload({
     tenant,
     course,
@@ -236,11 +291,12 @@ export async function POST(request: Request) {
       providerOrderId,
       checkoutId,
       opportunityId: upstream.body.records?.opportunity_id,
-      ddaId: upstream.body.records?.dda_id || upstream.body.direct_debit?.dda_id,
+      ddaId: upstream.body.records?.dda_id || upstream.body.direct_debit?.dda_id || undefined,
       checkoutToken,
       setupUrl,
       student,
       plan,
+      paymentOption: "interest_free_payment_plan",
     });
   } catch (error) {
     if (error instanceof NzSessionConfigError) {
@@ -253,6 +309,7 @@ export async function POST(request: Request) {
     provider_slug: tenant.slug,
     provider_order_id: providerOrderId,
     checkout_id: checkoutId,
+    payment_option: "payment_plan",
     idempotent_replay: Boolean(
       upstream.body.idempotent_replay || upstream.body.idempotentReplay,
     ),
@@ -268,6 +325,7 @@ export async function POST(request: Request) {
     idempotent_replay: Boolean(
       upstream.body.idempotent_replay || upstream.body.idempotentReplay,
     ),
+    payment_option: "payment_plan",
     checkout: {
       checkout_id: checkoutId,
       status: upstream.body.checkout?.status,
@@ -284,6 +342,153 @@ export async function POST(request: Request) {
       providerOrderId,
       checkoutId,
       setupUrl,
+      paymentOption: "interest_free_payment_plan",
+    }),
+  });
+}
+
+async function createPayInFullCheckout(input: {
+  tenant: NzTenant;
+  course: NzCourse;
+  student: ReturnType<typeof sanitiseStudent>;
+  providerOrderId: string;
+  apiBaseUrl: string;
+  apiKey: string;
+  origin: string;
+  returnPath: string;
+}) {
+  const { tenant, course, student, providerOrderId } = input;
+  const payload = buildPayInFullCreatePayload({
+    tenant,
+    course,
+    student,
+    providerOrderId,
+    successUrl: `${input.origin}${input.returnPath}`,
+    cancelUrl: `${input.origin}${input.returnPath}`,
+  });
+
+  logNzEnrolmentEvent("student_details_completed", {
+    provider_slug: tenant.slug,
+    course_code: course.courseCode,
+  });
+  logNzEnrolmentEvent("pay_in_full_selected", {
+    provider_slug: tenant.slug,
+    course_code: course.courseCode,
+  });
+  logNzEnrolmentEvent("pay_in_full_payment_started", {
+    provider_slug: tenant.slug,
+    provider_order_id: providerOrderId,
+  });
+
+  const upstream = await canonicalCreate({
+    apiBaseUrl: input.apiBaseUrl,
+    apiKey: input.apiKey,
+    payload,
+    idempotencyKey: providerOrderId,
+  });
+
+  if (!upstream.body.success) {
+    logNzEnrolmentEvent("checkout_failed", {
+      provider_slug: tenant.slug,
+      request_id: upstream.body.requestId || null,
+      http_status: upstream.httpStatus,
+      error_code: upstream.body.error?.code || null,
+      payment_option: "pay_in_full",
+    });
+    return jsonError(
+      upstream.httpStatus || 502,
+      upstream.body.error?.code || "VALIDATION_ERROR",
+      upstream.body.error?.message,
+      {
+        request_id: upstream.body.requestId,
+        invalid_fields: upstream.body.error?.invalid_fields,
+      },
+    );
+  }
+
+  const publishableKey = upstream.body.card_payment?.publishable_key || null;
+  if (!hostedStripePublishableKeyIsSafe(publishableKey)) {
+    logNzEnrolmentEvent("checkout_failed", {
+      provider_slug: tenant.slug,
+      reason: "stripe_test_key_required",
+      payment_option: "pay_in_full",
+    });
+    return jsonError(503, "STRIPE_TEST_KEY_REQUIRED");
+  }
+
+  const checkoutId =
+    upstream.body.checkout?.checkout_id || upstream.body.checkout?.id || "";
+  const authoritativePriceCents = authoritativePayInFullPriceCents({
+    catalogueCents: course.paymentInFullCourseFeeCents,
+    serverCoursePrice: upstream.body.pricing?.course_price ?? upstream.body.card_payment?.amount,
+  });
+
+  try {
+    await writeNzSession({
+      providerSlug: tenant.slug,
+      courseSlug: course.slug,
+      providerOrderId,
+      checkoutId,
+      opportunityId: upstream.body.records?.opportunity_id,
+      student,
+      paymentOption: "pay_in_full",
+      plan: {
+        paymentOption: "pay_in_full",
+        upfrontAmountCents: 0,
+        frequency: course.planPolicy.frequency,
+        firstPaymentDate: "",
+      },
+      authoritativePriceCents,
+    });
+  } catch (error) {
+    if (error instanceof NzSessionConfigError) {
+      return jsonError(503, "SESSION_NOT_CONFIGURED");
+    }
+    throw error;
+  }
+
+  logNzEnrolmentEvent("checkout_created", {
+    provider_slug: tenant.slug,
+    provider_order_id: providerOrderId,
+    checkout_id: checkoutId,
+    payment_option: "pay_in_full",
+    idempotent_replay: Boolean(
+      upstream.body.idempotent_replay || upstream.body.idempotentReplay,
+    ),
+    request_id: upstream.body.requestId || null,
+    requires_direct_debit: false,
+  });
+
+  return Response.json({
+    success: true,
+    idempotent_replay: Boolean(
+      upstream.body.idempotent_replay || upstream.body.idempotentReplay,
+    ),
+    payment_option: "pay_in_full",
+    checkout: {
+      checkout_id: checkoutId,
+      opportunity_id: upstream.body.records?.opportunity_id || null,
+      status: upstream.body.checkout?.status,
+      requires_direct_debit: false,
+    },
+    pricing: {
+      course_price: upstream.body.pricing?.course_price ?? null,
+      currency: upstream.body.pricing?.currency || "NZD",
+    },
+    card_payment: publicCardPayment(upstream.body.card_payment),
+    plan: null,
+    direct_debit: {
+      required: false,
+      setup_url: null,
+      setup_complete: false,
+      dda_id: null,
+    },
+    session: publicSessionView({
+      providerSlug: tenant.slug,
+      courseSlug: course.slug,
+      providerOrderId,
+      checkoutId,
+      paymentOption: "pay_in_full",
     }),
   });
 }

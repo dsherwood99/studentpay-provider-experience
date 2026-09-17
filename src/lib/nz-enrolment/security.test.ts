@@ -84,10 +84,14 @@ describe("NZ enrolment checkout security", () => {
     assert.doesNotMatch(header, /Mastercard/);
     assert.doesNotMatch(header, /attributionLabel/);
     assert.doesNotMatch(header, /powered by StudentPay/);
-    assert.match(footer, /attributionLabel/);
+    assert.match(footer, /Payment services powered by StudentPay NZ/);
+    assert.doesNotMatch(footer, /Afterpay/);
+    assert.doesNotMatch(footer, /Mastercard/);
+    assert.doesNotMatch(footer, /Visa/);
+    assert.match(footer, /\+64 9 870 8980|footerPhones|safeFooterPhones/);
   });
 
-  it("does not change BFF enrolment-checkout route files in this presentation layer", () => {
+  it("does not expose provider API keys from enrolment-checkout BFF routes", () => {
     const bff = path.join(srcRoot, "app/api/enrolment-checkout/route.ts");
     const text = fs.readFileSync(bff, "utf8");
     assert.match(text, /sameOriginOrConfigured/);
@@ -107,13 +111,13 @@ describe("NZ enrolment checkout security", () => {
     assert.match(checkout, /nz-section-review/);
     assert.match(checkout, /NZ_DIRECT_DEBIT_CTA/);
     assert.match(checkout, /NZ_CONFIRM_CTA/);
-    assert.match(checkout, /isPayInFullChoiceVisible/);
     assert.match(checkout, /Complete your enrolment and set up your StudentPay payment plan below/);
     assert.match(checkout, /nz-enrolment-summary/);
+    assert.match(checkout, /choiceGrid/);
+    assert.match(checkout, /selectPaymentOption/);
     assert.doesNotMatch(checkout, /Course already selected/);
     assert.doesNotMatch(checkout, /styles\.progress/);
     assert.doesNotMatch(checkout, /NZ_ENROLMENT_STEPS/);
-    assert.doesNotMatch(checkout, /Payment option/);
     assert.doesNotMatch(checkout, /Enrolment progress/);
   });
 

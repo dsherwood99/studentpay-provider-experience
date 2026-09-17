@@ -10,6 +10,9 @@ import {
   declarationsAccepted,
   isConfirmedCheckoutStatus,
   isPayInFullChoiceVisible,
+  payNowChoiceBody,
+  payNowSavingFromCatalogue,
+  paymentPlanChoiceCopy,
   planDisplay,
   sectionStatus,
   shouldConfirmCheckout,
@@ -253,7 +256,7 @@ describe("single-page checkout presentation helpers", () => {
     const oli = toPublicTenant(getNzTenantBySlug("oli")!);
     assert.equal(
       isPayInFullChoiceVisible(oli.checkout.paymentOptions.pay_in_full),
-      false,
+      true,
     );
   });
 });
@@ -284,5 +287,54 @@ describe("plan section maths display", () => {
     assert.equal(display.finalPaymentLabel, null);
     assert.match(display.regularCountLabel, /161 weekly payments of \$25\.00/);
     assert.match(display.totalLabel, /\$4,025\.00/);
+  });
+});
+
+describe("payment-choice card copy", () => {
+  it("calculates ADM101 Pay Now saving from catalogue amounts, not a hardcoded discount", () => {
+    process.env.STUDENTPAY_ENV = "production";
+    const course = getNzCourse("oli", "certificate-in-business-administration")!;
+    const saving = payNowSavingFromCatalogue({
+      paymentInFullCourseFeeCents: course.paymentInFullCourseFeeCents,
+      paymentPlanCourseFeeCents: course.paymentPlanCourseFeeCents,
+    });
+    assert.equal(course.paymentInFullCourseFeeCents, 160425);
+    assert.equal(course.paymentPlanCourseFeeCents, 183425);
+    assert.equal(saving?.savingCents, 23000);
+    assert.equal(saving?.percent, 13);
+    assert.equal(
+      payNowChoiceBody({
+        paymentInFullCourseFeeCents: course.paymentInFullCourseFeeCents,
+        paymentPlanCourseFeeCents: course.paymentPlanCourseFeeCents,
+      }),
+      "Pay your course fee today and save 13% ($230.00) under our current Pay Now promotion.",
+    );
+  });
+
+  it("uses residual weekly schedule for ADM101 Payment Plan copy", () => {
+    process.env.STUDENTPAY_ENV = "production";
+    const course = getNzCourse("oli", "certificate-in-business-administration")!;
+    const preview = previewCoursePlan(course, { firstPaymentDate: "2026-10-01" });
+    const copy = paymentPlanChoiceCopy(preview);
+    assert.equal(copy.weeklyAmountLabel, "$25.00");
+    assert.equal(copy.periodSuffix, "/ week");
+    assert.equal(
+      copy.body,
+      "Interest-free payment plan of 73 weekly payments of $25.00 and a final payment of $9.25.",
+    );
+    assert.equal(copy.totalLine, "Total paid over time: $1,834.25");
+  });
+
+  it("omits a residual clause when weekly payments divide exactly", () => {
+    process.env.STUDENTPAY_ENV = "production";
+    const course = getNzCourse("oli", "manicure-pedicure-nail-technology")!;
+    const copy = paymentPlanChoiceCopy(
+      previewCoursePlan(course, { firstPaymentDate: "2026-10-01" }),
+    );
+    assert.equal(
+      copy.body,
+      "Interest-free payment plan of 161 weekly payments of $25.00.",
+    );
+    assert.equal(copy.totalLine, "Total paid over time: $4,025.00");
   });
 });
