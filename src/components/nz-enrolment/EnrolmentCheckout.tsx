@@ -73,6 +73,14 @@ import type {
   NzStudentDetails,
 } from "@/lib/nz-enrolment/types";
 import { validateStudentDetails } from "@/lib/nz-enrolment/validation";
+import {
+  ddaPopupPreparingHtml,
+  handleManuallyClosedDdaPopup,
+  parseTrustedDdaReturnMessage,
+  runDdaSetupClick,
+  shouldRefreshStatusAfterDdaReturn,
+  shouldUseDesktopDdaPopup,
+} from "@/lib/nz-enrolment/dda-popup";
 import styles from "./enrolment-checkout.module.css";
 
 type Props = {
@@ -215,6 +223,10 @@ export function NzEnrolmentCheckout({
   const [agreementNumber, setAgreementNumber] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const ddaFocusedRef = useRef(false);
+  const ddaPopupRef = useRef<Window | null>(null);
+  const statusRefreshRef = useRef<() => Promise<void>>(async () => {});
+  const ddaOpeningRef = useRef(false);
+  const [ddaPopupOpen, setDdaPopupOpen] = useState(false);
   const [declarations, setDeclarations] = useState({
     payment_plan_accepted: false,
     information_confirmed: false,
@@ -510,6 +522,54 @@ export function NzEnrolmentCheckout({
   }
 
   useEffect(() => {
+    statusRefreshRef.current = fetchStatus;
+  });
+
+  useEffect(() => {
+    function onDdaReturnMessage(event: MessageEvent) {
+      const parsed = parseTrustedDdaReturnMessage(event);
+      if (!parsed || !shouldRefreshStatusAfterDdaReturn(parsed)) {
+        return;
+      }
+      const popup = ddaPopupRef.current;
+      if (popup && !popup.closed) {
+        try {
+          popup.close();
+        } catch {
+          // The callback page also attempts to close itself.
+        }
+      }
+      ddaPopupRef.current = null;
+      setDdaPopupOpen(false);
+      void statusRefreshRef.current();
+    }
+    window.addEventListener("message", onDdaReturnMessage);
+    return () => window.removeEventListener("message", onDdaReturnMessage);
+  }, []);
+
+  useEffect(() => {
+    if (!ddaPopupOpen) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      const popup = ddaPopupRef.current;
+      if (popup && !popup.closed) {
+        return;
+      }
+      window.clearInterval(timer);
+      ddaPopupRef.current = null;
+      setDdaPopupOpen(false);
+      const next = handleManuallyClosedDdaPopup({
+        alreadyCreated: Boolean(setupUrl || checkoutId),
+      });
+      if (next.refreshStatusOnce) {
+        void statusRefreshRef.current();
+      }
+    }, 400);
+    return () => window.clearInterval(timer);
+  }, [ddaPopupOpen, setupUrl, checkoutId]);
+
+  useEffect(() => {
     let cancelled = false;
     void (async () => {
       const bootstrap = await fetch(
@@ -589,9 +649,9 @@ export function NzEnrolmentCheckout({
     });
   }
 
-  async function createCheckout() {
+  async function createCheckout(): Promise<string | null> {
     if (creatingRef.current) {
-      return;
+      return null;
     }
     const nextErrors = validateStudentDetails(resolvedStudent);
     const createPlan = hostedCheckoutCreatePlan({
@@ -634,7 +694,7 @@ export function NzEnrolmentCheckout({
         studentSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         window.setTimeout(() => firstErrorRef.current?.focus(), 50);
       }
-      return;
+      return null;
     }
 
     creatingRef.current = true;
@@ -643,7 +703,9 @@ export function NzEnrolmentCheckout({
     setSectionErrors((current) => ({ ...current, student: undefined, dda: undefined }));
     persistDraft();
     if (!createPlan) {
-      return;
+      creatingRef.current = false;
+      setBusy(false);
+      return null;
     }
     try {
       const response = await fetch("/api/enrolment-checkout", {
@@ -668,14 +730,16 @@ export function NzEnrolmentCheckout({
       }
       applyStatus(json);
       if (!isPayInFull) {
-        setSetupUrl(json.direct_debit?.setup_url || "");
+        const nextSetupUrl = json.direct_debit?.setup_url || "";
+        setSetupUrl(nextSetupUrl);
         setSetupComplete(Boolean(json.direct_debit?.setup_complete));
         ddaSectionRef.current?.focus();
         ddaSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      } else {
-        cardSectionRef.current?.focus();
-        cardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return nextSetupUrl;
       }
+      cardSectionRef.current?.focus();
+      cardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return null;
     } catch (caught) {
       const message =
         caught instanceof Error ? caught.message : "Unable to create this enrolment.";
@@ -685,9 +749,94 @@ export function NzEnrolmentCheckout({
         dda: message,
       }));
       (isPayInFull ? cardSectionRef : ddaSectionRef).current?.focus();
+      return null;
     } finally {
       creatingRef.current = false;
       setBusy(false);
+    }
+  }
+
+  async function startDirectDebitSetup() {
+    if (isPayInFull || setupComplete) {
+      return;
+    }
+    if (ddaOpeningRef.current || busy) {
+      ddaPopupRef.current?.focus();
+      return;
+    }
+    if (ddaPopupOpen) {
+      ddaPopupRef.current?.focus();
+      return;
+    }
+
+    const nextErrors = validateStudentDetails(resolvedStudent);
+    if (Object.keys(nextErrors).length > 0 && !alreadyCreated) {
+      await createCheckout();
+      return;
+    }
+
+    ddaOpeningRef.current = true;
+    let sameTabUrl: string | null = null;
+    try {
+      const result = await runDdaSetupClick({
+        popupOpen: false,
+        alreadyCreated,
+        setupUrl,
+        setupComplete,
+        canCreate: canCreate || Boolean(alreadyCreated && setupUrl),
+        preferDesktopPopup: shouldUseDesktopDdaPopup({
+          innerWidth: window.innerWidth,
+          userAgent: window.navigator.userAgent,
+        }),
+        screen: window,
+        openWindow(url, name, features) {
+          const popup = window.open(url, name, features);
+          if (!popup) {
+            return null;
+          }
+          try {
+            popup.document.write(ddaPopupPreparingHtml());
+            popup.document.close();
+          } catch {
+            // Some browsers block writing into the blank popup; navigation still works.
+          }
+          ddaPopupRef.current = popup;
+          setDdaPopupOpen(true);
+          return {
+            get closed() {
+              return popup.closed;
+            },
+            focus: () => {
+              popup.focus();
+            },
+            close: () => {
+              popup.close();
+            },
+            assign: (nextUrl: string) => {
+              popup.location.replace(nextUrl);
+            },
+          };
+        },
+        async createOrLoad() {
+          const url = alreadyCreated ? setupUrl : await createCheckout();
+          if (!url) {
+            throw new Error("Unable to start Direct Debit setup.");
+          }
+          return { setupUrl: url };
+        },
+      });
+      if (result.closedPopupOnError) {
+        ddaPopupRef.current = null;
+        setDdaPopupOpen(false);
+      }
+      if (result.usedSameTabFallback && result.navigatedPopupTo) {
+        sameTabUrl = result.navigatedPopupTo;
+      }
+    } finally {
+      ddaOpeningRef.current = false;
+    }
+    if (sameTabUrl) {
+      window.location.assign(sameTabUrl);
     }
   }
 
@@ -1452,35 +1601,37 @@ export function NzEnrolmentCheckout({
             ) : (
               <>
                 <p id={ddaHelpId} className={styles.note}>
-                  {studentValid
-                    ? alreadyCreated
-                      ? "Continue to StudentPay’s hosted bank setup (GoCardless BECS NZ). Come back here when it finishes."
-                      : "Your details are ready. Set up Direct Debit when you are ready to continue."
-                    : "Complete your details above before setting up Direct Debit."}
+                  {ddaPopupOpen
+                    ? NZ_DIRECT_DEBIT_COPY.waitingBody
+                    : studentValid
+                      ? alreadyCreated
+                        ? "Continue Direct Debit setup in the secure StudentPay window. This page stays open."
+                        : "Your details are ready. Set up Direct Debit when you are ready to continue."
+                      : "Complete your details above before setting up Direct Debit."}
                 </p>
-                {!alreadyCreated ? (
-                  <div className={styles.actions}>
-                    <button
-                      type="button"
-                      className={`${styles.btn} ${styles.btnPrimary} ${styles.btnBlock}`}
-                      disabled={!canCreate || busy}
-                      aria-describedby={ddaHelpId}
-                      onClick={() => void createCheckout()}
-                    >
-                      {busy ? "Creating enrolment…" : NZ_DIRECT_DEBIT_CTA}
-                    </button>
+                {ddaPopupOpen ? (
+                  <div className={styles.ddaWaiting} data-testid="nz-dda-waiting" role="status">
+                    <h3>{NZ_DIRECT_DEBIT_COPY.waitingTitle}</h3>
+                    <p>{NZ_DIRECT_DEBIT_COPY.waitingBody}</p>
                   </div>
                 ) : null}
-                {setupUrl && !setupComplete ? (
-                  <div className={styles.actions}>
-                    <a
-                      className={`${styles.btn} ${styles.btnPrimary} ${styles.btnBlock}`}
-                      href={setupUrl}
-                    >
-                      Continue to Direct Debit setup
-                    </a>
-                  </div>
-                ) : null}
+                <div className={styles.actions}>
+                  <button
+                    type="button"
+                    className={`${styles.btn} ${styles.btnPrimary} ${styles.btnBlock}`}
+                    disabled={(!canCreate && !alreadyCreated) || busy || ddaPopupOpen}
+                    aria-describedby={ddaHelpId}
+                    onClick={() => void startDirectDebitSetup()}
+                  >
+                    {ddaPopupOpen
+                      ? NZ_DIRECT_DEBIT_COPY.waitingTitle
+                      : busy
+                        ? "Creating enrolment…"
+                        : alreadyCreated
+                          ? "Continue Direct Debit setup"
+                          : NZ_DIRECT_DEBIT_CTA}
+                  </button>
+                </div>
               </>
             )}
             {ddaError ? (

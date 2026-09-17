@@ -658,6 +658,22 @@
   gap: 10px;
 }
 
+.ddaWaiting {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--nz-primary) 10%, white);
+}
+
+.ddaWaiting h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.ddaWaiting p {
+  margin: 0;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;

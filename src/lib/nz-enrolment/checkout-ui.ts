@@ -27,6 +27,8 @@ export const NZ_DIRECT_DEBIT_COPY = {
   heading: "Direct debit",
   authorisedTitle: "Direct Debit authorised",
   authorisedBody: "Your bank account has been securely authorised for scheduled payments.",
+  waitingTitle: "Waiting for Direct Debit setup...",
+  waitingBody: "Complete your Direct Debit setup in the secure window.",
 } as const;
 
 export const NZ_REVIEW_COPY = {
