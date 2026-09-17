@@ -87,6 +87,12 @@ import {
   shouldRefreshStatusAfterDdaReturn,
   shouldUseDesktopDdaPopup,
 } from "@/lib/nz-enrolment/dda-popup";
+import {
+  hostedLegalDocumentHref,
+  openLegalAgreementDocument,
+  shouldUseDesktopLegalPopup,
+  type HostedLegalKind,
+} from "@/lib/nz-enrolment/legal-popup";
 import styles from "./enrolment-checkout.module.css";
 
 type Props = {
@@ -1749,25 +1755,17 @@ export function NzEnrolmentCheckout({
                     {renderFlags.showPpaLink ? (
                       <>
                         , the{" "}
-                        <a
-                          href="/api/enrolment-checkout/legal?kind=payment-plan"
-                          target="_blank"
-                          rel="noreferrer"
-                        >
+                        <LegalAgreementLink kind="payment-plan">
                           StudentPay Payment Plan Agreement
-                        </a>
+                        </LegalAgreementLink>
                       </>
                     ) : null}
                     {renderFlags.showDdsaLink ? (
                       <>
                         , and the{" "}
-                        <a
-                          href="/api/enrolment-checkout/legal?kind=direct-debit"
-                          target="_blank"
-                          rel="noreferrer"
-                        >
+                        <LegalAgreementLink kind="direct-debit">
                           Direct Debit Service Agreement
-                        </a>
+                        </LegalAgreementLink>
                       </>
                     ) : null}
                     .
@@ -2006,5 +2004,43 @@ function TextField({
         </span>
       ) : null}
     </label>
+  );
+}
+
+function LegalAgreementLink({
+  kind,
+  children,
+}: {
+  kind: HostedLegalKind;
+  children: ReactNode;
+}) {
+  const href = hostedLegalDocumentHref(kind);
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      data-testid={kind === "payment-plan" ? "nz-legal-ppa-link" : "nz-legal-ddsa-link"}
+      onClick={(event) => {
+        openLegalAgreementDocument({
+          href,
+          preferDesktopPopup: shouldUseDesktopLegalPopup({
+            innerWidth: window.innerWidth,
+            userAgent: navigator.userAgent,
+            maxTouchPoints: navigator.maxTouchPoints,
+          }),
+          screen: {
+            screenX: window.screenX,
+            screenY: window.screenY,
+            outerWidth: window.outerWidth,
+            outerHeight: window.outerHeight,
+          },
+          openWindow: (url, name, features) => window.open(url, name, features),
+          event,
+        });
+      }}
+    >
+      {children}
+    </a>
   );
 }
