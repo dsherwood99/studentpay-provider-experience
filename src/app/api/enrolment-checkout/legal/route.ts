@@ -1,5 +1,9 @@
 import { jsonError } from "@/lib/nz-enrolment/errors";
 import {
+  applyHostedLegalDocumentPresentation,
+  hostedLegalViewIsPopup,
+} from "@/lib/nz-enrolment/legal-branding";
+import {
   readNzSession,
   requireNzApiBaseUrl,
   resolveCourseContext,
@@ -28,6 +32,7 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const kind = url.searchParams.get("kind") === "direct-debit" ? "direct-debit" : "payment-plan";
+  const popup = hostedLegalViewIsPopup(url.searchParams.get("view"));
 
   const upstreamPath =
     kind === "direct-debit"
@@ -44,7 +49,12 @@ export async function GET(request: Request) {
   );
 
   const html = await upstream.text();
-  return new Response(html, {
+  const branded = applyHostedLegalDocumentPresentation({
+    html,
+    tenant: resolved.tenant,
+    popup,
+  });
+  return new Response(branded, {
     status: upstream.status,
     headers: {
       "Content-Type": "text/html; charset=utf-8",
