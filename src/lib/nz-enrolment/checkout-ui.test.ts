@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   NZ_CHECKOUT_SECTIONS,
   NZ_CONFIRM_CTA,
+  NZ_DIRECT_DEBIT_COPY,
   NZ_DIRECT_DEBIT_CTA,
   NZ_REMOVED_STEPPER_LABELS,
   NZ_STUDENT_DETAILS_COPY,
@@ -53,6 +54,10 @@ describe("single-page checkout presentation helpers", () => {
     assert.match(NZ_STUDENT_DETAILS_COPY.lead, /enrolment and StudentPay payment plan/);
     assert.equal(NZ_DIRECT_DEBIT_CTA, "Set up Direct Debit");
     assert.equal(NZ_CONFIRM_CTA, "Confirm enrolment & activate payment plan");
+    assert.equal(
+      NZ_DIRECT_DEBIT_COPY.waitingBody,
+      "Complete your Direct Debit setup in the secure window.",
+    );
   });
 
   it("does not create a checkout on render or while typing", () => {
