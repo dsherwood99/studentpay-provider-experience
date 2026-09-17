@@ -17,6 +17,7 @@ export type NzHeaderSocialLink = {
   label: string;
   href: string;
   network: NzHeaderSocialNetwork;
+  iconSrc?: string;
 };
 
 export type NzHeaderLayout = "site" | "compact";
@@ -25,6 +26,7 @@ export type NzHostedPathStyle = "enrol-slug" | "provider-root";
 
 export type NzTenantBranding = {
   logoPath: string;
+  footerLogoPath?: string;
   primaryColour: string;
   secondaryColour?: string;
   accentColour: string;
@@ -58,9 +60,12 @@ export type NzTenantPresentation = {
   headerSocialLinks?: readonly NzHeaderSocialLink[];
   headerSearchUrl?: string;
   headerSearchPlaceholder?: string;
+  headerPhoneIconSrc?: string;
+  headerSearchIconSrc?: string;
   headerContextLabel?: string;
   footerTagline?: string;
   footerAddressLines?: readonly string[];
+  footerRegion?: string;
   footerPhones?: readonly { display: string; href: string }[];
   footerQuickLinks?: readonly NzHeaderNavItem[];
   footerCourseLinks?: readonly NzHeaderNavItem[];

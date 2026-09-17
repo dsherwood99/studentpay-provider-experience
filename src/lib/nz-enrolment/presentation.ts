@@ -142,14 +142,35 @@ export function safeSocialUrl(
 
 export function safeHeaderSocialLinks(
   tenant: NzPublicTenant,
-): { label: string; href: string; network: NzHeaderSocialNetwork }[] {
+): {
+  label: string;
+  href: string;
+  network: NzHeaderSocialNetwork;
+  iconSrc?: string;
+}[] {
   return (tenant.presentation.headerSocialLinks || []).flatMap((item) => {
     const href = safeSocialUrl(item.href, item.network);
     if (!href || !item.label.trim()) {
       return [];
     }
-    return [{ label: item.label.trim(), href, network: item.network }];
+    const iconSrc = safePublicAssetPath(item.iconSrc);
+    return [{
+      label: item.label.trim(),
+      href,
+      network: item.network,
+      ...(iconSrc ? { iconSrc } : {}),
+    }];
   });
+}
+
+export function safePublicAssetPath(value: string | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+  if (!value.startsWith("/nz-enrolment/") || value.includes("..") || value.includes("//")) {
+    return null;
+  }
+  return value;
 }
 
 export function safeHeaderSearchUrl(tenant: NzPublicTenant): string | null {

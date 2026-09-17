@@ -97,16 +97,17 @@ function SiteFooter({
   const tagline = tenant.presentation.footerTagline?.trim();
   const addressLines = tenant.presentation.footerAddressLines || [];
   const contactHeading = tenant.presentation.footerContactHeading || "Get in Touch";
+  const region = tenant.presentation.footerRegion?.trim();
 
   return (
     <footer className={`${styles.footer} ${styles.siteFooter}`} data-testid="nz-oli-site-footer">
       <div className={styles.siteFooterInner}>
         <div className={styles.siteFooterBrand}>
-          {tenant.branding.logoPath ? (
+          {tenant.branding.footerLogoPath || tenant.branding.logoPath ? (
             <a href={websiteUrl || "#"} className={styles.siteFooterLogoLink}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={tenant.branding.logoPath}
+                src={tenant.branding.footerLogoPath || tenant.branding.logoPath}
                 alt={tenant.displayName}
                 className={styles.siteFooterLogo}
               />
@@ -114,51 +115,54 @@ function SiteFooter({
           ) : (
             <strong>{tenant.displayName}</strong>
           )}
-          {tagline ? <p>{tagline}</p> : null}
+          {tagline ? <p className={styles.siteFooterTagline}>{tagline}</p> : null}
         </div>
-        {quickLinks.length > 0 ? (
-          <nav className={styles.siteFooterCol} aria-label="Quick links">
-            <h2>Quick Links</h2>
-            <ul>
-              {quickLinks.map((item) => (
-                <li key={`${item.label}-${item.href}`}>
-                  <a href={item.href} target="_blank" rel="noreferrer">
-                    {item.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        ) : null}
-        {courseLinks.length > 0 ? (
-          <nav className={styles.siteFooterCol} aria-label="Courses">
-            <h2>Courses</h2>
-            <ul>
-              {courseLinks.map((item) => (
-                <li key={`${item.label}-${item.href}`}>
-                  <a href={item.href} target="_blank" rel="noreferrer">
-                    {item.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        ) : null}
-        <div className={styles.siteFooterCol} data-testid="nz-oli-footer-contact">
-          <h2>{contactHeading}</h2>
-          {addressLines.map((line) => (
-            <p key={line}>{line}</p>
-          ))}
-          {phones.map((phone) => (
-            <p key={phone.href}>
-              <a href={phone.href}>{phone.display}</a>
-            </p>
-          ))}
-          {tenant.supportEmail ? (
-            <p>
-              <a href={`mailto:${tenant.supportEmail}`}>{tenant.supportEmail}</a>
-            </p>
+        <div className={styles.siteFooterCols}>
+          {quickLinks.length > 0 ? (
+            <nav className={styles.siteFooterCol} aria-label="Quick links">
+              <h2>Quick Links</h2>
+              <ul>
+                {quickLinks.map((item) => (
+                  <li key={`${item.label}-${item.href}`}>
+                    <a href={item.href} target="_blank" rel="noreferrer">
+                      {item.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
           ) : null}
+          {courseLinks.length > 0 ? (
+            <nav className={styles.siteFooterCol} aria-label="Courses">
+              <h2>Courses</h2>
+              <ul>
+                {courseLinks.map((item) => (
+                  <li key={`${item.label}-${item.href}`}>
+                    <a href={item.href} target="_blank" rel="noreferrer">
+                      {item.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ) : null}
+          <div className={styles.siteFooterCol} data-testid="nz-oli-footer-contact">
+            <h2>{contactHeading}</h2>
+            {region ? <p className={styles.siteFooterRegion}>{region}</p> : null}
+            {addressLines.length > 0 ? (
+              <p className={styles.siteFooterAddress}>
+                {[addressLines[0], addressLines.slice(1).join(" ")].filter(Boolean).join(", ")}
+              </p>
+            ) : null}
+            {phones.map((phone) => (
+              <a key={phone.href} href={phone.href}>
+                {phone.display}
+              </a>
+            ))}
+            {tenant.supportEmail ? (
+              <a href={`mailto:${tenant.supportEmail}`}>{tenant.supportEmail}</a>
+            ) : null}
+          </div>
         </div>
       </div>
       <div className={styles.siteFooterBottom}>
