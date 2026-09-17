@@ -278,3 +278,39 @@ export function tenantCssVars(tenant: NzPublicTenant): Record<string, string> {
 export function usesProviderNativeChrome(tenant: NzPublicTenant): boolean {
   return tenant.presentation.chrome !== "platform";
 }
+
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const DISPLAY_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+] as const;
+
+export function formatEnrolmentDisplayDate(value: string): string {
+  const match = ISO_DATE.exec(String(value || "").trim());
+  if (!match) {
+    return value;
+  }
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return value;
+  }
+  return `${day} ${DISPLAY_MONTHS[month - 1]} ${year}`;
+}

@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import {
   NZ_CHECKOUT_SECTIONS,
@@ -9,8 +12,10 @@ import {
   NZ_STUDENT_DETAILS_COPY,
   confirmEnabled,
   declarationsAccepted,
+  decorateConfirmationRows,
   isConfirmedCheckoutStatus,
   isPayInFullChoiceVisible,
+  paymentPlanConfirmationRows,
   payNowChoiceBody,
   payNowSavingFromCatalogue,
   paymentPlanChoiceCopy,
@@ -341,5 +346,71 @@ describe("payment-choice card copy", () => {
       "Interest-free payment plan of 161 weekly payments of $25.00.",
     );
     assert.equal(copy.totalLine, "Total paid over time: $4,025.00");
+  });
+});
+
+describe("confirmation summary presentation", () => {
+  it("formats ADM101 payment-plan confirmation as polished user-facing rows", () => {
+    process.env.STUDENTPAY_ENV = "production";
+    const course = getNzCourse("oli", "certificate-in-business-administration")!;
+    const preview = previewCoursePlan(course, { firstPaymentDate: "2026-09-24" });
+    const display = planDisplay(preview);
+    const rows = paymentPlanConfirmationRows({
+      courseName: course.name,
+      courseFeeLabel: display.rows[0]?.value || "",
+      paymentPlanLabel: `${display.regularLabel} · ${display.finalPaymentLabel}`,
+      firstPaymentDate: preview.firstPaymentDate,
+      agreementNumber: "PPA-000004",
+      checkoutId: "chk_example_ref",
+    });
+    assert.equal(course.name, "Certificate in Business Administration");
+    assert.deepEqual(
+      rows.map((row) => `${row.label}: ${row.value}`),
+      [
+        "Course: Certificate in Business Administration",
+        "Course fee: $1,834.25",
+        "Payment plan: $25.00 per week · Final payment of $9.25",
+        "First payment date: 24 Sep 2026",
+        "Payment Plan Agreement: PPA-000004",
+        "Checkout: chk_example_ref",
+      ],
+    );
+    assert.equal(rows.find((row) => row.label === "Checkout")?.tone, "reference");
+    assert.equal(rows.find((row) => row.label === "Checkout")?.group, "references");
+    assert.equal(rows.find((row) => row.label === "Course")?.group, "course");
+    assert.equal(rows.find((row) => row.label === "Payment plan")?.group, "payments");
+  });
+
+  it("mutes Pay Now reference rows without changing the success fields", () => {
+    const rows = decorateConfirmationRows([
+      { label: "Course", value: "Certificate in Business Administration" },
+      { label: "Provider", value: "Online Learning Institute" },
+      { label: "Payment received", value: "$1,604.25" },
+      { label: "Payment method", value: "Card" },
+      { label: "Reference", value: "OLI-REF" },
+    ]);
+    assert.deepEqual(
+      rows.map((row) => row.label),
+      ["Course", "Provider", "Payment received", "Payment method", "Reference"],
+    );
+    assert.equal(rows.at(-1)?.tone, "reference");
+    assert.equal(rows.at(-1)?.group, "references");
+  });
+
+  it("uses a confirmation card and a two-column Direct Debit layout in EnrolmentCheckout", () => {
+    const checkout = fs.readFileSync(
+      path.join(fileURLToPath(new URL("../../", import.meta.url)), "components/nz-enrolment/EnrolmentCheckout.tsx"),
+      "utf8",
+    );
+    assert.match(checkout, /paymentPlanConfirmationRows/);
+    assert.match(checkout, /decorateConfirmationRows/);
+    assert.match(checkout, /styles\.confirmationCard/);
+    assert.match(checkout, /styles\.ddaLayout/);
+    assert.match(checkout, /styles\.ddaStatusPanel/);
+    assert.match(checkout, /formatEnrolmentDisplayDate\(resolvedFirstPaymentDate\)/);
+    assert.match(checkout, /data-testid="nz-enrolment-confirmed-summary"/);
+    assert.match(checkout, /Keep an eye on/);
+    assert.match(checkout, /onClick=\{\(\) => void startDirectDebitSetup\(\)\}/);
+    assert.doesNotMatch(checkout, /<dd>\{preview\.firstPaymentDate\}<\/dd>/);
   });
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties, ReactNode, RefObject } from "react";
-import { Fragment, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   NZ_CONFIRM_CTA,
   NZ_CONFIRMATION_COPY,
@@ -12,9 +12,13 @@ import {
   NZ_PAY_IN_FULL_COPY,
   NZ_REVIEW_COPY,
   NZ_STUDENT_DETAILS_COPY,
+  CONFIRMATION_GROUP_LABELS,
+  CONFIRMATION_SUMMARY_GROUPS,
   confirmEnabled,
   declarationsAccepted,
+  decorateConfirmationRows,
   isConfirmedCheckoutStatus,
+  paymentPlanConfirmationRows,
   payNowChoiceBody,
   paymentPlanChoiceCopy,
   planDisplay,
@@ -25,6 +29,7 @@ import {
   shouldPollDirectDebitStatus,
   studentDetailsAreValid,
   studentDetailsStarted,
+  type ConfirmationSummaryRow,
 } from "@/lib/nz-enrolment/checkout-ui";
 import {
   clearedStateForPaymentSwitch,
@@ -61,6 +66,7 @@ import { PayInFullCardForm } from "@/components/nz-enrolment/PayInFullCardForm";
 import { ProviderNativeHeader } from "@/components/nz-enrolment/ProviderNativeHeader";
 import type { Stripe, StripeElements } from "@stripe/stripe-js";
 import {
+  formatEnrolmentDisplayDate,
   providerCourseWebsiteUrl,
   safeReturnToProviderUrl,
   tenantCssVars,
@@ -1114,46 +1120,24 @@ export function NzEnrolmentCheckout({
                   ? pifSuccess.lead
                   : `Your ${tenant.displayName} enrolment and StudentPay payment plan are now active.`}
               </p>
-              <dl className={styles.review} data-testid="nz-enrolment-confirmed-summary">
-                {pifSuccess
-                  ? pifSuccess.rows.map((row) => (
-                      <Fragment key={row.label}>
-                        <dt>{row.label}</dt>
-                        <dd>{row.value}</dd>
-                      </Fragment>
-                    ))
-                  : (
-                    <>
-                      <dt>Course</dt>
-                      <dd>{course.name}</dd>
-                      <dt>Course fee</dt>
-                      <dd>{formatNzdFromCents(course.paymentPlanCourseFeeCents)}</dd>
-                      {preview ? (
-                        <>
-                          <dt>Payment plan</dt>
-                          <dd>
-                            {display?.regularLabel}
-                            {display?.finalPaymentLabel ? ` · ${display.finalPaymentLabel}` : ""}
-                          </dd>
-                          <dt>First payment date</dt>
-                          <dd>{preview.firstPaymentDate}</dd>
-                        </>
-                      ) : null}
-                      {agreementNumber ? (
-                        <>
-                          <dt>Payment Plan Agreement</dt>
-                          <dd>{agreementNumber}</dd>
-                        </>
-                      ) : null}
-                      {checkoutId ? (
-                        <>
-                          <dt>Checkout</dt>
-                          <dd>{checkoutId}</dd>
-                        </>
-                      ) : null}
-                    </>
-                  )}
-              </dl>
+              <ConfirmationSummary
+                rows={
+                  pifSuccess
+                    ? decorateConfirmationRows(pifSuccess.rows)
+                    : paymentPlanConfirmationRows({
+                        courseName: course.name,
+                        courseFeeLabel: formatNzdFromCents(course.paymentPlanCourseFeeCents),
+                        paymentPlanLabel: display
+                          ? `${display.regularLabel}${
+                              display.finalPaymentLabel ? ` · ${display.finalPaymentLabel}` : ""
+                            }`
+                          : null,
+                        firstPaymentDate: preview?.firstPaymentDate,
+                        agreementNumber,
+                        checkoutId,
+                      })
+                }
+              />
               <p className={styles.lead}>
                 {pifSuccess
                   ? `${tenant.displayName} will confirm your course access separately.`
@@ -1581,59 +1565,74 @@ export function NzEnrolmentCheckout({
               {tenant.checkout.wording?.ddaLead ||
                 "You are setting up a Direct Debit authority with StudentPay NZ. This is not a card payment."}
             </p>
-            {renderFlags.showFirstPaymentDate ? (
-            <div className={styles.grid}>
-              <TextField
-                label="First payment date"
-                name="first-payment-date"
-                type="date"
-                value={resolvedFirstPaymentDate}
-                disabled={planLocked}
-                onChange={setFirstPaymentDate}
-              />
-            </div>
-            ) : null}
-            {setupComplete ? (
-              <div className={styles.completePanel} data-testid="nz-dda-complete" role="status">
-                <h3>{NZ_DIRECT_DEBIT_COPY.authorisedTitle}</h3>
-                <p>{NZ_DIRECT_DEBIT_COPY.authorisedBody}</p>
-              </div>
-            ) : (
-              <>
-                <p id={ddaHelpId} className={styles.note}>
-                  {ddaPopupOpen
-                    ? NZ_DIRECT_DEBIT_COPY.waitingBody
-                    : studentValid
-                      ? alreadyCreated
-                        ? "Continue Direct Debit setup in the secure StudentPay window. This page stays open."
-                        : "Your details are ready. Set up Direct Debit when you are ready to continue."
-                      : "Complete your details above before setting up Direct Debit."}
-                </p>
-                {ddaPopupOpen ? (
-                  <div className={styles.ddaWaiting} data-testid="nz-dda-waiting" role="status">
-                    <h3>{NZ_DIRECT_DEBIT_COPY.waitingTitle}</h3>
-                    <p>{NZ_DIRECT_DEBIT_COPY.waitingBody}</p>
-                  </div>
-                ) : null}
-                <div className={styles.actions}>
-                  <button
-                    type="button"
-                    className={`${styles.btn} ${styles.btnPrimary} ${styles.btnBlock}`}
-                    disabled={(!canCreate && !alreadyCreated) || busy || ddaPopupOpen}
-                    aria-describedby={ddaHelpId}
-                    onClick={() => void startDirectDebitSetup()}
-                  >
-                    {ddaPopupOpen
-                      ? NZ_DIRECT_DEBIT_COPY.waitingTitle
-                      : busy
-                        ? "Creating enrolment…"
-                        : alreadyCreated
-                          ? "Continue Direct Debit setup"
-                          : NZ_DIRECT_DEBIT_CTA}
-                  </button>
+            <div className={styles.ddaLayout}>
+              {renderFlags.showFirstPaymentDate ? (
+                <div className={styles.ddaDateCol}>
+                  <TextField
+                    label="First payment date"
+                    name="first-payment-date"
+                    type="date"
+                    value={resolvedFirstPaymentDate}
+                    disabled={planLocked}
+                    onChange={setFirstPaymentDate}
+                  />
+                  <p className={styles.ddaDateHint}>
+                    Scheduled payments start on{" "}
+                    {formatEnrolmentDisplayDate(resolvedFirstPaymentDate)}.
+                  </p>
                 </div>
-              </>
-            )}
+              ) : null}
+              <div className={styles.ddaActionCol}>
+                {setupComplete ? (
+                  <div
+                    className={styles.ddaStatusPanel}
+                    data-state="complete"
+                    data-testid="nz-dda-complete"
+                    role="status"
+                  >
+                    <h3>{NZ_DIRECT_DEBIT_COPY.authorisedTitle}</h3>
+                    <p>{NZ_DIRECT_DEBIT_COPY.authorisedBody}</p>
+                  </div>
+                ) : (
+                  <div
+                    className={styles.ddaStatusPanel}
+                    data-state={ddaPopupOpen ? "waiting" : studentValid ? "ready" : "blocked"}
+                  >
+                    {ddaPopupOpen ? (
+                      <div data-testid="nz-dda-waiting" role="status">
+                        <h3>{NZ_DIRECT_DEBIT_COPY.waitingTitle}</h3>
+                        <p id={ddaHelpId}>{NZ_DIRECT_DEBIT_COPY.waitingBody}</p>
+                      </div>
+                    ) : (
+                      <p id={ddaHelpId}>
+                        {studentValid
+                          ? alreadyCreated
+                            ? "Continue Direct Debit setup in the secure StudentPay window. This page stays open."
+                            : "Your details are ready. Set up Direct Debit when you are ready to continue."
+                          : "Complete your details above before setting up Direct Debit."}
+                      </p>
+                    )}
+                    <div className={styles.ddaStatusActions}>
+                      <button
+                        type="button"
+                        className={`${styles.btn} ${styles.btnPrimary} ${styles.btnBlock}`}
+                        disabled={(!canCreate && !alreadyCreated) || busy || ddaPopupOpen}
+                        aria-describedby={ddaHelpId}
+                        onClick={() => void startDirectDebitSetup()}
+                      >
+                        {ddaPopupOpen
+                          ? NZ_DIRECT_DEBIT_COPY.waitingTitle
+                          : busy
+                            ? "Creating enrolment…"
+                            : alreadyCreated
+                              ? "Continue Direct Debit setup"
+                              : NZ_DIRECT_DEBIT_CTA}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
             {ddaError ? (
               <p className={styles.error} role="alert">
                 {ddaError}
@@ -1884,6 +1883,41 @@ export function NzEnrolmentCheckout({
       </div>
     </div>
     </>
+  );
+}
+
+function ConfirmationSummary({ rows }: { rows: ConfirmationSummaryRow[] }) {
+  const visibleGroups = CONFIRMATION_SUMMARY_GROUPS.filter((group) =>
+    rows.some((row) => row.group === group),
+  );
+  const showGroupLabels = visibleGroups.length > 1;
+
+  return (
+    <div className={styles.confirmationCard} data-testid="nz-enrolment-confirmed-summary">
+      {visibleGroups.map((group) => {
+        const items = rows.filter((row) => row.group === group);
+        return (
+          <div key={group} className={styles.confirmationGroup} data-group={group}>
+            {showGroupLabels &&
+            !(items.length === 1 && items[0].label === CONFIRMATION_GROUP_LABELS[group]) ? (
+              <p className={styles.confirmationGroupLabel}>{CONFIRMATION_GROUP_LABELS[group]}</p>
+            ) : null}
+            <dl className={styles.confirmationTable}>
+              {items.map((row) => (
+                <div
+                  key={row.label}
+                  className={styles.confirmationRow}
+                  data-tone={row.tone || "default"}
+                >
+                  <dt>{row.label}</dt>
+                  <dd>{row.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

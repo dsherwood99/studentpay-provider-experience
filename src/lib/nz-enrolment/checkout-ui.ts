@@ -1,4 +1,5 @@
 import { formatNzdFromCents } from "./plan-math.ts";
+import { formatEnrolmentDisplayDate } from "./presentation.ts";
 import type { NzPaymentFrequency, NzPlanPreview, NzStudentDetails } from "./types.ts";
 import { validateStudentDetails } from "./validation.ts";
 
@@ -344,4 +345,86 @@ export function paymentPlanChoiceCopy(preview: NzPlanPreview): {
     body: `Interest-free payment plan of ${regularCount} ${adjective} payments of ${amount}${residual}.`,
     totalLine: `Total paid over time: ${formatNzdFromCents(preview.totalPayableCents)}`,
   };
+}
+
+export type ConfirmationSummaryGroup = "course" | "payments" | "references";
+
+export type ConfirmationSummaryRow = {
+  label: string;
+  value: string;
+  tone?: "default" | "reference";
+  group: ConfirmationSummaryGroup;
+};
+
+export const CONFIRMATION_GROUP_LABELS: Record<ConfirmationSummaryGroup, string> = {
+  course: "Course",
+  payments: "Payments",
+  references: "References",
+};
+
+export const CONFIRMATION_SUMMARY_GROUPS: ConfirmationSummaryGroup[] = [
+  "course",
+  "payments",
+  "references",
+];
+
+export function decorateConfirmationRows(
+  rows: { label: string; value: string }[],
+): ConfirmationSummaryRow[] {
+  return rows.map((row) => {
+    if (row.label === "Reference" || row.label === "Checkout") {
+      return { ...row, tone: "reference" as const, group: "references" as const };
+    }
+    if (row.label === "Payment Plan Agreement") {
+      return { ...row, group: "references" as const };
+    }
+    if (row.label === "Course" || row.label === "Provider") {
+      return { ...row, group: "course" as const };
+    }
+    return { ...row, group: "payments" as const };
+  });
+}
+
+export function paymentPlanConfirmationRows(input: {
+  courseName: string;
+  courseFeeLabel: string;
+  paymentPlanLabel?: string | null;
+  firstPaymentDate?: string | null;
+  agreementNumber?: string | null;
+  checkoutId?: string | null;
+}): ConfirmationSummaryRow[] {
+  const rows: ConfirmationSummaryRow[] = [
+    { label: "Course", value: input.courseName, group: "course" },
+    { label: "Course fee", value: input.courseFeeLabel, group: "payments" },
+  ];
+  if (input.paymentPlanLabel) {
+    rows.push({
+      label: "Payment plan",
+      value: input.paymentPlanLabel,
+      group: "payments",
+    });
+  }
+  if (input.firstPaymentDate) {
+    rows.push({
+      label: "First payment date",
+      value: formatEnrolmentDisplayDate(input.firstPaymentDate),
+      group: "payments",
+    });
+  }
+  if (input.agreementNumber) {
+    rows.push({
+      label: "Payment Plan Agreement",
+      value: input.agreementNumber,
+      group: "references",
+    });
+  }
+  if (input.checkoutId) {
+    rows.push({
+      label: "Checkout",
+      value: input.checkoutId,
+      tone: "reference",
+      group: "references",
+    });
+  }
+  return rows;
 }
