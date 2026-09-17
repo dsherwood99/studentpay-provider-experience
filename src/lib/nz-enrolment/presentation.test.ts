@@ -5,6 +5,7 @@ import { buildCourseLinkMapping } from "./course-links.ts";
 import { getNzCourse, getNzCoursesForProvider } from "./courses.ts";
 import {
   currentCourseDeepLink,
+  formatEnrolmentDisplayDate,
   futureCourseDeepLink,
   providerCourseWebsiteUrl,
   safeHeaderPhone,
@@ -212,5 +213,14 @@ describe("OLI 64-course website integration mapping", () => {
     const tra = rows.filter((row) => row.courseCode === "TRA101");
     assert.equal(tra.length, 2);
     assert.equal(new Set(tra.map((row) => row.studentPaySlug)).size, 2);
+  });
+});
+
+describe("enrolment display dates", () => {
+  it("formats ISO dates as human-readable confirmation values", () => {
+    assert.equal(formatEnrolmentDisplayDate("2026-09-24"), "24 Sep 2026");
+    assert.equal(formatEnrolmentDisplayDate("2026-10-01"), "1 Oct 2026");
+    assert.equal(formatEnrolmentDisplayDate("not-a-date"), "not-a-date");
+    assert.equal(formatEnrolmentDisplayDate("2026-02-30"), "2026-02-30");
   });
 });
