@@ -63,6 +63,7 @@ import {
 } from "@/lib/nz-enrolment/pay-in-full-flow";
 import { confirmPayInFullElementsPayment } from "@/lib/nz-enrolment/pay-in-full-stripe";
 import { PayInFullCardForm } from "@/components/nz-enrolment/PayInFullCardForm";
+import { NzCourseConfigurationUnavailable } from "@/components/nz-enrolment/CourseConfigurationUnavailable";
 import { ProviderNativeHeader } from "@/components/nz-enrolment/ProviderNativeHeader";
 import type { Stripe, StripeElements } from "@stripe/stripe-js";
 import {
@@ -192,11 +193,13 @@ type StatusPayload = {
 
 export function NzEnrolmentCheckout({
   tenant,
-  course,
+  course: initialCourse,
   ddaReturn = null,
   payInFullAvailable = false,
   paymentPlanAvailable = true,
 }: Props) {
+  const [course, setCourse] = useState(initialCourse);
+  const [configurationUnavailable, setConfigurationUnavailable] = useState(false);
   const paymentMode = resolveHostedPaymentMode({
     paymentPlanAvailable,
     payInFullAvailable,
@@ -588,10 +591,28 @@ export function NzEnrolmentCheckout({
         `/api/enrolment-checkout?providerSlug=${encodeURIComponent(tenant.slug)}&courseSlug=${encodeURIComponent(course.slug)}`,
         { method: "GET", credentials: "same-origin", cache: "no-store" },
       );
+      if (!cancelled && bootstrap.status === 503) {
+        const failed = (await bootstrap.json().catch(() => ({}))) as {
+          error?: { code?: string };
+        };
+        if (failed.error?.code === "COURSE_CONFIGURATION_UNAVAILABLE") {
+          setConfigurationUnavailable(true);
+          return;
+        }
+      }
       if (!cancelled && bootstrap.ok) {
         const json = (await bootstrap.json().catch(() => ({}))) as StatusPayload & {
           eligibility?: { pay_in_full_available?: boolean };
+          courses?: NzPublicCourse[];
         };
+        const overlaid = json.courses?.find(
+          (item) => item.courseCode === initialCourse.courseCode,
+        );
+        if (overlaid) {
+          setCourse(overlaid);
+          setUpfrontAmountCents(overlaid.planPolicy.upfrontAmountCents);
+          setFrequency(overlaid.planPolicy.frequency);
+        }
         if (json.session?.paymentOption === "pay_in_full") {
           setPaymentOption("pay_in_full");
           setPaymentChoiceTouched(true);
@@ -1094,6 +1115,10 @@ export function NzEnrolmentCheckout({
     stripeApiRef.current = null;
     setSectionErrors({});
     setError("");
+  }
+
+  if (configurationUnavailable) {
+    return <NzCourseConfigurationUnavailable tenant={tenant} />;
   }
 
   if (alreadyConfirmed) {
