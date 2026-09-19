@@ -28,6 +28,7 @@ import {
   writeNzSession,
 } from "@/lib/nz-enrolment/request-context";
 import { getNzCourse, getNzCoursesForProvider, toPublicCourse } from "@/lib/nz-enrolment/courses";
+import { resolveAuthoritativeHostedCourse } from "@/lib/nz-enrolment/api-catalogue-overlay";
 import { toPublicTenant } from "@/lib/nz-enrolment/tenants";
 import { NzSessionConfigError, publicSessionView } from "@/lib/nz-enrolment/session";
 import {
@@ -71,9 +72,72 @@ export async function GET(request: Request) {
   }
 
   const { tenant } = resolved;
-  const courses = courseSlug
-    ? [getNzCourse(providerSlug, courseSlug)].filter(Boolean)
-    : getNzCoursesForProvider(providerSlug);
+  if (courseSlug) {
+    const localCourse = getNzCourse(providerSlug, courseSlug);
+    if (!localCourse) {
+      const session = await readNzSession();
+      const mismatch = assertSessionTenant(session, providerSlug, courseSlug);
+      if (mismatch) {
+        return mismatch;
+      }
+      logNzEnrolmentEvent("checkout_started", {
+        provider_slug: tenant.slug,
+        course_slug: courseSlug,
+        pay_in_full_available: false,
+      });
+      return Response.json({
+        success: true,
+        tenant: toPublicTenant(tenant),
+        courses: [],
+        eligibility: eligibilityForCourse(tenant, undefined),
+        session: publicSessionView(
+          session?.providerSlug === providerSlug ? session : null,
+        ),
+      });
+    }
+    const authoritative = await resolveAuthoritativeHostedCourse(
+      tenant,
+      localCourse,
+    );
+    if (authoritative.status === "unavailable") {
+      return jsonError(503, "COURSE_CONFIGURATION_UNAVAILABLE");
+    }
+
+    const session = await readNzSession();
+    const mismatch = assertSessionTenant(session, providerSlug, courseSlug);
+    if (mismatch) {
+      return mismatch;
+    }
+
+    const course = authoritative.course;
+    const eligibility = eligibilityForCourse(tenant, course);
+
+    logNzEnrolmentEvent("checkout_started", {
+      provider_slug: tenant.slug,
+      course_slug: courseSlug,
+      pay_in_full_available: eligibility.payInFullAvailable,
+    });
+
+    return Response.json({
+      success: true,
+      tenant: toPublicTenant(tenant),
+      courses: [toPublicCourse(course)],
+      eligibility,
+      session: publicSessionView(
+        session?.providerSlug === providerSlug ? session : null,
+      ),
+    });
+  }
+
+  const localCourses = getNzCoursesForProvider(providerSlug);
+  const courses = (
+    await Promise.all(
+      localCourses.map(async (item) => {
+        const authoritative = await resolveAuthoritativeHostedCourse(tenant, item);
+        return authoritative.status === "ok" ? authoritative.course : null;
+      }),
+    )
+  ).filter((item): item is NonNullable<typeof item> => Boolean(item));
 
   const session = await readNzSession();
   const mismatch = assertSessionTenant(session, providerSlug, courseSlug || undefined);
@@ -81,8 +145,7 @@ export async function GET(request: Request) {
     return mismatch;
   }
 
-  const course = courseSlug ? getNzCourse(providerSlug, courseSlug) : undefined;
-  const eligibility = eligibilityForCourse(tenant, course);
+  const eligibility = eligibilityForCourse(tenant, undefined);
 
   logNzEnrolmentEvent("checkout_started", {
     provider_slug: tenant.slug,
@@ -133,7 +196,15 @@ export async function POST(request: Request) {
     return apiBase.error;
   }
 
-  const { tenant, course } = resolved;
+  const { tenant } = resolved;
+  const authoritative = await resolveAuthoritativeHostedCourse(
+    tenant,
+    resolved.course,
+  );
+  if (authoritative.status === "unavailable") {
+    return jsonError(503, "COURSE_CONFIGURATION_UNAVAILABLE");
+  }
+  const course = authoritative.course;
   const existing = await readNzSession();
   const mismatch = assertSessionTenant(existing, providerSlug, courseSlug);
   if (mismatch) {

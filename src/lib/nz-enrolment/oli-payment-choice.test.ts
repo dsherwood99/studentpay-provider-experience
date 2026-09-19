@@ -259,7 +259,7 @@ describe("OLI payment choice + footer", () => {
     assert.match(chrome, /width: 25px/);
     assert.match(chrome, /max-width: 100px/);
     assert.match(chrome, /width: 89px/);
-    assert.match(chrome, /\.siteFooter \{\n  background: #f9f7f3;/);
+    assert.match(chrome, /\.siteFooter \{\r?\n  background: #f9f7f3;/);
     assert.match(chrome, /@media \(max-width: 991px\)/);
     assert.match(chrome, /@media \(max-width: 479px\)/);
     assert.match(header, /nz-enrolment\/oli\/fb-icon\.png|iconSrc/);
