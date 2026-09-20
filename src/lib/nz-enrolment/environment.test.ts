@@ -143,6 +143,19 @@ describe("NZ hosted product and environment isolation", () => {
     assert.equal(getNzCourse("oli", "certification-course"), undefined);
   });
 
+  it("J2. OLI admin test course is sandbox-only and absent from Production OLI", () => {
+    process.env.STUDENTPAY_ENV = "sandbox";
+    assert.equal(getNzCourse("oli", "studentpay-test-course")?.courseCode, "OLI_TEST_001");
+    process.env.STUDENTPAY_ENV = "production";
+    assert.equal(getNzCourse("oli", "studentpay-test-course"), undefined);
+    const productionOli = getNzCoursesForProvider("oli");
+    assert.equal(productionOli.length, 64);
+    assert.equal(
+      productionOli.some((course) => course.courseCode === "OLI_TEST_001"),
+      false,
+    );
+  });
+
   it("uses a generic Salesforce-aligned instalment ceiling, not an OLI 52-week demo cap", () => {
     assert.equal(GENERIC_MAX_RECURRING_INSTALMENTS, 400);
   });

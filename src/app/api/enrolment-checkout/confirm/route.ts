@@ -6,6 +6,8 @@ import {
 import { jsonError } from "@/lib/nz-enrolment/errors";
 import { logNzEnrolmentEvent } from "@/lib/nz-enrolment/observability";
 import { isPayInFullOption, payInFullDeclarationsAccepted } from "@/lib/nz-enrolment/pay-in-full-flow";
+import { providerStudentAgreementAccepted } from "@/lib/nz-enrolment/hosted-agreement";
+import { isSalesforceAuthorityCourse } from "@/lib/nz-enrolment/catalogue-authority";
 import {
   readNzSession,
   requireNzApiBaseUrl,
@@ -22,6 +24,14 @@ type ConfirmBody = {
     payment_plan_accepted?: boolean;
     information_confirmed?: boolean;
     privacy_consent_accepted?: boolean;
+    provider_student_agreement_accepted?: boolean;
+    agreements?: {
+      provider_student?: {
+        version?: string;
+        key?: string;
+        content_hash?: string;
+      };
+    };
   };
 };
 
@@ -44,14 +54,30 @@ export async function POST(request: Request) {
 
   const payInFull = isPayInFullOption(session.paymentOption || session.plan?.paymentOption);
 
+  const resolved = resolveCourseContext(session.providerSlug, session.courseSlug);
+  if (resolved.error || !resolved.tenant) {
+    return resolved.error || jsonError(404, "PROVIDER_NOT_FOUND");
+  }
+
   const declarations = {
     payment_plan_accepted: Boolean(body.declarations?.payment_plan_accepted),
     information_confirmed: Boolean(body.declarations?.information_confirmed),
     privacy_consent_accepted: Boolean(body.declarations?.privacy_consent_accepted),
+    provider_student_agreement_accepted: Boolean(
+      body.declarations?.provider_student_agreement_accepted,
+    ),
   };
 
+  const psaRequired = Boolean(
+    resolved.course && isSalesforceAuthorityCourse(resolved.tenant, resolved.course),
+  );
+  const psaOk = providerStudentAgreementAccepted({
+    required: psaRequired,
+    accepted: declarations.provider_student_agreement_accepted,
+  });
+
   if (payInFull) {
-    if (!payInFullDeclarationsAccepted(declarations)) {
+    if (!payInFullDeclarationsAccepted(declarations) || !psaOk) {
       return jsonError(400, "DECLARATIONS_REQUIRED");
     }
     if (!session.opportunityId && !session.checkoutId) {
@@ -60,18 +86,14 @@ export async function POST(request: Request) {
   } else if (
     !declarations.payment_plan_accepted ||
     !declarations.information_confirmed ||
-    !declarations.privacy_consent_accepted
+    !declarations.privacy_consent_accepted ||
+    !psaOk
   ) {
     return jsonError(400, "DECLARATIONS_REQUIRED");
   }
 
   if (!payInFull && (!session.checkoutToken || !session.opportunityId || !session.ddaId)) {
     return jsonError(409, "SESSION_EXPIRED");
-  }
-
-  const resolved = resolveCourseContext(session.providerSlug, session.courseSlug);
-  if (resolved.error || !resolved.tenant) {
-    return resolved.error || jsonError(404, "PROVIDER_NOT_FOUND");
   }
 
   const key = requireTenantKey(resolved.tenant);
@@ -99,6 +121,9 @@ export async function POST(request: Request) {
         declarations: {
           information_confirmed: declarations.information_confirmed,
           privacy_consent_accepted: declarations.privacy_consent_accepted,
+          provider_student_agreement_accepted:
+            declarations.provider_student_agreement_accepted,
+          agreements: body.declarations?.agreements,
         },
       })
     : buildCanonicalConfirmPayload({

@@ -1,0 +1,1252 @@
+diff --git a/src/app/api/enrolment-checkout/route.ts b/src/app/api/enrolment-checkout/route.ts
+index 3806ce9..72d940e 100644
+--- a/src/app/api/enrolment-checkout/route.ts
++++ b/src/app/api/enrolment-checkout/route.ts
+@@ -28,6 +28,7 @@ import {
+   writeNzSession,
+ } from "@/lib/nz-enrolment/request-context";
+ import { getNzCourse, getNzCoursesForProvider, toPublicCourse } from "@/lib/nz-enrolment/courses";
++import { resolveAuthoritativeHostedCourse } from "@/lib/nz-enrolment/api-catalogue-overlay";
+ import { toPublicTenant } from "@/lib/nz-enrolment/tenants";
+ import { NzSessionConfigError, publicSessionView } from "@/lib/nz-enrolment/session";
+ import {
+@@ -71,9 +72,72 @@ export async function GET(request: Request) {
+   }
+ 
+   const { tenant } = resolved;
+-  const courses = courseSlug
+-    ? [getNzCourse(providerSlug, courseSlug)].filter(Boolean)
+-    : getNzCoursesForProvider(providerSlug);
++  if (courseSlug) {
++    const localCourse = getNzCourse(providerSlug, courseSlug);
++    if (!localCourse) {
++      const session = await readNzSession();
++      const mismatch = assertSessionTenant(session, providerSlug, courseSlug);
++      if (mismatch) {
++        return mismatch;
++      }
++      logNzEnrolmentEvent("checkout_started", {
++        provider_slug: tenant.slug,
++        course_slug: courseSlug,
++        pay_in_full_available: false,
++      });
++      return Response.json({
++        success: true,
++        tenant: toPublicTenant(tenant),
++        courses: [],
++        eligibility: eligibilityForCourse(tenant, undefined),
++        session: publicSessionView(
++          session?.providerSlug === providerSlug ? session : null,
++        ),
++      });
++    }
++    const authoritative = await resolveAuthoritativeHostedCourse(
++      tenant,
++      localCourse,
++    );
++    if (authoritative.status === "unavailable") {
++      return jsonError(503, "COURSE_CONFIGURATION_UNAVAILABLE");
++    }
++
++    const session = await readNzSession();
++    const mismatch = assertSessionTenant(session, providerSlug, courseSlug);
++    if (mismatch) {
++      return mismatch;
++    }
++
++    const course = authoritative.course;
++    const eligibility = eligibilityForCourse(tenant, course);
++
++    logNzEnrolmentEvent("checkout_started", {
++      provider_slug: tenant.slug,
++      course_slug: courseSlug,
++      pay_in_full_available: eligibility.payInFullAvailable,
++    });
++
++    return Response.json({
++      success: true,
++      tenant: toPublicTenant(tenant),
++      courses: [toPublicCourse(course)],
++      eligibility,
++      session: publicSessionView(
++        session?.providerSlug === providerSlug ? session : null,
++      ),
++    });
++  }
++
++  const localCourses = getNzCoursesForProvider(providerSlug);
++  const courses = (
++    await Promise.all(
++      localCourses.map(async (item) => {
++        const authoritative = await resolveAuthoritativeHostedCourse(tenant, item);
++        return authoritative.status === "ok" ? authoritative.course : null;
++      }),
++    )
++  ).filter((item): item is NonNullable<typeof item> => Boolean(item));
+ 
+   const session = await readNzSession();
+   const mismatch = assertSessionTenant(session, providerSlug, courseSlug || undefined);
+@@ -81,8 +145,7 @@ export async function GET(request: Request) {
+     return mismatch;
+   }
+ 
+-  const course = courseSlug ? getNzCourse(providerSlug, courseSlug) : undefined;
+-  const eligibility = eligibilityForCourse(tenant, course);
++  const eligibility = eligibilityForCourse(tenant, undefined);
+ 
+   logNzEnrolmentEvent("checkout_started", {
+     provider_slug: tenant.slug,
+@@ -133,7 +196,15 @@ export async function POST(request: Request) {
+     return apiBase.error;
+   }
+ 
+-  const { tenant, course } = resolved;
++  const { tenant } = resolved;
++  const authoritative = await resolveAuthoritativeHostedCourse(
++    tenant,
++    resolved.course,
++  );
++  if (authoritative.status === "unavailable") {
++    return jsonError(503, "COURSE_CONFIGURATION_UNAVAILABLE");
++  }
++  const course = authoritative.course;
+   const existing = await readNzSession();
+   const mismatch = assertSessionTenant(existing, providerSlug, courseSlug);
+   if (mismatch) {
+diff --git a/src/app/enrol/[providerSlug]/[courseSlug]/page.tsx b/src/app/enrol/[providerSlug]/[courseSlug]/page.tsx
+index 5211958..28083c7 100644
+--- a/src/app/enrol/[providerSlug]/[courseSlug]/page.tsx
++++ b/src/app/enrol/[providerSlug]/[courseSlug]/page.tsx
+@@ -1,11 +1,13 @@
+ import { notFound, redirect } from "next/navigation";
+ import { CatalogueUnavailable } from "@/components/courses/CatalogueUnavailable";
+ import { EnrolmentWizard } from "@/components/enrolment/EnrolmentWizard";
++import { NzCourseConfigurationUnavailable } from "@/components/nz-enrolment/CourseConfigurationUnavailable";
+ import { NzCourseNotFound } from "@/components/nz-enrolment/CourseNotFound";
+ import { NzEnrolmentCheckout } from "@/components/nz-enrolment/EnrolmentCheckout";
+ import { getCourseBySlug } from "@/config/courses";
+ import { getProviderBySlug } from "@/config/providers";
+ import { getNzCourse, toPublicCourse } from "@/lib/nz-enrolment/courses";
++import { resolveAuthoritativeHostedCourse } from "@/lib/nz-enrolment/api-catalogue-overlay";
+ import { isNzEnrolmentProductAvailable } from "@/lib/nz-enrolment/environment";
+ import { resolveHostedPayInFullEligibility } from "@/lib/nz-enrolment/pay-in-full";
+ import { getNzTenantBySlug, toPublicTenant } from "@/lib/nz-enrolment/tenants";
+@@ -32,7 +34,17 @@ export async function generateMetadata({ params }: EnrolmentPageProps) {
+     return {};
+   }
+   const tenant = getNzTenantBySlug(providerSlug);
+-  const course = tenant ? getNzCourse(providerSlug, courseSlug) : undefined;
++  const localCourse = tenant ? getNzCourse(providerSlug, courseSlug) : undefined;
++  const resolved =
++    tenant && localCourse
++      ? await resolveAuthoritativeHostedCourse(tenant, localCourse)
++      : null;
++  if (tenant && resolved?.status === "unavailable") {
++    return {
++      title: `Enrolment options unavailable | ${tenant.displayName}`,
++    };
++  }
++  const course = resolved?.status === "ok" ? resolved.course : undefined;
+   if (!tenant || !course) {
+     return {
+       title: tenant ? `Course not found | ${tenant.displayName}` : "Enrolment",
+@@ -61,8 +73,8 @@ export default async function EnrolmentPage({
+       notFound();
+     }
+ 
+-    const nzCourse = getNzCourse(providerSlug, courseSlug);
+-    if (!nzCourse) {
++    const localCourse = getNzCourse(providerSlug, courseSlug);
++    if (!localCourse) {
+       return (
+         <NzCourseNotFound
+           tenant={toPublicTenant(nzTenant)}
+@@ -70,6 +82,16 @@ export default async function EnrolmentPage({
+         />
+       );
+     }
++    const resolved = await resolveAuthoritativeHostedCourse(
++      nzTenant,
++      localCourse,
++    );
++    if (resolved.status === "unavailable") {
++      return (
++        <NzCourseConfigurationUnavailable tenant={toPublicTenant(nzTenant)} />
++      );
++    }
++    const nzCourse = resolved.course;
+ 
+     const ddaReturn = dda === "return" || dda === "cancelled" ? dda : null;
+     const eligibility = resolveHostedPayInFullEligibility({
+diff --git a/src/app/enrol/[providerSlug]/page.tsx b/src/app/enrol/[providerSlug]/page.tsx
+index 1de98ac..afe8e1a 100644
+--- a/src/app/enrol/[providerSlug]/page.tsx
++++ b/src/app/enrol/[providerSlug]/page.tsx
+@@ -1,6 +1,7 @@
+ import { notFound, redirect } from "next/navigation";
+ import type { CSSProperties } from "react";
+ import { NzCourseCatalogue } from "@/components/nz-enrolment/CourseCatalogue";
++import { resolveAuthoritativeHostedCourse } from "@/lib/nz-enrolment/api-catalogue-overlay";
+ import { getNzCoursesForProvider, toPublicCourse } from "@/lib/nz-enrolment/courses";
+ import { isNzEnrolmentProductAvailable } from "@/lib/nz-enrolment/environment";
+ import { tenantCssVars } from "@/lib/nz-enrolment/presentation";
+@@ -37,11 +38,20 @@ export default async function NzProviderEnrolPage({ params }: PageProps) {
+     notFound();
+   }
+ 
+-  const courses = getNzCoursesForProvider(tenant.slug);
+-  if (courses.length === 1) {
+-    redirect(`/enrol/${tenant.slug}/${courses[0].slug}`);
++  const localCourses = getNzCoursesForProvider(tenant.slug);
++  if (localCourses.length === 1) {
++    redirect(`/enrol/${tenant.slug}/${localCourses[0].slug}`);
+   }
+ 
++  const courses = (
++    await Promise.all(
++      localCourses.map(async (item) => {
++        const resolved = await resolveAuthoritativeHostedCourse(tenant, item);
++        return resolved.status === "ok" ? resolved.course : null;
++      }),
++    )
++  ).filter((item): item is NonNullable<typeof item> => Boolean(item));
++
+   const publicTenant = toPublicTenant(tenant);
+ 
+   return (
+diff --git a/src/components/nz-enrolment/CourseConfigurationUnavailable.tsx b/src/components/nz-enrolment/CourseConfigurationUnavailable.tsx
+new file mode 100644
+index 0000000..ed61e02
+--- /dev/null
++++ b/src/components/nz-enrolment/CourseConfigurationUnavailable.tsx
+@@ -0,0 +1,42 @@
++import { ProviderNativeHeader } from "@/components/nz-enrolment/ProviderNativeHeader";
++import {
++  cataloguePath,
++  safeReturnToProviderUrl,
++} from "@/lib/nz-enrolment/presentation";
++import type { NzPublicTenant } from "@/lib/nz-enrolment/types";
++import styles from "./provider-chrome.module.css";
++
++type Props = {
++  tenant: NzPublicTenant;
++};
++
++export function NzCourseConfigurationUnavailable({ tenant }: Props) {
++  const returnUrl = safeReturnToProviderUrl(tenant);
++
++  return (
++    <>
++      <ProviderNativeHeader tenant={tenant} />
++      <section
++        className={styles.missing}
++        data-testid="nz-course-configuration-unavailable"
++      >
++        <h1>Enrolment options unavailable</h1>
++        <p>
++          We’re unable to load the current enrolment options for this course.
++          Please try again shortly or contact {tenant.displayName}.
++        </p>
++        <div className={styles.missingActions}>
++          <a className={styles.enrol} href={cataloguePath(tenant)}>
++            Choose a course
++          </a>
++          {returnUrl ? (
++            <a href={returnUrl}>
++              {tenant.presentation.returnToProviderLabel ||
++                `Return to ${tenant.displayName}`}
++            </a>
++          ) : null}
++        </div>
++      </section>
++    </>
++  );
++}
+diff --git a/src/components/nz-enrolment/EnrolmentCheckout.tsx b/src/components/nz-enrolment/EnrolmentCheckout.tsx
+index 00f6901..cb16bee 100644
+--- a/src/components/nz-enrolment/EnrolmentCheckout.tsx
++++ b/src/components/nz-enrolment/EnrolmentCheckout.tsx
+@@ -63,6 +63,7 @@ import {
+ } from "@/lib/nz-enrolment/pay-in-full-flow";
+ import { confirmPayInFullElementsPayment } from "@/lib/nz-enrolment/pay-in-full-stripe";
+ import { PayInFullCardForm } from "@/components/nz-enrolment/PayInFullCardForm";
++import { NzCourseConfigurationUnavailable } from "@/components/nz-enrolment/CourseConfigurationUnavailable";
+ import { ProviderNativeHeader } from "@/components/nz-enrolment/ProviderNativeHeader";
+ import type { Stripe, StripeElements } from "@stripe/stripe-js";
+ import {
+@@ -192,11 +193,13 @@ type StatusPayload = {
+ 
+ export function NzEnrolmentCheckout({
+   tenant,
+-  course,
++  course: initialCourse,
+   ddaReturn = null,
+   payInFullAvailable = false,
+   paymentPlanAvailable = true,
+ }: Props) {
++  const [course, setCourse] = useState(initialCourse);
++  const [configurationUnavailable, setConfigurationUnavailable] = useState(false);
+   const paymentMode = resolveHostedPaymentMode({
+     paymentPlanAvailable,
+     payInFullAvailable,
+@@ -588,10 +591,28 @@ export function NzEnrolmentCheckout({
+         `/api/enrolment-checkout?providerSlug=${encodeURIComponent(tenant.slug)}&courseSlug=${encodeURIComponent(course.slug)}`,
+         { method: "GET", credentials: "same-origin", cache: "no-store" },
+       );
++      if (!cancelled && bootstrap.status === 503) {
++        const failed = (await bootstrap.json().catch(() => ({}))) as {
++          error?: { code?: string };
++        };
++        if (failed.error?.code === "COURSE_CONFIGURATION_UNAVAILABLE") {
++          setConfigurationUnavailable(true);
++          return;
++        }
++      }
+       if (!cancelled && bootstrap.ok) {
+         const json = (await bootstrap.json().catch(() => ({}))) as StatusPayload & {
+           eligibility?: { pay_in_full_available?: boolean };
++          courses?: NzPublicCourse[];
+         };
++        const overlaid = json.courses?.find(
++          (item) => item.courseCode === initialCourse.courseCode,
++        );
++        if (overlaid) {
++          setCourse(overlaid);
++          setUpfrontAmountCents(overlaid.planPolicy.upfrontAmountCents);
++          setFrequency(overlaid.planPolicy.frequency);
++        }
+         if (json.session?.paymentOption === "pay_in_full") {
+           setPaymentOption("pay_in_full");
+           setPaymentChoiceTouched(true);
+@@ -1096,6 +1117,10 @@ export function NzEnrolmentCheckout({
+     setError("");
+   }
+ 
++  if (configurationUnavailable) {
++    return <NzCourseConfigurationUnavailable tenant={tenant} />;
++  }
++
+   if (alreadyConfirmed) {
+     const pifSuccess = isPayInFull
+       ? payInFullSuccessCopy({
+diff --git a/src/lib/nz-enrolment/api-catalogue-overlay.test.ts b/src/lib/nz-enrolment/api-catalogue-overlay.test.ts
+new file mode 100644
+index 0000000..b33de23
+--- /dev/null
++++ b/src/lib/nz-enrolment/api-catalogue-overlay.test.ts
+@@ -0,0 +1,285 @@
++import assert from "node:assert/strict";
++import fs from "node:fs";
++import path from "node:path";
++import { fileURLToPath } from "node:url";
++import { afterEach, beforeEach, describe, it } from "node:test";
++import {
++  overlayNzCourseFromApi,
++  resolveAuthoritativeHostedCourse,
++  type NzApiPublicCourse,
++} from "./api-catalogue-overlay.ts";
++import {
++  SANDBOX_DEFAULT_SALESFORCE_CANARY_COURSES,
++  isSalesforceAuthorityCourse,
++  parseSalesforceCanaryCourses,
++  resolveSalesforceCanaryCoursesConfig,
++} from "./catalogue-authority.ts";
++import { getNzCourse } from "./courses.ts";
++import { getNzTenantBySlug } from "./tenants.ts";
++
++const managed = [
++  "HOSTED_PRODUCT_MODE",
++  "STUDENTPAY_ENV",
++  "NZ_STUDENTPAY_API_BASE_URL",
++  "NZ_ENROLMENT_SESSION_SECRET",
++  "NZ_CATALOGUE_SALESFORCE_CANARY_COURSES",
++  "NZ_CATALOGUE_OVERLAY_FORCE_UNAVAILABLE",
++  "PROVIDER_API_KEY_OLI_NZ",
++];
++const previous: Record<string, string | undefined> = {};
++
++function snapshotEnv() {
++  for (const name of managed) {
++    previous[name] = process.env[name];
++    delete process.env[name];
++  }
++  process.env.HOSTED_PRODUCT_MODE = "nz_enrolment";
++  process.env.STUDENTPAY_ENV = "sandbox";
++  process.env.NZ_STUDENTPAY_API_BASE_URL = "https://sandbox-api.studentpay.co.nz";
++  process.env.NZ_ENROLMENT_SESSION_SECRET = "unit-test-session-secret-key";
++  process.env.PROVIDER_API_KEY_OLI_NZ = "spnz_test_overlay_key";
++}
++
++function restoreEnv() {
++  for (const name of managed) {
++    if (previous[name] === undefined) {
++      delete process.env[name];
++    } else {
++      process.env[name] = previous[name];
++    }
++  }
++}
++
++beforeEach(snapshotEnv);
++afterEach(restoreEnv);
++
++const apiSuccess: NzApiPublicCourse = {
++  course_code: "OLI_TEST_001",
++  slug: "studentpay-test-course",
++  name: "OLI Test Course – StudentPay",
++  description: "Authoritative sandbox terms.",
++  status: "active",
++  enrolment_payment_options: ["payment_plan", "pay_in_full"],
++  payment_in_full_course_fee_cents: 1000,
++  payment_plan_course_fee_cents: 1000,
++  frequency: "Weekly",
++  plan_mode: "derived_regular",
++  regular_instalment_cents: 250,
++  number_of_instalments: 4,
++  upfront_amount_cents: 0,
++};
++
++function jsonResponse(status: number, body: unknown): Response {
++  return new Response(JSON.stringify(body), {
++    status,
++    headers: { "content-type": "application/json" },
++  });
++}
++
++describe("Hosted Salesforce catalogue authority", () => {
++  it("defaults the sandbox canary list to OLI_NZ:OLI_TEST_001 without a literal backslash", () => {
++    assert.equal(
++      SANDBOX_DEFAULT_SALESFORCE_CANARY_COURSES,
++      "OLI_NZ:OLI_TEST_001",
++    );
++    assert.equal(SANDBOX_DEFAULT_SALESFORCE_CANARY_COURSES.includes("\\"), false);
++    assert.deepEqual(parseSalesforceCanaryCourses(undefined), []);
++    assert.equal(
++      resolveSalesforceCanaryCoursesConfig(),
++      "OLI_NZ:OLI_TEST_001",
++    );
++    const tenant = getNzTenantBySlug("oli")!;
++    const course = getNzCourse("oli", "studentpay-test-course")!;
++    assert.equal(isSalesforceAuthorityCourse(tenant, course), true);
++    const psy = getNzCourse("oli", "certificate-in-psychology-counselling")!;
++    assert.equal(isSalesforceAuthorityCourse(tenant, psy), false);
++  });
++
++  it("expands the allowlist from env without UI course hardcoding", () => {
++    process.env.NZ_CATALOGUE_SALESFORCE_CANARY_COURSES =
++      "OLI_NZ:OLI_TEST_001,OLI_NZ:PSY101";
++    const tenant = getNzTenantBySlug("oli")!;
++    assert.equal(
++      isSalesforceAuthorityCourse(tenant, getNzCourse("oli", "studentpay-test-course")!),
++      true,
++    );
++    assert.equal(
++      isSalesforceAuthorityCourse(
++        tenant,
++        getNzCourse("oli", "certificate-in-psychology-counselling")!,
++      ),
++      true,
++    );
++    process.env.NZ_CATALOGUE_SALESFORCE_CANARY_COURSES = "none";
++    assert.equal(resolveSalesforceCanaryCoursesConfig(), "");
++    assert.equal(
++      isSalesforceAuthorityCourse(tenant, getNzCourse("oli", "studentpay-test-course")!),
++      false,
++    );
++  });
++
++  it("renders Salesforce-authority terms on API success and does not keep local prices", async () => {
++    const tenant = getNzTenantBySlug("oli")!;
++    const local = getNzCourse("oli", "studentpay-test-course")!;
++    const fetchImpl: typeof fetch = async () =>
++      jsonResponse(200, {
++        course: {
++          ...apiSuccess,
++          name: "OLI Test Course – Salesforce Authority",
++          payment_in_full_course_fee_cents: 2000,
++          payment_plan_course_fee_cents: 2000,
++          regular_instalment_cents: 500,
++        },
++      });
++    const resolved = await resolveAuthoritativeHostedCourse(
++      tenant,
++      local,
++      fetchImpl,
++    );
++    assert.equal(resolved.status, "ok");
++    if (resolved.status !== "ok") {
++      return;
++    }
++    assert.equal(resolved.source, "api");
++    assert.equal(resolved.course.name, "OLI Test Course – Salesforce Authority");
++    assert.equal(resolved.course.paymentInFullCourseFeeCents, 2000);
++    assert.equal(resolved.course.paymentPlanCourseFeeCents, 2000);
++    assert.notEqual(resolved.course.paymentInFullCourseFeeCents, local.paymentInFullCourseFeeCents);
++  });
++
++  it("fail-closes when API configuration is missing", async () => {
++    delete process.env.NZ_STUDENTPAY_API_BASE_URL;
++    delete process.env.PROVIDER_API_KEY_OLI_NZ;
++    const tenant = getNzTenantBySlug("oli")!;
++    const local = getNzCourse("oli", "studentpay-test-course")!;
++    const resolved = await resolveAuthoritativeHostedCourse(tenant, local, async () => {
++      throw new Error("fetch must not run when config is missing");
++    });
++    assert.deepEqual(resolved, { status: "unavailable", reason: "missing_config" });
++  });
++
++  it("fail-closes when the API fetch throws", async () => {
++    const tenant = getNzTenantBySlug("oli")!;
++    const local = getNzCourse("oli", "studentpay-test-course")!;
++    const resolved = await resolveAuthoritativeHostedCourse(
++      tenant,
++      local,
++      async () => {
++        throw new Error("network down");
++      },
++    );
++    assert.deepEqual(resolved, { status: "unavailable", reason: "fetch_error" });
++  });
++
++  it("fail-closes when the API returns non-OK", async () => {
++    const tenant = getNzTenantBySlug("oli")!;
++    const local = getNzCourse("oli", "studentpay-test-course")!;
++    const resolved = await resolveAuthoritativeHostedCourse(
++      tenant,
++      local,
++      async () => jsonResponse(500, { success: false }),
++    );
++    assert.deepEqual(resolved, { status: "unavailable", reason: "http_error" });
++  });
++
++  it("fail-closes on a malformed or null API payload", async () => {
++    const tenant = getNzTenantBySlug("oli")!;
++    const local = getNzCourse("oli", "studentpay-test-course")!;
++    const nullBody = await resolveAuthoritativeHostedCourse(
++      tenant,
++      local,
++      async () => jsonResponse(200, { course: null }),
++    );
++    assert.deepEqual(nullBody, { status: "unavailable", reason: "malformed" });
++
++    const missingFees = await resolveAuthoritativeHostedCourse(
++      tenant,
++      local,
++      async () =>
++        jsonResponse(200, {
++          course: {
++            course_code: "OLI_TEST_001",
++            name: "Broken",
++          },
++        }),
++    );
++    assert.deepEqual(missingFees, { status: "unavailable", reason: "malformed" });
++    assert.equal(overlayNzCourseFromApi(local, null), null);
++    assert.equal(
++      overlayNzCourseFromApi(local, {
++        course_code: "OLI_TEST_001",
++        payment_in_full_course_fee_cents: 1000,
++      }),
++      null,
++    );
++  });
++
++  it("leaves legacy course behaviour unchanged and does not fetch", async () => {
++    const tenant = getNzTenantBySlug("oli")!;
++    const psy = getNzCourse("oli", "certificate-in-psychology-counselling")!;
++    let fetched = false;
++    const resolved = await resolveAuthoritativeHostedCourse(
++      tenant,
++      psy,
++      async () => {
++        fetched = true;
++        return jsonResponse(500, {});
++      },
++    );
++    assert.equal(fetched, false);
++    assert.equal(resolved.status, "ok");
++    if (resolved.status !== "ok") {
++      return;
++    }
++    assert.equal(resolved.source, "local");
++    assert.equal(resolved.course.courseCode, "PSY101");
++    assert.equal(resolved.course.paymentPlanCourseFeeCents, 183425);
++    assert.equal(resolved.course.paymentInFullCourseFeeCents, 160425);
++  });
++
++  it("keeps the Production sandbox-only course unavailable", () => {
++    process.env.STUDENTPAY_ENV = "production";
++    process.env.NZ_STUDENTPAY_API_BASE_URL = "https://api.studentpay.co.nz";
++    assert.equal(getNzCourse("oli", "studentpay-test-course"), undefined);
++    assert.equal(resolveSalesforceCanaryCoursesConfig(), "");
++  });
++
++  it("honours the sandbox-only injected overlay failure without substituting local prices", async () => {
++    process.env.NZ_CATALOGUE_OVERLAY_FORCE_UNAVAILABLE = "true";
++    const tenant = getNzTenantBySlug("oli")!;
++    const local = getNzCourse("oli", "studentpay-test-course")!;
++    const resolved = await resolveAuthoritativeHostedCourse(
++      tenant,
++      local,
++      async () => jsonResponse(200, { course: apiSuccess }),
++    );
++    assert.deepEqual(resolved, {
++      status: "unavailable",
++      reason: "forced_unavailable",
++    });
++  });
++});
++
++describe("Hosted unavailable enrolment chrome", () => {
++  it("keeps a provider-native unavailable state without internal details or checkout actions", () => {
++    const source = fs.readFileSync(
++      path.join(
++        path.dirname(fileURLToPath(import.meta.url)),
++        "../../components/nz-enrolment/CourseConfigurationUnavailable.tsx",
++      ),
++      "utf8",
++    );
++    assert.match(source, /Enrolment options unavailable/);
++    assert.match(source, /unable to load the current enrolment options/);
++    assert.match(source, /ProviderNativeHeader/);
++    assert.match(source, /Choose a course/);
++    assert.doesNotMatch(source, /Salesforce/i);
++    assert.doesNotMatch(source, /\bAPI\b/);
++    assert.doesNotMatch(source, /JSON/);
++    assert.doesNotMatch(source, /NZ_CATALOGUE/);
++    assert.doesNotMatch(source, /stack/i);
++    assert.doesNotMatch(source, /Pay Now/);
++    assert.doesNotMatch(source, /Start payment plan/);
++    assert.doesNotMatch(source, /Create checkout/i);
++  });
++});
+diff --git a/src/lib/nz-enrolment/api-catalogue-overlay.ts b/src/lib/nz-enrolment/api-catalogue-overlay.ts
+new file mode 100644
+index 0000000..77457bf
+--- /dev/null
++++ b/src/lib/nz-enrolment/api-catalogue-overlay.ts
+@@ -0,0 +1,193 @@
++import type { NzCourse, NzEnrolmentPaymentOption, NzPaymentFrequency, NzTenant } from "./types.ts";
++import {
++  isSalesforceAuthorityCourse,
++  isSandboxOverlayForceUnavailable,
++} from "./catalogue-authority.ts";
++import { resolveNzApiBaseUrl } from "./environment.ts";
++import { getTenantApiKey } from "./secrets.ts";
++
++export type NzApiPublicCourse = {
++  provider_code?: string;
++  course_code: string;
++  slug?: string;
++  name?: string;
++  description?: string;
++  category?: string | null;
++  status?: string;
++  enrolment_payment_options?: readonly NzEnrolmentPaymentOption[];
++  payment_in_full_course_fee_cents?: number;
++  payment_plan_course_fee_cents?: number;
++  frequency?: NzPaymentFrequency;
++  plan_mode?: string;
++  regular_instalment_cents?: number;
++  number_of_instalments?: number;
++  upfront_amount_cents?: number;
++};
++
++export type CatalogueUnavailableReason =
++  | "missing_config"
++  | "fetch_error"
++  | "http_error"
++  | "malformed"
++  | "forced_unavailable";
++
++export type AuthoritativeHostedCourseResult =
++  | { status: "ok"; course: NzCourse; source: "local" | "api" }
++  | { status: "unavailable"; reason: CatalogueUnavailableReason };
++
++const VALID_FREQUENCIES: readonly NzPaymentFrequency[] = [
++  "Weekly",
++  "Fortnightly",
++  "Monthly",
++];
++
++function positiveCents(value: unknown): number | null {
++  const cents = Number(value);
++  return Number.isInteger(cents) && cents >= 0 ? cents : null;
++}
++
++function logUnavailable(reason: CatalogueUnavailableReason, courseCode?: string) {
++  console.warn(
++    JSON.stringify({
++      event: "hosted_catalogue_unavailable",
++      reason,
++      course_code: courseCode || null,
++    }),
++  );
++}
++
++export function overlayNzCourseFromApi(
++  local: NzCourse,
++  api: NzApiPublicCourse | null | undefined,
++): NzCourse | null {
++  if (!api || local.courseCode !== api.course_code) {
++    return null;
++  }
++
++  const payNow = positiveCents(api.payment_in_full_course_fee_cents);
++  const plan = positiveCents(api.payment_plan_course_fee_cents);
++  const regular = positiveCents(api.regular_instalment_cents);
++  const upfront = positiveCents(api.upfront_amount_cents);
++  const frequency = api.frequency;
++  const instalmentCount = Number(api.number_of_instalments);
++  const options = Array.isArray(api.enrolment_payment_options)
++    ? api.enrolment_payment_options
++    : null;
++
++  if (
++    payNow == null ||
++    plan == null ||
++    options == null ||
++    options.length === 0 ||
++    !frequency ||
++    !VALID_FREQUENCIES.includes(frequency) ||
++    regular == null ||
++    upfront == null ||
++    !Number.isInteger(instalmentCount) ||
++    instalmentCount < 1
++  ) {
++    return null;
++  }
++
++  const next: NzCourse = {
++    ...local,
++    name: api.name || local.name,
++    description: api.description || local.description,
++    category: api.category || local.category,
++    paymentInFullCourseFeeCents: payNow,
++    paymentPlanCourseFeeCents: plan,
++    enrolmentPaymentOptions: options,
++  };
++
++  if (local.planPolicy.mode === "derived_regular") {
++    next.planPolicy = {
++      mode: "derived_regular",
++      frequency,
++      regularInstalmentCents: regular,
++      upfrontAmountCents: upfront,
++    };
++  }
++
++  return next;
++}
++
++export async function fetchNzApiPublicCourse(input: {
++  apiBaseUrl: string;
++  apiKey: string;
++  providerCode: string;
++  courseCode: string;
++  fetchImpl?: typeof fetch;
++}): Promise<
++  | { ok: true; course: NzApiPublicCourse }
++  | { ok: false; reason: "http_error" | "malformed" }
++> {
++  const fetchImpl = input.fetchImpl || fetch;
++  const response = await fetchImpl(
++    `${input.apiBaseUrl.replace(/\/$/, "")}/v1/providers/${encodeURIComponent(input.providerCode)}/courses/${encodeURIComponent(input.courseCode)}`,
++    {
++      method: "GET",
++      headers: {
++        Authorization: `Bearer ${input.apiKey}`,
++        Accept: "application/json",
++      },
++      cache: "no-store",
++    },
++  );
++  if (!response.ok) {
++    return { ok: false, reason: "http_error" };
++  }
++  let body: { course?: NzApiPublicCourse } | null = null;
++  try {
++    body = (await response.json()) as { course?: NzApiPublicCourse };
++  } catch {
++    return { ok: false, reason: "malformed" };
++  }
++  if (!body?.course || typeof body.course !== "object") {
++    return { ok: false, reason: "malformed" };
++  }
++  return { ok: true, course: body.course };
++}
++
++export async function resolveAuthoritativeHostedCourse(
++  tenant: NzTenant,
++  course: NzCourse,
++  fetchImpl?: typeof fetch,
++): Promise<AuthoritativeHostedCourseResult> {
++  if (!isSalesforceAuthorityCourse(tenant, course)) {
++    return { status: "ok", course, source: "local" };
++  }
++  if (isSandboxOverlayForceUnavailable()) {
++    logUnavailable("forced_unavailable", course.courseCode);
++    return { status: "unavailable", reason: "forced_unavailable" };
++  }
++
++  const api = resolveNzApiBaseUrl();
++  const apiKey = getTenantApiKey(tenant);
++  if (api.error || !api.url || !apiKey) {
++    logUnavailable("missing_config", course.courseCode);
++    return { status: "unavailable", reason: "missing_config" };
++  }
++
++  try {
++    const remote = await fetchNzApiPublicCourse({
++      apiBaseUrl: api.url,
++      apiKey,
++      providerCode: tenant.providerCode,
++      courseCode: course.courseCode,
++      fetchImpl,
++    });
++    if (!remote.ok) {
++      logUnavailable(remote.reason, course.courseCode);
++      return { status: "unavailable", reason: remote.reason };
++    }
++    const overlaid = overlayNzCourseFromApi(course, remote.course);
++    if (!overlaid) {
++      logUnavailable("malformed", course.courseCode);
++      return { status: "unavailable", reason: "malformed" };
++    }
++    return { status: "ok", course: overlaid, source: "api" };
++  } catch {
++    logUnavailable("fetch_error", course.courseCode);
++    return { status: "unavailable", reason: "fetch_error" };
++  }
++}
+diff --git a/src/lib/nz-enrolment/catalogue-authority.ts b/src/lib/nz-enrolment/catalogue-authority.ts
+new file mode 100644
+index 0000000..33ff476
+--- /dev/null
++++ b/src/lib/nz-enrolment/catalogue-authority.ts
+@@ -0,0 +1,76 @@
++import { getStudentpayEnv } from "./environment.ts";
++import type { NzCourse, NzTenant } from "./types.ts";
++
++/**
++ * Hosted mirror of the NZ API Salesforce canary allowlist.
++ *
++ * NZ_CATALOGUE_SALESFORCE_CANARY_COURSES=OLI_NZ:OLI_TEST_001,OLI_NZ:PSY101
++ * lifts listed courses from local catalogue authority to the NZ API.
++ * `none` disables the allowlist.
++ *
++ * Expanding from 1 course to 64 is an env-list change, not a UI rewrite.
++ */
++export const SANDBOX_DEFAULT_SALESFORCE_CANARY_COURSES = "OLI_NZ:OLI_TEST_001";
++export const SALESFORCE_CANARY_DISABLED = "none";
++
++function normaliseCode(value: string): string {
++  return String(value || "")
++    .trim()
++    .toUpperCase()
++    .replace(/[^A-Z0-9]+/g, "_");
++}
++
++export function parseSalesforceCanaryCourses(raw: string | undefined | null): string[] {
++  return String(raw || "")
++    .split(",")
++    .map((entry) =>
++      String(entry || "")
++        .trim()
++        .toUpperCase()
++        .replace(/\s+/g, ""),
++    )
++    .filter(Boolean);
++}
++
++export function resolveSalesforceCanaryCoursesConfig(): string {
++  const configured = process.env.NZ_CATALOGUE_SALESFORCE_CANARY_COURSES || "";
++  if (configured.trim().toLowerCase() === SALESFORCE_CANARY_DISABLED) {
++    return "";
++  }
++  if (configured.trim()) {
++    return configured;
++  }
++  return getStudentpayEnv() === "sandbox"
++    ? SANDBOX_DEFAULT_SALESFORCE_CANARY_COURSES
++    : "";
++}
++
++export function salesforceAuthorityKey(
++  providerCode: string,
++  courseCode: string,
++): string {
++  return `${normaliseCode(providerCode)}:${String(courseCode || "")
++    .trim()
++    .toUpperCase()}`;
++}
++
++export function isSalesforceAuthorityCourse(
++  tenant: Pick<NzTenant, "providerCode">,
++  course: Pick<NzCourse, "courseCode">,
++): boolean {
++  if (!tenant?.providerCode || !course?.courseCode) {
++    return false;
++  }
++  const key = salesforceAuthorityKey(tenant.providerCode, course.courseCode);
++  return parseSalesforceCanaryCourses(
++    resolveSalesforceCanaryCoursesConfig(),
++  ).includes(key);
++}
++
++export function isSandboxOverlayForceUnavailable(): boolean {
++  const flag = process.env.NZ_CATALOGUE_OVERLAY_FORCE_UNAVAILABLE?.trim().toLowerCase();
++  if (flag !== "true" && flag !== "1" && flag !== "yes" && flag !== "on") {
++    return false;
++  }
++  return getStudentpayEnv() === "sandbox";
++}
+diff --git a/src/lib/nz-enrolment/courses.ts b/src/lib/nz-enrolment/courses.ts
+index 8686b7e..2caaf61 100644
+--- a/src/lib/nz-enrolment/courses.ts
++++ b/src/lib/nz-enrolment/courses.ts
+@@ -28,6 +28,26 @@ const SANDBOX_FIXTURE_COURSES: readonly NzCourse[] = [
+       upfrontAmountCents: 0,
+     },
+   },
++  {
++    courseCode: "OLI_TEST_001",
++    slug: "studentpay-test-course",
++    providerSlug: "oli",
++    name: "OLI Test Course – StudentPay",
++    description:
++      "StudentPay NZ sandbox-only test course for validating OLI Hosted Checkout, Pay Now and Payment Plan enrolment. Not a live student offering.",
++    paymentPlanCourseFeeCents: 1000,
++    paymentInFullCourseFeeCents: 1000,
++    enrolmentPaymentOptions: ["payment_plan", "pay_in_full"],
++    status: "active",
++    sandboxOnly: true,
++    duration: "Test only",
++    planPolicy: {
++      mode: "derived_regular",
++      frequency: "Weekly",
++      regularInstalmentCents: 250,
++      upfrontAmountCents: 0,
++    },
++  },
+   {
+     courseCode: "FIXTURE_EXAMPLE_CERTIFICATE",
+     slug: "example-certificate",
+diff --git a/src/lib/nz-enrolment/environment.test.ts b/src/lib/nz-enrolment/environment.test.ts
+index 7f07c62..8580418 100644
+--- a/src/lib/nz-enrolment/environment.test.ts
++++ b/src/lib/nz-enrolment/environment.test.ts
+@@ -143,6 +143,19 @@ describe("NZ hosted product and environment isolation", () => {
+     assert.equal(getNzCourse("oli", "certification-course"), undefined);
+   });
+ 
++  it("J2. OLI admin test course is sandbox-only and absent from Production OLI", () => {
++    process.env.STUDENTPAY_ENV = "sandbox";
++    assert.equal(getNzCourse("oli", "studentpay-test-course")?.courseCode, "OLI_TEST_001");
++    process.env.STUDENTPAY_ENV = "production";
++    assert.equal(getNzCourse("oli", "studentpay-test-course"), undefined);
++    const productionOli = getNzCoursesForProvider("oli");
++    assert.equal(productionOli.length, 64);
++    assert.equal(
++      productionOli.some((course) => course.courseCode === "OLI_TEST_001"),
++      false,
++    );
++  });
++
+   it("uses a generic Salesforce-aligned instalment ceiling, not an OLI 52-week demo cap", () => {
+     assert.equal(GENERIC_MAX_RECURRING_INSTALMENTS, 400);
+   });
+diff --git a/src/lib/nz-enrolment/errors.ts b/src/lib/nz-enrolment/errors.ts
+index 4d1585e..a45f7ac 100644
+--- a/src/lib/nz-enrolment/errors.ts
++++ b/src/lib/nz-enrolment/errors.ts
+@@ -31,6 +31,8 @@ const SAFE_MESSAGES: Record<string, string> = {
+   NZ_API_SANDBOX_PRODUCTION_MISMATCH:
+     "This enrolment page is not configured yet. Please try again later.",
+   SESSION_NOT_CONFIGURED: "This enrolment page is not configured yet. Please try again later.",
++  COURSE_CONFIGURATION_UNAVAILABLE:
++    "We’re unable to load the current enrolment options for this course. Please try again shortly.",
+ };
+ 
+ export function hostedErrorMessage(
+diff --git a/src/lib/nz-enrolment/oli-admin-test-course.test.ts b/src/lib/nz-enrolment/oli-admin-test-course.test.ts
+new file mode 100644
+index 0000000..0e9a21c
+--- /dev/null
++++ b/src/lib/nz-enrolment/oli-admin-test-course.test.ts
+@@ -0,0 +1,275 @@
++import assert from "node:assert/strict";
++import fs from "node:fs";
++import path from "node:path";
++import { fileURLToPath } from "node:url";
++import { afterEach, beforeEach, describe, it } from "node:test";
++import {
++  buildCanonicalCreatePayload,
++  buildPayInFullCreatePayload,
++  previewCoursePlan,
++} from "./canonical.ts";
++import { getNzCourse, getNzCoursesForProvider, toPublicCourse } from "./courses.ts";
++import { overlayNzCourseFromApi } from "./api-catalogue-overlay.ts";
++import { resolveHostedPayInFullEligibility } from "./pay-in-full.ts";
++import { getNzTenantBySlug } from "./tenants.ts";
++
++const managed = [
++  "HOSTED_PRODUCT_MODE",
++  "STUDENTPAY_ENV",
++  "NZ_STUDENTPAY_API_BASE_URL",
++  "NZ_ENROLMENT_SESSION_SECRET",
++];
++const previous: Record<string, string | undefined> = {};
++
++function snapshotEnv() {
++  for (const name of managed) {
++    previous[name] = process.env[name];
++    delete process.env[name];
++  }
++  process.env.HOSTED_PRODUCT_MODE = "nz_enrolment";
++  process.env.STUDENTPAY_ENV = "sandbox";
++  process.env.NZ_STUDENTPAY_API_BASE_URL = "https://sandbox-api.studentpay.co.nz";
++  process.env.NZ_ENROLMENT_SESSION_SECRET = "unit-test-session-secret-key";
++}
++
++function restoreEnv() {
++  for (const name of managed) {
++    if (previous[name] === undefined) {
++      delete process.env[name];
++    } else {
++      process.env[name] = previous[name];
++    }
++  }
++}
++
++beforeEach(snapshotEnv);
++afterEach(restoreEnv);
++
++const student = {
++  firstName: "Taylor",
++  lastName: "Testdata",
++  email: "oli.test.001.sandbox@example.test",
++  mobile: "0210000001",
++  dateOfBirth: "1994-09-18",
++  streetAddress: "1 Sandbox Lane",
++  suburb: "Auckland",
++  city: "Auckland",
++  postcode: "1010",
++  region: "Auckland",
++  country: "New Zealand",
++};
++
++describe("OLI_TEST_001 sandbox admin fixture", () => {
++  it("looks up the test course in sandbox with both payment options", () => {
++    const course = getNzCourse("oli", "studentpay-test-course");
++    assert.ok(course);
++    assert.equal(course?.courseCode, "OLI_TEST_001");
++    assert.equal(course?.slug, "studentpay-test-course");
++    assert.equal(course?.providerSlug, "oli");
++    assert.equal(course?.name, "OLI Test Course – StudentPay");
++    assert.equal(course?.sandboxOnly, true);
++    assert.equal(course?.status, "active");
++    assert.equal(course?.paymentInFullCourseFeeCents, 1000);
++    assert.equal(course?.paymentPlanCourseFeeCents, 1000);
++    assert.deepEqual(course?.enrolmentPaymentOptions, [
++      "payment_plan",
++      "pay_in_full",
++    ]);
++
++    const pub = toPublicCourse(course!);
++    assert.deepEqual(pub.enrolmentPaymentOptions, ["payment_plan", "pay_in_full"]);
++    assert.equal(pub.paymentInFullCourseFeeCents, 1000);
++    assert.equal(pub.paymentPlanCourseFeeCents, 1000);
++  });
++
++  it("is hidden in Production and is not in the approved OLI production catalogue", () => {
++    process.env.STUDENTPAY_ENV = "production";
++    process.env.NZ_STUDENTPAY_API_BASE_URL = "https://api.studentpay.co.nz";
++
++    assert.equal(getNzCourse("oli", "studentpay-test-course"), undefined);
++    const productionOli = getNzCoursesForProvider("oli");
++    assert.equal(productionOli.length, 64);
++    assert.equal(
++      productionOli.some((course) => course.courseCode === "OLI_TEST_001"),
++      false,
++    );
++    assert.equal(
++      productionOli.some((course) => course.slug === "studentpay-test-course"),
++      false,
++    );
++
++    const productionJson = JSON.parse(
++      fs.readFileSync(
++        path.join(
++          path.dirname(fileURLToPath(import.meta.url)),
++          "catalogues/oli-production.json",
++        ),
++        "utf8",
++      ),
++    ) as Array<{ courseCode: string; slug: string }>;
++    assert.equal(productionJson.length, 64);
++    assert.equal(
++      productionJson.some((row) => row.courseCode === "OLI_TEST_001"),
++      false,
++    );
++  });
++
++  it("exposes Pay Now and Payment Plan through the normal OLI checkout shell", () => {
++    const tenant = getNzTenantBySlug("oli")!;
++    const course = getNzCourse("oli", "studentpay-test-course")!;
++    const eligibility = resolveHostedPayInFullEligibility({ tenant, course });
++    assert.equal(tenant.slug, "oli");
++    assert.equal(tenant.checkout.paymentOptions.pay_in_full.enabled, true);
++    assert.equal(
++      tenant.checkout.paymentOptions.interest_free_payment_plan.enabled,
++      true,
++    );
++    assert.equal(eligibility.payInFullAvailable, true);
++    assert.equal(eligibility.paymentPlanAvailable, true);
++  });
++
++  it("resolves Pay Now at 1000 cents without a client-supplied price", () => {
++    const tenant = getNzTenantBySlug("oli")!;
++    const course = getNzCourse("oli", "studentpay-test-course")!;
++    const payload = buildPayInFullCreatePayload({
++      tenant,
++      course,
++      student,
++      providerOrderId: "OLI-TEST-PIF-20260918-001",
++      successUrl:
++        "https://example.test/enrol/oli/studentpay-test-course",
++      cancelUrl: "https://example.test/enrol/oli/studentpay-test-course",
++    });
++    assert.equal(payload.payment_option, "pay_in_full");
++    assert.equal(payload.provider.provider_code, "OLI_NZ");
++    assert.equal(payload.course.course_code, "OLI_TEST_001");
++    assert.equal("pricing" in payload, false);
++    assert.equal(course.paymentInFullCourseFeeCents, 1000);
++  });
++
++  it("derives 4 × 250 cents weekly with no residual final payment", () => {
++    const course = getNzCourse("oli", "studentpay-test-course")!;
++    assert.equal(course.planPolicy.mode, "derived_regular");
++    if (course.planPolicy.mode !== "derived_regular") {
++      return;
++    }
++    assert.equal(course.planPolicy.regularInstalmentCents, 250);
++    assert.equal(course.planPolicy.upfrontAmountCents, 0);
++    assert.equal(course.planPolicy.frequency, "Weekly");
++
++    const preview = previewCoursePlan(course, { firstPaymentDate: "2026-10-01" });
++    assert.equal(preview.coursePriceCents, 1000);
++    assert.equal(preview.upfrontAmountCents, 0);
++    assert.equal(preview.regularInstalmentAmountCents, 250);
++    assert.equal(preview.numberOfInstalments, 4);
++    assert.equal(preview.fullRegularInstalmentCount, 4);
++    assert.equal(preview.hasResidualFinal, false);
++    assert.equal(preview.finalInstalmentAmountCents, null);
++    assert.equal(
++      preview.fullRegularInstalmentCount * preview.regularInstalmentAmountCents +
++        preview.upfrontAmountCents,
++      preview.coursePriceCents,
++    );
++
++    const tenant = getNzTenantBySlug("oli")!;
++    const payload = buildCanonicalCreatePayload({
++      tenant,
++      course,
++      student,
++      plan: {
++        paymentOption: "interest_free_payment_plan",
++        upfrontAmountCents: 0,
++        frequency: "Weekly",
++        firstPaymentDate: "2026-10-01",
++      },
++      providerOrderId: "OLI-TEST-PLAN-20260918-001",
++      successUrl:
++        "https://example.test/enrol/oli/studentpay-test-course?dda=return",
++      cancelUrl:
++        "https://example.test/enrol/oli/studentpay-test-course?dda=cancelled",
++    });
++    assert.equal(payload.course.course_code, "OLI_TEST_001");
++    assert.equal(payload.pricing.course_price, 10);
++    assert.equal(payload.pricing.upfront_payment, 0);
++    assert.equal(payload.plan.payment_frequency, "Weekly");
++    assert.equal(payload.plan.number_of_instalments, 4);
++    assert.equal(payload.plan.instalment_amount, 2.5);
++    assert.equal(payload.plan.final_instalment_amount, undefined);
++  });
++
++  it("does not change existing Production OLI commercial terms", () => {
++    process.env.STUDENTPAY_ENV = "production";
++    const psy = getNzCourse("oli", "certificate-in-psychology-counselling")!;
++    const adm = getNzCourse("oli", "certificate-in-business-administration")!;
++    assert.equal(psy.courseCode, "PSY101");
++    assert.equal(psy.paymentPlanCourseFeeCents, 183425);
++    assert.equal(psy.paymentInFullCourseFeeCents, 160425);
++    assert.equal(adm.courseCode, "ADM101");
++    assert.equal(adm.paymentPlanCourseFeeCents, 183425);
++    assert.equal(adm.paymentInFullCourseFeeCents, 160425);
++  });
++
++  it("overlays API-resolved Salesforce terms onto the sandbox canary course", () => {
++    const local = getNzCourse("oli", "studentpay-test-course")!;
++    const overlaid = overlayNzCourseFromApi(local, {
++      course_code: "OLI_TEST_001",
++      slug: "studentpay-test-course",
++      name: "OLI Test Course – StudentPay",
++      description: "StudentPay NZ sandbox-only test course for validating Salesforce catalogue authority. Not a live student offering.",
++      status: "active",
++      enrolment_payment_options: ["payment_plan", "pay_in_full"],
++      payment_in_full_course_fee_cents: 1000,
++      payment_plan_course_fee_cents: 1000,
++      frequency: "Weekly",
++      plan_mode: "derived_regular",
++      regular_instalment_cents: 250,
++      number_of_instalments: 4,
++      upfront_amount_cents: 0,
++    });
++    assert.ok(overlaid);
++    const publicCourse = toPublicCourse(overlaid);
++    assert.equal(publicCourse.paymentInFullCourseFeeCents, 1000);
++    assert.equal(publicCourse.paymentPlanCourseFeeCents, 1000);
++    assert.equal(publicCourse.planPolicy.mode, "derived_regular");
++    if (publicCourse.planPolicy.mode === "derived_regular") {
++      assert.equal(publicCourse.planPolicy.regularInstalmentCents, 250);
++      assert.equal(publicCourse.planPolicy.frequency, "Weekly");
++      assert.equal(publicCourse.planPolicy.upfrontAmountCents, 0);
++    }
++    const preview = previewCoursePlan(overlaid, { firstPaymentDate: "2026-10-01" });
++    assert.equal(preview.coursePriceCents, 1000);
++    assert.equal(preview.regularInstalmentAmountCents, 250);
++    assert.equal(preview.numberOfInstalments, 4);
++  });
++
++  it("wires the enrolment page and checkout BFF to fail closed on Salesforce-authority overlay", () => {
++    const page = fs.readFileSync(
++      path.join(
++        path.dirname(fileURLToPath(import.meta.url)),
++        "../../app/enrol/[providerSlug]/[courseSlug]/page.tsx",
++      ),
++      "utf8",
++    );
++    const checkout = fs.readFileSync(
++      path.join(
++        path.dirname(fileURLToPath(import.meta.url)),
++        "../../components/nz-enrolment/EnrolmentCheckout.tsx",
++      ),
++      "utf8",
++    );
++    const bff = fs.readFileSync(
++      path.join(
++        path.dirname(fileURLToPath(import.meta.url)),
++        "../../app/api/enrolment-checkout/route.ts",
++      ),
++      "utf8",
++    );
++    assert.match(page, /resolveAuthoritativeHostedCourse/);
++    assert.match(page, /NzCourseConfigurationUnavailable/);
++    assert.doesNotMatch(page, /\|\| localCourse/);
++    assert.match(bff, /COURSE_CONFIGURATION_UNAVAILABLE/);
++    assert.doesNotMatch(bff, /\|\| resolved\.course/);
++    assert.match(checkout, /json\.courses/);
++    assert.match(checkout, /setCourse\(overlaid\)/);
++  });
++});

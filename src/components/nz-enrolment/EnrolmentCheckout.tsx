@@ -63,6 +63,7 @@ import {
 } from "@/lib/nz-enrolment/pay-in-full-flow";
 import { confirmPayInFullElementsPayment } from "@/lib/nz-enrolment/pay-in-full-stripe";
 import { PayInFullCardForm } from "@/components/nz-enrolment/PayInFullCardForm";
+import { NzCourseConfigurationUnavailable } from "@/components/nz-enrolment/CourseConfigurationUnavailable";
 import { ProviderNativeHeader } from "@/components/nz-enrolment/ProviderNativeHeader";
 import type { Stripe, StripeElements } from "@stripe/stripe-js";
 import {
@@ -93,6 +94,9 @@ import {
   shouldUseDesktopLegalPopup,
   type HostedLegalKind,
 } from "@/lib/nz-enrolment/legal-popup";
+import {
+  providerStudentAgreementAccepted,
+} from "@/lib/nz-enrolment/hosted-agreement";
 import styles from "./enrolment-checkout.module.css";
 
 type Props = {
@@ -192,11 +196,13 @@ type StatusPayload = {
 
 export function NzEnrolmentCheckout({
   tenant,
-  course,
+  course: initialCourse,
   ddaReturn = null,
   payInFullAvailable = false,
   paymentPlanAvailable = true,
 }: Props) {
+  const [course, setCourse] = useState(initialCourse);
+  const [configurationUnavailable, setConfigurationUnavailable] = useState(false);
   const paymentMode = resolveHostedPaymentMode({
     paymentPlanAvailable,
     payInFullAvailable,
@@ -243,6 +249,7 @@ export function NzEnrolmentCheckout({
     payment_plan_accepted: false,
     information_confirmed: false,
     privacy_consent_accepted: false,
+    provider_student_agreement_accepted: false,
   });
   const [paymentOption, setPaymentOption] = useState<NzPaymentOptionId>(
     () => initialHostedPaymentOption(paymentMode) ?? "interest_free_payment_plan",
@@ -346,7 +353,13 @@ export function NzEnrolmentCheckout({
       : undefined);
   const alreadyCreated = Boolean(setupUrl || checkoutId);
   const alreadyConfirmed = confirmed || isConfirmedCheckoutStatus(checkoutStatus || undefined);
-  const accepted = declarationsAccepted(declarations);
+  const providerAgreement = course.providerStudentAgreement || null;
+  const psaRequired = Boolean(providerAgreement);
+  const psaAccepted = providerStudentAgreementAccepted({
+    required: psaRequired,
+    accepted: declarations.provider_student_agreement_accepted,
+  });
+  const accepted = declarationsAccepted(declarations) && psaAccepted;
   const planLocked = alreadyCreated;
   const courseWebsiteUrl = providerCourseWebsiteUrl(tenant, course);
   const returnToProviderUrl = safeReturnToProviderUrl(tenant);
@@ -360,7 +373,8 @@ export function NzEnrolmentCheckout({
     amountCents: displayedCoursePriceCents,
     tenantAttribution: attribution,
   });
-  const pifDeclarationsOk = payInFullDeclarationsAccepted(declarations);
+  const pifDeclarationsOk =
+    payInFullDeclarationsAccepted(declarations) && psaAccepted;
   const pifPhase = payInFullPhase({
     confirmed: alreadyConfirmed,
     stripeSucceeded,
@@ -588,10 +602,28 @@ export function NzEnrolmentCheckout({
         `/api/enrolment-checkout?providerSlug=${encodeURIComponent(tenant.slug)}&courseSlug=${encodeURIComponent(course.slug)}`,
         { method: "GET", credentials: "same-origin", cache: "no-store" },
       );
+      if (!cancelled && bootstrap.status === 503) {
+        const failed = (await bootstrap.json().catch(() => ({}))) as {
+          error?: { code?: string };
+        };
+        if (failed.error?.code === "COURSE_CONFIGURATION_UNAVAILABLE") {
+          setConfigurationUnavailable(true);
+          return;
+        }
+      }
       if (!cancelled && bootstrap.ok) {
         const json = (await bootstrap.json().catch(() => ({}))) as StatusPayload & {
           eligibility?: { pay_in_full_available?: boolean };
+          courses?: NzPublicCourse[];
         };
+        const overlaid = json.courses?.find(
+          (item) => item.courseCode === initialCourse.courseCode,
+        );
+        if (overlaid) {
+          setCourse(overlaid);
+          setUpfrontAmountCents(overlaid.planPolicy.upfrontAmountCents);
+          setFrequency(overlaid.planPolicy.frequency);
+        }
         if (json.session?.paymentOption === "pay_in_full") {
           setPaymentOption("pay_in_full");
           setPaymentChoiceTouched(true);
@@ -856,6 +888,7 @@ export function NzEnrolmentCheckout({
     const confirmDeclarations = hostedCheckoutConfirmDeclarations({
       selectedOption: resolvedPaymentOption,
       declarations,
+      providerStudentAgreement: providerAgreement,
     });
     if (!confirmDeclarations) {
       return;
@@ -1019,6 +1052,7 @@ export function NzEnrolmentCheckout({
       const confirmDeclarations = hostedCheckoutConfirmDeclarations({
         selectedOption: resolvedPaymentOption,
         declarations,
+        providerStudentAgreement: providerAgreement,
       });
       if (!confirmDeclarations) {
         return;
@@ -1078,7 +1112,7 @@ export function NzEnrolmentCheckout({
       setError("This enrolment is already set up. Refresh to start a different payment method.");
       return;
     }
-    const cleared = clearedStateForPaymentSwitch(next);
+    const cleared = clearedStateForPaymentSwitch();
     setPaymentChoiceTouched(true);
     setPaymentOption(next);
     setSetupUrl(cleared.setupUrl);
@@ -1094,6 +1128,10 @@ export function NzEnrolmentCheckout({
     stripeApiRef.current = null;
     setSectionErrors({});
     setError("");
+  }
+
+  if (configurationUnavailable) {
+    return <NzCourseConfigurationUnavailable tenant={tenant} />;
   }
 
   if (alreadyConfirmed) {
@@ -1714,6 +1752,38 @@ export function NzEnrolmentCheckout({
             <div className={styles.reviewConfirm}>
             <fieldset className={styles.checks}>
               <legend>Agreements</legend>
+              {providerAgreement ? (
+                <>
+                  <label className={styles.check}>
+                    <input
+                      type="checkbox"
+                      checked={declarations.provider_student_agreement_accepted}
+                      onChange={(event) =>
+                        setDeclarations((current) => ({
+                          ...current,
+                          provider_student_agreement_accepted: event.target.checked,
+                        }))
+                      }
+                    />
+                    <span>
+                      I have read and agree to the {providerAgreement.title}
+                      {providerAgreement.version
+                        ? ` (version ${providerAgreement.version})`
+                        : ""}
+                      . This is separate from the StudentPay Payment Plan Agreement.
+                    </span>
+                  </label>
+                  <details className={styles.agreementPanel}>
+                    <summary>
+                      Read {providerAgreement.title} version {providerAgreement.version}
+                    </summary>
+                    <div
+                      className={styles.agreementHtml}
+                      dangerouslySetInnerHTML={{ __html: providerAgreement.html }}
+                    />
+                  </details>
+                </>
+              ) : null}
               {renderFlags.showPayInFullSummary ? (
                 <label className={styles.check}>
                   <input
@@ -1727,12 +1797,21 @@ export function NzEnrolmentCheckout({
                     }
                   />
                   <span>
-                    I have read and agree to the{" "}
-                    <a href={tenant.termsUrl} target="_blank" rel="noreferrer">
-                      {tenant.displayName} terms
-                    </a>
-                    . I confirm my details are true and complete, and I authorise{" "}
-                    {tenant.legalName} and StudentPay NZ to use them for this enrolment.
+                    {providerAgreement ? (
+                      <>
+                        I confirm my details are true and complete, and I authorise{" "}
+                        {tenant.legalName} and StudentPay NZ to use them for this enrolment.
+                      </>
+                    ) : (
+                      <>
+                        I have read and agree to the{" "}
+                        <a href={tenant.termsUrl} target="_blank" rel="noreferrer">
+                          {tenant.displayName} terms
+                        </a>
+                        . I confirm my details are true and complete, and I authorise{" "}
+                        {tenant.legalName} and StudentPay NZ to use them for this enrolment.
+                      </>
+                    )}
                   </span>
                 </label>
               ) : renderFlags.showPaymentPlanAccepted ? (
@@ -1748,13 +1827,20 @@ export function NzEnrolmentCheckout({
                     }
                   />
                   <span>
-                    I have read and agree to the{" "}
-                    <a href={tenant.termsUrl} target="_blank" rel="noreferrer">
-                      {tenant.displayName} terms
-                    </a>
+                    {providerAgreement ? (
+                      <>I have read and agree to the </>
+                    ) : (
+                      <>
+                        I have read and agree to the{" "}
+                        <a href={tenant.termsUrl} target="_blank" rel="noreferrer">
+                          {tenant.displayName} terms
+                        </a>
+                        {renderFlags.showPpaLink || renderFlags.showDdsaLink ? ", " : "."}
+                      </>
+                    )}
                     {renderFlags.showPpaLink ? (
                       <>
-                        , the{" "}
+                        {providerAgreement ? "" : null}
                         <LegalAgreementLink kind="payment-plan">
                           StudentPay Payment Plan Agreement
                         </LegalAgreementLink>
@@ -1762,13 +1848,15 @@ export function NzEnrolmentCheckout({
                     ) : null}
                     {renderFlags.showDdsaLink ? (
                       <>
-                        , and the{" "}
+                        {renderFlags.showPpaLink ? " and the " : ""}
                         <LegalAgreementLink kind="direct-debit">
                           Direct Debit Service Agreement
                         </LegalAgreementLink>
                       </>
                     ) : null}
-                    .
+                    {providerAgreement || renderFlags.showPpaLink || renderFlags.showDdsaLink
+                      ? "."
+                      : null}
                   </span>
                 </label>
               ) : null}

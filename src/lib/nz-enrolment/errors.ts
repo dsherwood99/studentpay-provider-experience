@@ -31,6 +31,8 @@ const SAFE_MESSAGES: Record<string, string> = {
   NZ_API_SANDBOX_PRODUCTION_MISMATCH:
     "This enrolment page is not configured yet. Please try again later.",
   SESSION_NOT_CONFIGURED: "This enrolment page is not configured yet. Please try again later.",
+  COURSE_CONFIGURATION_UNAVAILABLE:
+    "We’re unable to load the current enrolment options for this course. Please try again shortly.",
 };
 
 export function hostedErrorMessage(
