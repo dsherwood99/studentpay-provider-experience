@@ -88,6 +88,9 @@ export function overlayNzCourseFromApi(
   if (!api || local.courseCode !== api.course_code) {
     return null;
   }
+  if (api.slug && local.slug !== api.slug) {
+    return null;
+  }
 
   const payNow = positiveCents(api.payment_in_full_course_fee_cents);
   const plan = positiveCents(api.payment_plan_course_fee_cents);
@@ -202,14 +205,18 @@ export async function fetchNzApiPublicCourse(input: {
   apiKey: string;
   providerCode: string;
   courseCode: string;
+  slug?: string;
   fetchImpl?: typeof fetch;
 }): Promise<
   | { ok: true; course: NzApiPublicCourse }
   | { ok: false; reason: "http_error" | "malformed" }
 > {
   const fetchImpl = input.fetchImpl || fetch;
+  const slugQuery = input.slug
+    ? `?slug=${encodeURIComponent(input.slug)}`
+    : "";
   const response = await fetchImpl(
-    `${input.apiBaseUrl.replace(/\/$/, "")}/v1/providers/${encodeURIComponent(input.providerCode)}/courses/${encodeURIComponent(input.courseCode)}`,
+    `${input.apiBaseUrl.replace(/\/$/, "")}/v1/providers/${encodeURIComponent(input.providerCode)}/courses/${encodeURIComponent(input.courseCode)}${slugQuery}`,
     {
       method: "GET",
       headers: {
@@ -260,6 +267,7 @@ export async function resolveAuthoritativeHostedCourse(
       apiKey,
       providerCode: tenant.providerCode,
       courseCode: course.courseCode,
+      slug: course.slug,
       fetchImpl,
     });
     if (!remote.ok) {

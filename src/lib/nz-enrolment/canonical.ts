@@ -37,6 +37,7 @@ export type CanonicalCreatePayload = {
   course: {
     course_code: string;
     course_name: string;
+    slug: string;
   };
   pricing: {
     course_price: number;
@@ -66,6 +67,8 @@ export type CanonicalPayInFullCreatePayload = {
   student: CanonicalCreatePayload["student"];
   course: {
     course_code: string;
+    course_name: string;
+    slug: string;
   };
 };
 
@@ -185,6 +188,7 @@ export function buildCanonicalCreatePayload(input: {
     course: {
       course_code: input.course.courseCode,
       course_name: input.course.name,
+      slug: input.course.slug,
     },
     pricing: {
       course_price: centsToApiAmount(preview.coursePriceCents),
@@ -245,6 +249,8 @@ export function buildPayInFullCreatePayload(input: {
     student: canonicalStudent(input.student),
     course: {
       course_code: input.course.courseCode,
+      course_name: input.course.name,
+      slug: input.course.slug,
     },
   };
 }

@@ -54,12 +54,28 @@ export function salesforceAuthorityKey(
     .toUpperCase()}`;
 }
 
+function catalogueAuthorityModeFor(providerCode: string): string {
+  const code = normaliseCode(providerCode);
+  const perProvider = String(
+    process.env[`NZ_CATALOGUE_AUTHORITY_${code}`] || "",
+  )
+    .trim()
+    .toLowerCase();
+  const global = String(process.env.NZ_CATALOGUE_AUTHORITY || "")
+    .trim()
+    .toLowerCase();
+  return perProvider || global || "legacy";
+}
+
 export function isSalesforceAuthorityCourse(
   tenant: Pick<NzTenant, "providerCode">,
   course: Pick<NzCourse, "courseCode">,
 ): boolean {
   if (!tenant?.providerCode || !course?.courseCode) {
     return false;
+  }
+  if (catalogueAuthorityModeFor(tenant.providerCode) === "salesforce") {
+    return true;
   }
   const key = salesforceAuthorityKey(tenant.providerCode, course.courseCode);
   return parseSalesforceCanaryCourses(
