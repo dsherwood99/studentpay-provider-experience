@@ -148,6 +148,16 @@ export type NzCoursePlanDefaults = {
 
 export type NzEnrolmentPaymentOption = "payment_plan" | "pay_in_full";
 
+export type NzProviderStudentAgreement = {
+  type: "provider_student_agreement";
+  title: string;
+  version: string;
+  key: string;
+  content_hash: string;
+  html: string;
+  effective_from?: string | null;
+};
+
 export type NzCourse = {
   courseCode: string;
   slug: string;
@@ -170,6 +180,7 @@ export type NzCourse = {
   duration?: string;
   planPolicy: NzPlanPolicy;
   sourceRow?: number;
+  providerStudentAgreement?: NzProviderStudentAgreement;
 };
 
 export type NzStudentDetails = {
@@ -261,6 +272,7 @@ export type NzPublicCourse = {
   duration?: string;
   planPolicy: NzPlanPolicy;
   planDefaults: NzCoursePlanDefaults;
+  providerStudentAgreement?: NzProviderStudentAgreement;
 };
 
 export type NzHostedEligibility = {

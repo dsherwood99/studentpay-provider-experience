@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import type { CSSProperties } from "react";
 import { NzCourseCatalogue } from "@/components/nz-enrolment/CourseCatalogue";
+import { resolveAuthoritativeHostedCourse } from "@/lib/nz-enrolment/api-catalogue-overlay";
 import { getNzCoursesForProvider, toPublicCourse } from "@/lib/nz-enrolment/courses";
 import { isNzEnrolmentProductAvailable } from "@/lib/nz-enrolment/environment";
 import { tenantCssVars } from "@/lib/nz-enrolment/presentation";
@@ -37,10 +38,19 @@ export default async function NzProviderEnrolPage({ params }: PageProps) {
     notFound();
   }
 
-  const courses = getNzCoursesForProvider(tenant.slug);
-  if (courses.length === 1) {
-    redirect(`/enrol/${tenant.slug}/${courses[0].slug}`);
+  const localCourses = getNzCoursesForProvider(tenant.slug);
+  if (localCourses.length === 1) {
+    redirect(`/enrol/${tenant.slug}/${localCourses[0].slug}`);
   }
+
+  const courses = (
+    await Promise.all(
+      localCourses.map(async (item) => {
+        const resolved = await resolveAuthoritativeHostedCourse(tenant, item);
+        return resolved.status === "ok" ? resolved.course : null;
+      }),
+    )
+  ).filter((item): item is NonNullable<typeof item> => Boolean(item));
 
   const publicTenant = toPublicTenant(tenant);
 

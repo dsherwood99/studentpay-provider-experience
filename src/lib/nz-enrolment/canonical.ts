@@ -69,6 +69,20 @@ export type CanonicalPayInFullCreatePayload = {
   };
 };
 
+export type CanonicalConfirmDeclarations = {
+  payment_plan_accepted?: boolean;
+  information_confirmed: boolean;
+  privacy_consent_accepted: boolean;
+  provider_student_agreement_accepted?: boolean;
+  agreements?: {
+    provider_student?: {
+      version?: string;
+      key?: string;
+      content_hash?: string;
+    };
+  };
+};
+
 export type CanonicalPayInFullConfirmPayload = {
   payment_option: "pay_in_full";
   provider: {
@@ -79,10 +93,7 @@ export type CanonicalPayInFullConfirmPayload = {
     checkout_id: string;
     opportunity_id?: string;
   };
-  declarations: {
-    information_confirmed: boolean;
-    privacy_consent_accepted: boolean;
-  };
+  declarations: CanonicalConfirmDeclarations;
 };
 
 function canonicalStudent(student: NzStudentDetails): CanonicalCreatePayload["student"] {
@@ -192,11 +203,7 @@ export function buildCanonicalConfirmPayload(input: {
   opportunityId: string;
   ddaId: string;
   firstPaymentDate: string;
-  declarations: {
-    payment_plan_accepted: boolean;
-    information_confirmed: boolean;
-    privacy_consent_accepted: boolean;
-  };
+  declarations: CanonicalConfirmDeclarations;
 }) {
   return {
     provider: {
@@ -247,10 +254,7 @@ export function buildPayInFullConfirmPayload(input: {
   providerOrderId: string;
   checkoutId: string;
   opportunityId?: string;
-  declarations: {
-    information_confirmed: boolean;
-    privacy_consent_accepted: boolean;
-  };
+  declarations: CanonicalConfirmDeclarations;
 }): CanonicalPayInFullConfirmPayload {
   return {
     payment_option: "pay_in_full",
@@ -262,10 +266,7 @@ export function buildPayInFullConfirmPayload(input: {
       checkout_id: input.checkoutId,
       ...(input.opportunityId ? { opportunity_id: input.opportunityId } : {}),
     },
-    declarations: {
-      information_confirmed: input.declarations.information_confirmed,
-      privacy_consent_accepted: input.declarations.privacy_consent_accepted,
-    },
+    declarations: input.declarations,
   };
 }
 

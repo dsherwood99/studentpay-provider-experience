@@ -59,11 +59,27 @@ export type HostedCheckoutConfirmDeclarations =
   | {
       information_confirmed: boolean;
       privacy_consent_accepted: boolean;
+      provider_student_agreement_accepted?: boolean;
+      agreements?: {
+        provider_student?: {
+          version: string;
+          key: string;
+          content_hash: string;
+        };
+      };
     }
   | {
       payment_plan_accepted: boolean;
       information_confirmed: boolean;
       privacy_consent_accepted: boolean;
+      provider_student_agreement_accepted?: boolean;
+      agreements?: {
+        provider_student?: {
+          version: string;
+          key: string;
+          content_hash: string;
+        };
+      };
     };
 
 /**
@@ -256,21 +272,42 @@ export function hostedCheckoutConfirmDeclarations(input: {
     payment_plan_accepted: boolean;
     information_confirmed: boolean;
     privacy_consent_accepted: boolean;
+    provider_student_agreement_accepted?: boolean;
   };
+  providerStudentAgreement?: {
+    version: string;
+    key: string;
+    content_hash: string;
+  } | null;
 }): HostedCheckoutConfirmDeclarations | null {
   if (!input.selectedOption) {
     return null;
   }
+  const psa = input.providerStudentAgreement
+    ? {
+        provider_student_agreement_accepted:
+          input.declarations.provider_student_agreement_accepted === true,
+        agreements: {
+          provider_student: {
+            version: input.providerStudentAgreement.version,
+            key: input.providerStudentAgreement.key,
+            content_hash: input.providerStudentAgreement.content_hash,
+          },
+        },
+      }
+    : {};
   if (input.selectedOption === "pay_in_full") {
     return {
       information_confirmed: input.declarations.information_confirmed,
       privacy_consent_accepted: input.declarations.privacy_consent_accepted,
+      ...psa,
     };
   }
   return {
     payment_plan_accepted: input.declarations.payment_plan_accepted,
     information_confirmed: input.declarations.information_confirmed,
     privacy_consent_accepted: input.declarations.privacy_consent_accepted,
+    ...psa,
   };
 }
 
@@ -286,7 +323,7 @@ export function paymentMethodSwitchLocked(input: {
   return input.checkoutCreated;
 }
 
-export function clearedStateForPaymentSwitch(nextOption: NzPaymentOptionId): {
+export function clearedStateForPaymentSwitch(): {
   setupUrl: string;
   setupComplete: boolean;
   clientSecret: string;
@@ -300,6 +337,7 @@ export function clearedStateForPaymentSwitch(nextOption: NzPaymentOptionId): {
     payment_plan_accepted: boolean;
     information_confirmed: boolean;
     privacy_consent_accepted: boolean;
+    provider_student_agreement_accepted: boolean;
   };
 } {
   return {
@@ -313,9 +351,10 @@ export function clearedStateForPaymentSwitch(nextOption: NzPaymentOptionId): {
     serverErrorAfterPayment: false,
     confirmCode: null,
     declarations: {
-      payment_plan_accepted: nextOption === "interest_free_payment_plan" ? false : false,
+      payment_plan_accepted: false,
       information_confirmed: false,
       privacy_consent_accepted: false,
+      provider_student_agreement_accepted: false,
     },
   };
 }

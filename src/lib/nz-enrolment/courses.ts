@@ -29,6 +29,26 @@ const SANDBOX_FIXTURE_COURSES: readonly NzCourse[] = [
     },
   },
   {
+    courseCode: "OLI_TEST_001",
+    slug: "studentpay-test-course",
+    providerSlug: "oli",
+    name: "OLI Test Course – StudentPay",
+    description:
+      "StudentPay NZ sandbox-only test course for validating OLI Hosted Checkout, Pay Now and Payment Plan enrolment. Not a live student offering.",
+    paymentPlanCourseFeeCents: 1000,
+    paymentInFullCourseFeeCents: 1000,
+    enrolmentPaymentOptions: ["payment_plan", "pay_in_full"],
+    status: "active",
+    sandboxOnly: true,
+    duration: "Test only",
+    planPolicy: {
+      mode: "derived_regular",
+      frequency: "Weekly",
+      regularInstalmentCents: 250,
+      upfrontAmountCents: 0,
+    },
+  },
+  {
     courseCode: "FIXTURE_EXAMPLE_CERTIFICATE",
     slug: "example-certificate",
     providerSlug: "fixture-institute",
@@ -191,5 +211,8 @@ export function toPublicCourse(course: NzCourse): NzPublicCourse {
     planPolicy: course.planPolicy,
     planDefaults,
     enrolmentPaymentOptions: courseEnrolmentPaymentOptions(course),
+    ...(course.providerStudentAgreement
+      ? { providerStudentAgreement: course.providerStudentAgreement }
+      : {}),
   };
 }
