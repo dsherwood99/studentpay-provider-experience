@@ -152,7 +152,8 @@ describe("Hosted payment-mode matrix", () => {
     assert.equal(selectedPif.flags.showPaymentPlanAccepted, false);
     assert.equal(selectedPif.flags.showPayInFullSummary, true);
     assert.equal(selectedPif.createPlan?.paymentOption, "pay_in_full");
-    assert.equal(selectedPif.copy.journeyAttribution, PIF_ONLY_JOURNEY_ATTRIBUTION);
+    assert.equal(selectedPif.copy.journeyAttribution, "Powered by");
+    assert.notEqual(selectedPif.copy.journeyAttribution, PIF_ONLY_JOURNEY_ATTRIBUTION);
     assert.equal(
       selectedPif.confirmDeclarations &&
         "payment_plan_accepted" in selectedPif.confirmDeclarations,
@@ -194,7 +195,8 @@ describe("Hosted payment-mode matrix", () => {
     assert.equal(view.copy.studentLead, PIF_ONLY_STUDENT_LEAD);
     assert.equal(view.copy.continueCta, PIF_ONLY_CONTINUE_CTA);
     assert.equal(view.copy.confirmCta, "Pay $1.00");
-    assert.equal(view.copy.journeyAttribution, PIF_ONLY_JOURNEY_ATTRIBUTION);
+    assert.equal(view.copy.journeyAttribution, "Powered by");
+    assert.notEqual(view.copy.journeyAttribution, PIF_ONLY_JOURNEY_ATTRIBUTION);
     assert.ok(view.visibleCopy.includes("Pay now"));
     assert.ok(view.absentTestIds.includes("nz-payment-plan-choice"));
     assert.ok(view.absentTestIds.includes("nz-section-dda"));

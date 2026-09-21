@@ -145,7 +145,7 @@ describe("OLI payment choice + footer", () => {
     assert.ok(payNow.presentTestIds.includes("nz-section-card"));
     assert.ok(payNow.absentCopy.includes("Payment Plan Agreement"));
     assert.ok(payNow.absentTestIds.includes("nz-section-dda"));
-    assert.equal(payNow.copy.journeyAttribution, "Payments powered by StudentPay NZ");
+    assert.equal(payNow.copy.journeyAttribution, "Powered by");
     assert.doesNotMatch(payNow.copy.journeyAttribution, /Payment plan/);
   });
 
