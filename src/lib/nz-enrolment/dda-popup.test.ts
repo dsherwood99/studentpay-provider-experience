@@ -266,7 +266,8 @@ describe("Hosted DDA popup setup", () => {
       "utf8",
     );
     assert.match(resume, /readNzSession/);
-    assert.match(resume, /redirect\(`\/enrol\/\$\{tenant\.slug\}\/\$\{course\.slug\}\?dda=return`\)/);
+    assert.match(resume, /redirect\(`\/enrol\/\$\{tenant\.slug\}\/\$\{courseSlug\}\?dda=return`\)/);
+    assert.doesNotMatch(resume, /getNzCourse/);
     assert.doesNotMatch(resume, /searchParams/);
     assert.doesNotMatch(resume, /window\.location/);
   });

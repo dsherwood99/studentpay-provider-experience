@@ -4,13 +4,17 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import {
+  hostedCourseFromApi,
+  listAuthoritativeHostedCourses,
   overlayNzCourseFromApi,
   resolveAuthoritativeHostedCourse,
+  resolveAuthoritativeHostedCourseBySlug,
   type NzApiPublicCourse,
 } from "./api-catalogue-overlay.ts";
 import {
   SANDBOX_DEFAULT_SALESFORCE_CANARY_COURSES,
   isSalesforceAuthorityCourse,
+  isSalesforceAuthorityProvider,
   parseSalesforceCanaryCourses,
   resolveSalesforceCanaryCoursesConfig,
 } from "./catalogue-authority.ts";
@@ -23,6 +27,8 @@ const managed = [
   "NZ_STUDENTPAY_API_BASE_URL",
   "NZ_ENROLMENT_SESSION_SECRET",
   "NZ_CATALOGUE_SALESFORCE_CANARY_COURSES",
+  "NZ_CATALOGUE_AUTHORITY_OLI_NZ",
+  "NZ_CATALOGUE_AUTHORITY",
   "NZ_CATALOGUE_OVERLAY_FORCE_UNAVAILABLE",
   "PROVIDER_API_KEY_OLI_NZ",
 ];
@@ -350,5 +356,169 @@ describe("Hosted unavailable enrolment chrome", () => {
     assert.doesNotMatch(source, /Pay Now/);
     assert.doesNotMatch(source, /Start payment plan/);
     assert.doesNotMatch(source, /Create checkout/i);
+  });
+});
+
+describe("Hosted Salesforce-driven OLI catalogue", () => {
+  const test101Api: NzApiPublicCourse = {
+    provider_code: "OLI_NZ",
+    course_code: "TEST101",
+    slug: "test-of-payment-options",
+    name: "Test of Payment Options",
+    description: "Salesforce-only production course.",
+    status: "active",
+    enrolment_payment_options: ["payment_plan", "pay_in_full"],
+    payment_in_full_course_fee_cents: 500,
+    payment_plan_course_fee_cents: 1500,
+    frequency: "Weekly",
+    plan_mode: "derived_regular",
+    regular_instalment_cents: 250,
+    number_of_instalments: 4,
+    upfront_amount_cents: 500,
+    provider_student_agreement: hostedAgreement,
+    provider_config: apiSuccess.provider_config,
+  };
+
+  const adm101Api: NzApiPublicCourse = {
+    ...test101Api,
+    course_code: "ADM101",
+    slug: "certificate-in-business-administration",
+    name: "Certificate in Business Administration",
+    payment_in_full_course_fee_cents: 160425,
+    payment_plan_course_fee_cents: 183425,
+    regular_instalment_cents: 2500,
+    number_of_instalments: 74,
+    upfront_amount_cents: 0,
+  };
+
+  function catalogueResponse(courses: NzApiPublicCourse[]): Response {
+    return jsonResponse(200, {
+      success: true,
+      provider_code: "OLI_NZ",
+      authority_mode: "salesforce",
+      source: "salesforce",
+      count: courses.length,
+      courses,
+      provider_config: apiSuccess.provider_config,
+      provider_student_agreement: hostedAgreement,
+    });
+  }
+
+  it("does not require a local JSON course when provider authority is Salesforce", async () => {
+    process.env.STUDENTPAY_ENV = "production";
+    process.env.NZ_STUDENTPAY_API_BASE_URL = "https://api.studentpay.co.nz";
+    process.env.NZ_CATALOGUE_AUTHORITY_OLI_NZ = "salesforce";
+    const tenant = getNzTenantBySlug("oli")!;
+    assert.equal(isSalesforceAuthorityProvider(tenant), true);
+    assert.equal(getNzCourse("oli", "test-of-payment-options"), undefined);
+
+    const listed = await listAuthoritativeHostedCourses(
+      tenant,
+      async (input) => {
+        assert.match(String(input), /\/v1\/providers\/OLI_NZ\/courses$/);
+        return catalogueResponse([test101Api, adm101Api]);
+      },
+    );
+    assert.equal(listed.status, "ok");
+    if (listed.status !== "ok") {
+      return;
+    }
+    assert.equal(listed.source, "api");
+    assert.equal(
+      listed.courses.some((course) => course.slug === "test-of-payment-options"),
+      true,
+    );
+    assert.equal(
+      listed.courses.some((course) => course.courseCode === "ADM101"),
+      true,
+    );
+
+    const resolved = await resolveAuthoritativeHostedCourseBySlug(
+      tenant,
+      "test-of-payment-options",
+      async (input) => {
+        assert.match(String(input), /slug=test-of-payment-options/);
+        return catalogueResponse([test101Api]);
+      },
+    );
+    assert.equal(resolved.status, "ok");
+    if (resolved.status !== "ok") {
+      return;
+    }
+    assert.equal(resolved.source, "api");
+    assert.equal(resolved.course.courseCode, "TEST101");
+    assert.equal(resolved.course.name, "Test of Payment Options");
+    assert.equal(resolved.course.paymentInFullCourseFeeCents, 500);
+    assert.equal(resolved.course.paymentPlanCourseFeeCents, 1500);
+    assert.equal(resolved.course.planPolicy.mode, "derived_regular");
+    if (resolved.course.planPolicy.mode === "derived_regular") {
+      assert.equal(resolved.course.planPolicy.upfrontAmountCents, 500);
+      assert.equal(resolved.course.planPolicy.regularInstalmentCents, 250);
+      assert.equal(resolved.course.planPolicy.frequency, "Weekly");
+    }
+  });
+
+  it("hides the Salesforce-only course when authority rolls back to legacy", async () => {
+    process.env.STUDENTPAY_ENV = "production";
+    process.env.NZ_STUDENTPAY_API_BASE_URL = "https://api.studentpay.co.nz";
+    process.env.NZ_CATALOGUE_AUTHORITY_OLI_NZ = "legacy";
+    const tenant = getNzTenantBySlug("oli")!;
+    assert.equal(isSalesforceAuthorityProvider(tenant), false);
+    assert.equal(getNzCourse("oli", "test-of-payment-options"), undefined);
+    assert.equal(getNzCourse("oli", "certificate-in-business-administration")?.courseCode, "ADM101");
+
+    let fetched = false;
+    const listed = await listAuthoritativeHostedCourses(tenant, async () => {
+      fetched = true;
+      return catalogueResponse([test101Api]);
+    });
+    assert.equal(fetched, false);
+    assert.equal(listed.status, "ok");
+    if (listed.status !== "ok") {
+      return;
+    }
+    assert.equal(listed.source, "local");
+    assert.equal(
+      listed.courses.some((course) => course.slug === "test-of-payment-options"),
+      false,
+    );
+    assert.equal(listed.courses.length, 64);
+
+    const missing = await resolveAuthoritativeHostedCourseBySlug(
+      tenant,
+      "test-of-payment-options",
+      async () => {
+        throw new Error("legacy mode must not fetch the Salesforce list");
+      },
+    );
+    assert.equal(missing.status, "not_found");
+  });
+
+  it("keeps TRA101 duplicate codes slug-safe in legacy Hosted JSON", () => {
+    process.env.STUDENTPAY_ENV = "production";
+    const personal = getNzCourse("oli", "certificate-in-personal-training");
+    const carpentry = getNzCourse(
+      "oli",
+      "certificate-in-carpentry-construction-skills",
+    );
+    assert.equal(personal?.courseCode, "TRA101");
+    assert.equal(carpentry?.courseCode, "TRA101");
+    assert.notEqual(personal?.slug, carpentry?.slug);
+  });
+
+  it("builds a Hosted course from API terms without a local JSON seed", () => {
+    const tenant = getNzTenantBySlug("oli")!;
+    const course = hostedCourseFromApi(tenant, test101Api, {
+      type: "provider_student_agreement",
+      title: hostedAgreement.title,
+      version: hostedAgreement.version,
+      key: hostedAgreement.key,
+      content_hash: hostedAgreement.content_hash,
+      html: hostedAgreement.html,
+    });
+    assert.ok(course);
+    assert.equal(course?.slug, "test-of-payment-options");
+    assert.equal(course?.paymentInFullCourseFeeCents, 500);
+    assert.equal(course?.paymentPlanCourseFeeCents, 1500);
   });
 });

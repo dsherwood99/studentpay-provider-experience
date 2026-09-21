@@ -264,7 +264,8 @@ describe("OLI_TEST_001 sandbox admin fixture", () => {
       ),
       "utf8",
     );
-    assert.match(page, /resolveAuthoritativeHostedCourse/);
+    assert.match(page, /resolveAuthoritativeHostedCourseBySlug/);
+    assert.doesNotMatch(page, /getNzCourse\(/);
     assert.match(page, /NzCourseConfigurationUnavailable/);
     assert.doesNotMatch(page, /\|\| localCourse/);
     assert.match(bff, /COURSE_CONFIGURATION_UNAVAILABLE/);

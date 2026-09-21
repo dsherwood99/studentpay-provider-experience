@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { getNzCourse } from "@/lib/nz-enrolment/courses";
 import { isNzEnrolmentProductAvailable } from "@/lib/nz-enrolment/environment";
 import { readNzSession } from "@/lib/nz-enrolment/request-context";
 import { getNzTenantBySlug } from "@/lib/nz-enrolment/tenants";
@@ -14,9 +13,8 @@ export default async function EnrolmentResumePage() {
   const courseSlug = session?.courseSlug;
   if (providerSlug && courseSlug) {
     const tenant = getNzTenantBySlug(providerSlug);
-    const course = tenant ? getNzCourse(providerSlug, courseSlug) : undefined;
-    if (tenant && course) {
-      redirect(`/enrol/${tenant.slug}/${course.slug}?dda=return`);
+    if (tenant) {
+      redirect(`/enrol/${tenant.slug}/${courseSlug}?dda=return`);
     }
   }
 

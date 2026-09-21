@@ -6,8 +6,8 @@ import { NzCourseNotFound } from "@/components/nz-enrolment/CourseNotFound";
 import { NzEnrolmentCheckout } from "@/components/nz-enrolment/EnrolmentCheckout";
 import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
-import { getNzCourse, toPublicCourse } from "@/lib/nz-enrolment/courses";
-import { resolveAuthoritativeHostedCourse } from "@/lib/nz-enrolment/api-catalogue-overlay";
+import { toPublicCourse } from "@/lib/nz-enrolment/courses";
+import { resolveAuthoritativeHostedCourseBySlug } from "@/lib/nz-enrolment/api-catalogue-overlay";
 import { isNzEnrolmentProductAvailable } from "@/lib/nz-enrolment/environment";
 import { resolveHostedPayInFullEligibility } from "@/lib/nz-enrolment/pay-in-full";
 import { getNzTenantBySlug, toPublicTenant } from "@/lib/nz-enrolment/tenants";
@@ -34,11 +34,9 @@ export async function generateMetadata({ params }: EnrolmentPageProps) {
     return {};
   }
   const tenant = getNzTenantBySlug(providerSlug);
-  const localCourse = tenant ? getNzCourse(providerSlug, courseSlug) : undefined;
-  const resolved =
-    tenant && localCourse
-      ? await resolveAuthoritativeHostedCourse(tenant, localCourse)
-      : null;
+  const resolved = tenant
+    ? await resolveAuthoritativeHostedCourseBySlug(tenant, courseSlug)
+    : null;
   if (tenant && resolved?.status === "unavailable") {
     return {
       title: `Enrolment options unavailable | ${tenant.displayName}`,
@@ -77,8 +75,11 @@ export default async function EnrolmentPage({
       notFound();
     }
 
-    const localCourse = getNzCourse(providerSlug, courseSlug);
-    if (!localCourse) {
+    const resolved = await resolveAuthoritativeHostedCourseBySlug(
+      nzTenant,
+      courseSlug,
+    );
+    if (resolved.status === "not_found") {
       return (
         <NzCourseNotFound
           tenant={toPublicTenant(nzTenant)}
@@ -86,10 +87,6 @@ export default async function EnrolmentPage({
         />
       );
     }
-    const resolved = await resolveAuthoritativeHostedCourse(
-      nzTenant,
-      localCourse,
-    );
     if (resolved.status === "unavailable") {
       return (
         <NzCourseConfigurationUnavailable tenant={toPublicTenant(nzTenant)} />

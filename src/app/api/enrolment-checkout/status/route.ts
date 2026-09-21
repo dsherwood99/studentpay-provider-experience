@@ -11,7 +11,7 @@ import {
   readNzSession,
   requireNzApiBaseUrl,
   requireTenantKey,
-  resolveCourseContext,
+  resolveAuthoritativeCourseContext,
   writeNzSession,
 } from "@/lib/nz-enrolment/request-context";
 import { publicSessionView } from "@/lib/nz-enrolment/session";
@@ -24,7 +24,7 @@ export async function GET() {
     return jsonError(404, "SESSION_EXPIRED");
   }
 
-  const resolved = resolveCourseContext(session.providerSlug, session.courseSlug);
+  const resolved = await resolveAuthoritativeCourseContext(session.providerSlug, session.courseSlug);
   if (resolved.error || !resolved.tenant) {
     return resolved.error || jsonError(404, "PROVIDER_NOT_FOUND");
   }

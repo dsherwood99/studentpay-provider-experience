@@ -67,6 +67,15 @@ function catalogueAuthorityModeFor(providerCode: string): string {
   return perProvider || global || "legacy";
 }
 
+export function isSalesforceAuthorityProvider(
+  tenant: Pick<NzTenant, "providerCode">,
+): boolean {
+  if (!tenant?.providerCode) {
+    return false;
+  }
+  return catalogueAuthorityModeFor(tenant.providerCode) === "salesforce";
+}
+
 export function isSalesforceAuthorityCourse(
   tenant: Pick<NzTenant, "providerCode">,
   course: Pick<NzCourse, "courseCode">,
@@ -74,7 +83,7 @@ export function isSalesforceAuthorityCourse(
   if (!tenant?.providerCode || !course?.courseCode) {
     return false;
   }
-  if (catalogueAuthorityModeFor(tenant.providerCode) === "salesforce") {
+  if (isSalesforceAuthorityProvider(tenant)) {
     return true;
   }
   const key = salesforceAuthorityKey(tenant.providerCode, course.courseCode);

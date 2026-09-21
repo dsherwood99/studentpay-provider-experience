@@ -6,7 +6,7 @@ import {
 import {
   readNzSession,
   requireNzApiBaseUrl,
-  resolveCourseContext,
+  resolveAuthoritativeCourseContext,
 } from "@/lib/nz-enrolment/request-context";
 
 export const runtime = "nodejs";
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     });
   }
 
-  const resolved = resolveCourseContext(session.providerSlug, session.courseSlug);
+  const resolved = await resolveAuthoritativeCourseContext(session.providerSlug, session.courseSlug);
   if (resolved.error || !resolved.tenant) {
     return resolved.error || jsonError(404, "PROVIDER_NOT_FOUND");
   }
