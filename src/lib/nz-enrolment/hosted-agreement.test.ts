@@ -151,6 +151,22 @@ describe("Hosted Provider Student Agreement", () => {
     });
     assert.equal(plan && "payment_plan_accepted" in plan && plan.payment_plan_accepted, true);
     assert.equal(plan?.provider_student_agreement_accepted, false);
+    assert.equal(plan?.agreements?.provider_student?.version, validAgreement.version);
+    assert.equal(plan?.agreements?.provider_student?.key, validAgreement.key);
+    assert.equal(
+      plan?.agreements?.provider_student?.content_hash,
+      validAgreement.content_hash,
+    );
+
+    const confirmRoute = fs.readFileSync(
+      new URL("../../app/api/enrolment-checkout/confirm/route.ts", import.meta.url),
+      "utf8",
+    );
+    assert.match(confirmRoute, /body\.declarations\?\.agreements/);
+    assert.match(
+      confirmRoute,
+      /buildCanonicalConfirmPayload\(\{[\s\S]*declarations,/,
+    );
   });
 
   it("does not replace a historically accepted version with a newer displayed version", () => {

@@ -66,6 +66,9 @@ export async function POST(request: Request) {
     provider_student_agreement_accepted: Boolean(
       body.declarations?.provider_student_agreement_accepted,
     ),
+    ...(body.declarations?.agreements
+      ? { agreements: body.declarations.agreements }
+      : {}),
   };
 
   const psaRequired = Boolean(
@@ -123,7 +126,9 @@ export async function POST(request: Request) {
           privacy_consent_accepted: declarations.privacy_consent_accepted,
           provider_student_agreement_accepted:
             declarations.provider_student_agreement_accepted,
-          agreements: body.declarations?.agreements,
+          ...(declarations.agreements
+            ? { agreements: declarations.agreements }
+            : {}),
         },
       })
     : buildCanonicalConfirmPayload({
