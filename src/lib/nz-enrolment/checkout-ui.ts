@@ -98,6 +98,37 @@ export function isPayInFullChoiceVisible(payInFull: {
   return payInFull.enabled === true && payInFull.comingSoon !== true;
 }
 
+export const POWERED_BY_LABEL = "Powered by";
+export const STUDENTPAY_POWERED_BY_LOGO_SRC =
+  "/nz-enrolment/studentpay-powered-by.png";
+export const STUDENTPAY_POWERED_BY_LOGO_ALT = "StudentPay";
+
+export const STANDALONE_DETAILS_CONFIRMATION_COPY =
+  "I confirm my details are true and complete, and I authorise";
+
+export function combinedDetailsPrivacyCopy(legalName: string): string {
+  return `I confirm my details are true and complete, have read the privacy information, and consent to ${legalName} and StudentPay NZ using my details to process this enrolment.`;
+}
+
+export function setCombinedDetailsPrivacyDeclaration(checked: boolean): {
+  information_confirmed: boolean;
+  privacy_consent_accepted: boolean;
+} {
+  return {
+    information_confirmed: checked,
+    privacy_consent_accepted: checked,
+  };
+}
+
+export function combinedDetailsPrivacyAccepted(declarations: {
+  information_confirmed: boolean;
+  privacy_consent_accepted: boolean;
+}): boolean {
+  return (
+    declarations.information_confirmed && declarations.privacy_consent_accepted
+  );
+}
+
 export function declarationsAccepted(declarations: {
   payment_plan_accepted: boolean;
   information_confirmed: boolean;
@@ -105,8 +136,7 @@ export function declarationsAccepted(declarations: {
 }): boolean {
   return (
     declarations.payment_plan_accepted &&
-    declarations.information_confirmed &&
-    declarations.privacy_consent_accepted
+    combinedDetailsPrivacyAccepted(declarations)
   );
 }
 

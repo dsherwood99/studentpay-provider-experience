@@ -14,6 +14,7 @@ import {
   NZ_STUDENT_DETAILS_COPY,
   CONFIRMATION_GROUP_LABELS,
   CONFIRMATION_SUMMARY_GROUPS,
+  combinedDetailsPrivacyAccepted,
   confirmEnabled,
   declarationsAccepted,
   decorateConfirmationRows,
@@ -24,6 +25,7 @@ import {
   planDisplay,
   sectionStatus,
   sectionStatusLabel,
+  setCombinedDetailsPrivacyDeclaration,
   shouldConfirmCheckout,
   shouldCreateCheckout,
   shouldPollDirectDebitStatus,
@@ -65,6 +67,7 @@ import { confirmPayInFullElementsPayment } from "@/lib/nz-enrolment/pay-in-full-
 import { PayInFullCardForm } from "@/components/nz-enrolment/PayInFullCardForm";
 import { NzCourseConfigurationUnavailable } from "@/components/nz-enrolment/CourseConfigurationUnavailable";
 import { ProviderNativeHeader } from "@/components/nz-enrolment/ProviderNativeHeader";
+import { StudentPayAttribution } from "@/components/nz-enrolment/StudentPayAttribution";
 import type { Stripe, StripeElements } from "@stripe/stripe-js";
 import {
   formatEnrolmentDisplayDate,
@@ -1195,7 +1198,7 @@ export function NzEnrolmentCheckout({
                   </a>
                 </div>
               ) : null}
-              <p className={styles.powered}>{copy.journeyAttribution}</p>
+              <StudentPayAttribution />
             </div>
           </section>
         </div>
@@ -1784,37 +1787,7 @@ export function NzEnrolmentCheckout({
                   </details>
                 </>
               ) : null}
-              {renderFlags.showPayInFullSummary ? (
-                <label className={styles.check}>
-                  <input
-                    type="checkbox"
-                    checked={declarations.information_confirmed}
-                    onChange={(event) =>
-                      setDeclarations((current) => ({
-                        ...current,
-                        information_confirmed: event.target.checked,
-                      }))
-                    }
-                  />
-                  <span>
-                    {providerAgreement ? (
-                      <>
-                        I confirm my details are true and complete, and I authorise{" "}
-                        {tenant.legalName} and StudentPay NZ to use them for this enrolment.
-                      </>
-                    ) : (
-                      <>
-                        I have read and agree to the{" "}
-                        <a href={tenant.termsUrl} target="_blank" rel="noreferrer">
-                          {tenant.displayName} terms
-                        </a>
-                        . I confirm my details are true and complete, and I authorise{" "}
-                        {tenant.legalName} and StudentPay NZ to use them for this enrolment.
-                      </>
-                    )}
-                  </span>
-                </label>
-              ) : renderFlags.showPaymentPlanAccepted ? (
+              {renderFlags.showPayInFullSummary ? null : renderFlags.showPaymentPlanAccepted ? (
                 <label className={styles.check}>
                   <input
                     type="checkbox"
@@ -1860,41 +1833,24 @@ export function NzEnrolmentCheckout({
                   </span>
                 </label>
               ) : null}
-              {renderFlags.showPayInFullSummary ? null : (
-                <label className={styles.check}>
-                  <input
-                    type="checkbox"
-                    checked={declarations.information_confirmed}
-                    onChange={(event) =>
-                      setDeclarations((current) => ({
-                        ...current,
-                        information_confirmed: event.target.checked,
-                      }))
-                    }
-                  />
-                  <span>
-                    I confirm my details are true and complete, and I authorise{" "}
-                    {tenant.legalName} and StudentPay NZ to use them for this enrolment.
-                  </span>
-                </label>
-              )}
-              <label className={styles.check}>
+              <label className={styles.check} data-testid="nz-combined-details-privacy">
                 <input
                   type="checkbox"
-                  checked={declarations.privacy_consent_accepted}
+                  checked={combinedDetailsPrivacyAccepted(declarations)}
                   onChange={(event) =>
                     setDeclarations((current) => ({
                       ...current,
-                      privacy_consent_accepted: event.target.checked,
+                      ...setCombinedDetailsPrivacyDeclaration(event.target.checked),
                     }))
                   }
                 />
                 <span>
-                  I have read the{" "}
+                  I confirm my details are true and complete, have read the{" "}
                   <a href={tenant.privacyUrl} target="_blank" rel="noreferrer">
                     privacy information
-                  </a>{" "}
-                  and consent to this enrolment being processed.
+                  </a>
+                  , and consent to {tenant.legalName} and StudentPay NZ using my details to
+                  process this enrolment.
                 </span>
               </label>
             </fieldset>
@@ -1960,12 +1916,7 @@ export function NzEnrolmentCheckout({
             </div>
           </CheckoutSection>
         </div>
-        <p className={styles.powered}>
-          {copy.journeyAttribution}
-          {tenant.checkout.wording?.supportNote
-            ? ` · ${tenant.checkout.wording.supportNote}`
-            : null}
-        </p>
+        <StudentPayAttribution />
       </div>
     </div>
     </>

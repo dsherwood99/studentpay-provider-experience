@@ -10,6 +10,7 @@ import {
   NZ_DIRECT_DEBIT_CTA,
   NZ_REMOVED_STEPPER_LABELS,
   NZ_STUDENT_DETAILS_COPY,
+  combinedDetailsPrivacyAccepted,
   confirmEnabled,
   declarationsAccepted,
   decorateConfirmationRows,
@@ -21,6 +22,7 @@ import {
   paymentPlanChoiceCopy,
   planDisplay,
   sectionStatus,
+  setCombinedDetailsPrivacyDeclaration,
   shouldConfirmCheckout,
   shouldCreateCheckout,
   shouldPollDirectDebitStatus,
@@ -158,6 +160,17 @@ describe("single-page checkout presentation helpers", () => {
         userClickedConfirm: true,
         busy: false,
         alreadyConfirmed: true,
+      }),
+      false,
+    );
+    assert.deepEqual(setCombinedDetailsPrivacyDeclaration(true), {
+      information_confirmed: true,
+      privacy_consent_accepted: true,
+    });
+    assert.equal(
+      combinedDetailsPrivacyAccepted({
+        information_confirmed: true,
+        privacy_consent_accepted: false,
       }),
       false,
     );

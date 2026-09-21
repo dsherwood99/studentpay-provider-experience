@@ -937,10 +937,28 @@
 }
 
 .powered {
-  margin: 16px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 1.75rem 0 0;
   color: var(--nz-muted);
-  font-size: 0.82rem;
-  line-height: 1.45;
+  font-size: 0.78rem;
+  line-height: 1;
+}
+
+.poweredLabel {
+  color: var(--nz-muted);
+  font-size: 0.78rem;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.poweredLogo {
+  display: block;
+  width: 148px;
+  height: auto;
 }
 
 .link {
@@ -983,6 +1001,14 @@
 }
 
 @media (max-width: 720px) {
+  .powered {
+    margin-top: 1.5rem;
+  }
+
+  .poweredLogo {
+    width: 118px;
+  }
+
   .page {
     padding: 16px 12px 40px;
   }

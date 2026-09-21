@@ -5,6 +5,7 @@ import {
   NZ_PAYMENT_PLAN_COPY,
   NZ_PAY_IN_FULL_COPY,
   NZ_STUDENT_DETAILS_COPY,
+  POWERED_BY_LABEL,
 } from "./checkout-ui.ts";
 import { formatNzdFromCents } from "./plan-math.ts";
 import type { NzPaymentOptionId } from "./types.ts";
@@ -190,7 +191,7 @@ export function hostedCheckoutCopy(input: {
       studentLead: PIF_ONLY_STUDENT_LEAD,
       continueCta: PIF_ONLY_CONTINUE_CTA,
       confirmCta: amountLabel ? `Pay ${amountLabel}` : PIF_ONLY_CONTINUE_CTA,
-      journeyAttribution: PIF_ONLY_JOURNEY_ATTRIBUTION,
+      journeyAttribution: POWERED_BY_LABEL,
     };
   }
 
@@ -210,10 +211,7 @@ export function hostedCheckoutCopy(input: {
         input.selectedOption === "pay_in_full"
           ? NZ_PAY_IN_FULL_COPY.confirmCta
           : NZ_CONFIRM_CTA,
-      journeyAttribution:
-        input.selectedOption === "pay_in_full"
-          ? PIF_ONLY_JOURNEY_ATTRIBUTION
-          : input.tenantAttribution,
+      journeyAttribution: POWERED_BY_LABEL,
     };
   }
 
@@ -224,7 +222,7 @@ export function hostedCheckoutCopy(input: {
       studentLead: NZ_PAY_IN_FULL_COPY.studentLead,
       continueCta: NZ_PAY_IN_FULL_COPY.continueCta,
       confirmCta: NZ_PAY_IN_FULL_COPY.confirmCta,
-      journeyAttribution: PIF_ONLY_JOURNEY_ATTRIBUTION,
+      journeyAttribution: POWERED_BY_LABEL,
     };
   }
 
@@ -234,7 +232,7 @@ export function hostedCheckoutCopy(input: {
     studentLead: NZ_STUDENT_DETAILS_COPY.lead,
     continueCta: NZ_DIRECT_DEBIT_CTA,
     confirmCta: NZ_CONFIRM_CTA,
-    journeyAttribution: input.tenantAttribution,
+    journeyAttribution: POWERED_BY_LABEL,
   };
 }
 
@@ -362,6 +360,7 @@ export function clearedStateForPaymentSwitch(): {
 const PIF_ONLY_FORBIDDEN_COPY = [
   "Your payment plan",
   "Payment plan powered by StudentPay NZ",
+  PIF_ONLY_JOURNEY_ATTRIBUTION,
   "We'll use these details to set up your enrolment and StudentPay payment plan.",
   "Confirm enrolment & activate payment plan",
   "Set up Direct Debit",
