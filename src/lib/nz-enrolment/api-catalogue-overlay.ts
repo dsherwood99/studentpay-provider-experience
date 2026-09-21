@@ -1,8 +1,10 @@
 import type { NzCourse, NzEnrolmentPaymentOption, NzPaymentFrequency, NzProviderStudentAgreement, NzTenant } from "./types.ts";
 import {
   isSalesforceAuthorityCourse,
+  isSalesforceAuthorityProvider,
   isSandboxOverlayForceUnavailable,
 } from "./catalogue-authority.ts";
+import { getNzCourse, getNzCoursesForProvider } from "./courses.ts";
 import { resolveNzApiBaseUrl } from "./environment.ts";
 import {
   parseHostedProviderStudentAgreement,
@@ -57,6 +59,11 @@ export type CatalogueUnavailableReason =
 
 export type AuthoritativeHostedCourseResult =
   | { status: "ok"; course: NzCourse; tenant: NzTenant; source: "local" | "api" }
+  | { status: "unavailable"; reason: CatalogueUnavailableReason }
+  | { status: "not_found" };
+
+export type AuthoritativeHostedCatalogueResult =
+  | { status: "ok"; courses: NzCourse[]; tenant: NzTenant; source: "local" | "api" }
   | { status: "unavailable"; reason: CatalogueUnavailableReason };
 
 const VALID_FREQUENCIES: readonly NzPaymentFrequency[] = [
@@ -141,6 +148,37 @@ export function overlayNzCourseFromApi(
   }
 
   return next;
+}
+
+export function hostedCourseFromApi(
+  tenant: NzTenant,
+  api: NzApiPublicCourse | null | undefined,
+  agreement?: NzProviderStudentAgreement | null,
+): NzCourse | null {
+  const slug = String(api?.slug || "").trim();
+  const courseCode = String(api?.course_code || "").trim();
+  const name = String(api?.name || "").trim();
+  if (!api || !slug || !courseCode || !name) {
+    return null;
+  }
+  const stub: NzCourse = {
+    courseCode,
+    slug,
+    providerSlug: tenant.slug,
+    name,
+    description: api.description || "",
+    category: api.category || undefined,
+    paymentInFullCourseFeeCents: 0,
+    paymentPlanCourseFeeCents: 0,
+    status: "active",
+    planPolicy: {
+      mode: "derived_regular",
+      frequency: "Weekly",
+      regularInstalmentCents: 0,
+      upfrontAmountCents: 0,
+    },
+  };
+  return overlayNzCourseFromApi(stub, api, agreement);
 }
 
 export function parseHostedProviderOperationalConfig(
@@ -239,6 +277,214 @@ export async function fetchNzApiPublicCourse(input: {
     return { ok: false, reason: "malformed" };
   }
   return { ok: true, course: body.course };
+}
+
+export type NzApiProviderCatalogue = {
+  courses: NzApiPublicCourse[];
+  provider_config?: ApiProviderOperationalConfig;
+  provider_student_agreement?: ApiProviderStudentAgreement;
+};
+
+export async function fetchNzApiProviderCourses(input: {
+  apiBaseUrl: string;
+  apiKey: string;
+  providerCode: string;
+  slug?: string;
+  fetchImpl?: typeof fetch;
+}): Promise<
+  | { ok: true; catalogue: NzApiProviderCatalogue }
+  | { ok: false; reason: "http_error" | "malformed" }
+> {
+  const fetchImpl = input.fetchImpl || fetch;
+  const slugQuery = input.slug
+    ? `?slug=${encodeURIComponent(input.slug)}`
+    : "";
+  const response = await fetchImpl(
+    `${input.apiBaseUrl.replace(/\/$/, "")}/v1/providers/${encodeURIComponent(input.providerCode)}/courses${slugQuery}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${input.apiKey}`,
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    },
+  );
+  if (!response.ok) {
+    return { ok: false, reason: "http_error" };
+  }
+  let body: NzApiProviderCatalogue | null = null;
+  try {
+    body = (await response.json()) as NzApiProviderCatalogue;
+  } catch {
+    return { ok: false, reason: "malformed" };
+  }
+  if (!body || !Array.isArray(body.courses)) {
+    return { ok: false, reason: "malformed" };
+  }
+  return { ok: true, catalogue: body };
+}
+
+function hostedCoursesFromCatalogue(
+  tenant: NzTenant,
+  catalogue: NzApiProviderCatalogue,
+): { courses: NzCourse[]; tenant: NzTenant } | null {
+  const operational = parseHostedProviderOperationalConfig(
+    catalogue.provider_config || catalogue.courses[0]?.provider_config,
+    tenant.providerCode,
+  );
+  const overlaidTenant = overlayNzTenantOperationalConfig(tenant, operational);
+  if (!overlaidTenant) {
+    return null;
+  }
+  const listAgreement = parseHostedProviderStudentAgreement(
+    catalogue.provider_student_agreement,
+  );
+  const courses: NzCourse[] = [];
+  for (const apiCourse of catalogue.courses) {
+    const agreement =
+      parseHostedProviderStudentAgreement(apiCourse.provider_student_agreement) ||
+      listAgreement;
+    const course = hostedCourseFromApi(overlaidTenant, apiCourse, agreement);
+    if (!course || !course.providerStudentAgreement) {
+      logUnavailable("malformed", apiCourse.course_code);
+      continue;
+    }
+    courses.push(course);
+  }
+  return { courses, tenant: overlaidTenant };
+}
+
+function salesforceAuthorityConfig(tenant: NzTenant):
+  | { ok: true; url: string; apiKey: string }
+  | { ok: false; reason: CatalogueUnavailableReason } {
+  if (isSandboxOverlayForceUnavailable()) {
+    return { ok: false, reason: "forced_unavailable" };
+  }
+  const api = resolveNzApiBaseUrl();
+  const apiKey = getTenantApiKey(tenant);
+  if (api.error || !api.url || !apiKey) {
+    return { ok: false, reason: "missing_config" };
+  }
+  return { ok: true, url: api.url, apiKey };
+}
+
+export async function listAuthoritativeHostedCourses(
+  tenant: NzTenant,
+  fetchImpl?: typeof fetch,
+): Promise<AuthoritativeHostedCatalogueResult> {
+  if (!isSalesforceAuthorityProvider(tenant)) {
+    const localCourses = getNzCoursesForProvider(tenant.slug);
+    const courses = (
+      await Promise.all(
+        localCourses.map(async (item) => {
+          const resolved = await resolveAuthoritativeHostedCourse(
+            tenant,
+            item,
+            fetchImpl,
+          );
+          return resolved.status === "ok" ? resolved.course : null;
+        }),
+      )
+    ).filter((item): item is NzCourse => Boolean(item));
+    return { status: "ok", courses, tenant, source: "local" };
+  }
+
+  const config = salesforceAuthorityConfig(tenant);
+  if (!config.ok) {
+    logUnavailable(config.reason);
+    return { status: "unavailable", reason: config.reason };
+  }
+
+  try {
+    const remote = await fetchNzApiProviderCourses({
+      apiBaseUrl: config.url,
+      apiKey: config.apiKey,
+      providerCode: tenant.providerCode,
+      fetchImpl,
+    });
+    if (!remote.ok) {
+      logUnavailable(remote.reason);
+      return { status: "unavailable", reason: remote.reason };
+    }
+    const mapped = hostedCoursesFromCatalogue(tenant, remote.catalogue);
+    if (
+      !mapped ||
+      (mapped.courses.length === 0 && remote.catalogue.courses.length > 0)
+    ) {
+      logUnavailable("malformed");
+      return { status: "unavailable", reason: "malformed" };
+    }
+    return {
+      status: "ok",
+      courses: mapped.courses,
+      tenant: mapped.tenant,
+      source: "api",
+    };
+  } catch {
+    logUnavailable("fetch_error");
+    return { status: "unavailable", reason: "fetch_error" };
+  }
+}
+
+export async function resolveAuthoritativeHostedCourseBySlug(
+  tenant: NzTenant,
+  courseSlug: string,
+  fetchImpl?: typeof fetch,
+): Promise<AuthoritativeHostedCourseResult> {
+  const slug = courseSlug.trim().toLowerCase();
+  if (!isSalesforceAuthorityProvider(tenant)) {
+    const local = getNzCourse(tenant.slug, slug);
+    if (!local) {
+      return { status: "not_found" };
+    }
+    return resolveAuthoritativeHostedCourse(tenant, local, fetchImpl);
+  }
+
+  const config = salesforceAuthorityConfig(tenant);
+  if (!config.ok) {
+    logUnavailable(config.reason);
+    return { status: "unavailable", reason: config.reason };
+  }
+
+  try {
+    const remote = await fetchNzApiProviderCourses({
+      apiBaseUrl: config.url,
+      apiKey: config.apiKey,
+      providerCode: tenant.providerCode,
+      slug,
+      fetchImpl,
+    });
+    if (!remote.ok) {
+      logUnavailable(remote.reason);
+      return { status: "unavailable", reason: remote.reason };
+    }
+    const mapped = hostedCoursesFromCatalogue(tenant, remote.catalogue);
+    if (!mapped) {
+      logUnavailable("malformed");
+      return { status: "unavailable", reason: "malformed" };
+    }
+    const match = mapped.courses.find((course) => course.slug === slug);
+    if (!match) {
+      const raw = remote.catalogue.courses.find(
+        (course) => String(course.slug || "").trim().toLowerCase() === slug,
+      );
+      if (raw) {
+        logUnavailable("malformed", raw.course_code);
+        return { status: "unavailable", reason: "malformed" };
+      }
+      return { status: "not_found" };
+    }
+    return {
+      status: "ok",
+      course: match,
+      tenant: mapped.tenant,
+      source: "api",
+    };
+  } catch {
+    logUnavailable("fetch_error");
+    return { status: "unavailable", reason: "fetch_error" };
+  }
 }
 
 export async function resolveAuthoritativeHostedCourse(

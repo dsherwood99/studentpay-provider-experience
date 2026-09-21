@@ -1,8 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import type { CSSProperties } from "react";
 import { NzCourseCatalogue } from "@/components/nz-enrolment/CourseCatalogue";
-import { resolveAuthoritativeHostedCourse } from "@/lib/nz-enrolment/api-catalogue-overlay";
-import { getNzCoursesForProvider, toPublicCourse } from "@/lib/nz-enrolment/courses";
+import { NzCourseConfigurationUnavailable } from "@/components/nz-enrolment/CourseConfigurationUnavailable";
+import { listAuthoritativeHostedCourses } from "@/lib/nz-enrolment/api-catalogue-overlay";
+import { toPublicCourse } from "@/lib/nz-enrolment/courses";
 import { isNzEnrolmentProductAvailable } from "@/lib/nz-enrolment/environment";
 import { tenantCssVars } from "@/lib/nz-enrolment/presentation";
 import { getNzTenantBySlug, toPublicTenant } from "@/lib/nz-enrolment/tenants";
@@ -38,21 +39,22 @@ export default async function NzProviderEnrolPage({ params }: PageProps) {
     notFound();
   }
 
-  const localCourses = getNzCoursesForProvider(tenant.slug);
-  if (localCourses.length === 1) {
-    redirect(`/enrol/${tenant.slug}/${localCourses[0].slug}`);
+  const listed = await listAuthoritativeHostedCourses(tenant);
+  if (listed.status === "unavailable") {
+    return (
+      <div style={tenantCssVars(toPublicTenant(tenant)) as CSSProperties}>
+        <NzCourseConfigurationUnavailable tenant={toPublicTenant(tenant)} />
+      </div>
+    );
   }
 
-  const courses = (
-    await Promise.all(
-      localCourses.map(async (item) => {
-        const resolved = await resolveAuthoritativeHostedCourse(tenant, item);
-        return resolved.status === "ok" ? resolved.course : null;
-      }),
-    )
-  ).filter((item): item is NonNullable<typeof item> => Boolean(item));
+  const courses = listed.courses;
+  const overlayTenant = listed.tenant;
+  if (courses.length === 1) {
+    redirect(`/enrol/${overlayTenant.slug}/${courses[0].slug}`);
+  }
 
-  const publicTenant = toPublicTenant(tenant);
+  const publicTenant = toPublicTenant(overlayTenant);
 
   return (
     <div style={tenantCssVars(publicTenant) as CSSProperties}>

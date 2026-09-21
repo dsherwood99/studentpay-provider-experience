@@ -12,7 +12,7 @@ import {
   readNzSession,
   requireNzApiBaseUrl,
   requireTenantKey,
-  resolveCourseContext,
+  resolveAuthoritativeCourseContext,
   writeNzSession,
 } from "@/lib/nz-enrolment/request-context";
 import { sameOriginOrConfigured } from "@/lib/nz-enrolment/validation";
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
 
   const payInFull = isPayInFullOption(session.paymentOption || session.plan?.paymentOption);
 
-  const resolved = resolveCourseContext(session.providerSlug, session.courseSlug);
+  const resolved = await resolveAuthoritativeCourseContext(session.providerSlug, session.courseSlug);
   if (resolved.error || !resolved.tenant) {
     return resolved.error || jsonError(404, "PROVIDER_NOT_FOUND");
   }

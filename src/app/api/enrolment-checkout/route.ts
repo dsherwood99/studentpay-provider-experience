@@ -23,12 +23,12 @@ import {
   readNzSession,
   requireNzApiBaseUrl,
   requireTenantKey,
-  resolveCourseContext,
+  resolveAuthoritativeCourseContext,
   resolveTenantContext,
   writeNzSession,
 } from "@/lib/nz-enrolment/request-context";
-import { getNzCourse, getNzCoursesForProvider, toPublicCourse } from "@/lib/nz-enrolment/courses";
-import { resolveAuthoritativeHostedCourse } from "@/lib/nz-enrolment/api-catalogue-overlay";
+import { toPublicCourse } from "@/lib/nz-enrolment/courses";
+import { listAuthoritativeHostedCourses, resolveAuthoritativeHostedCourseBySlug } from "@/lib/nz-enrolment/api-catalogue-overlay";
 import { toPublicTenant } from "@/lib/nz-enrolment/tenants";
 import { NzSessionConfigError, publicSessionView } from "@/lib/nz-enrolment/session";
 import {
@@ -73,8 +73,11 @@ export async function GET(request: Request) {
 
   const { tenant } = resolved;
   if (courseSlug) {
-    const localCourse = getNzCourse(providerSlug, courseSlug);
-    if (!localCourse) {
+    const authoritative = await resolveAuthoritativeHostedCourseBySlug(
+      tenant,
+      courseSlug,
+    );
+    if (authoritative.status === "not_found") {
       const session = await readNzSession();
       const mismatch = assertSessionTenant(session, providerSlug, courseSlug);
       if (mismatch) {
@@ -95,10 +98,6 @@ export async function GET(request: Request) {
         ),
       });
     }
-    const authoritative = await resolveAuthoritativeHostedCourse(
-      tenant,
-      localCourse,
-    );
     if (authoritative.status === "unavailable") {
       return jsonError(503, "COURSE_CONFIGURATION_UNAVAILABLE");
     }
@@ -130,15 +129,12 @@ export async function GET(request: Request) {
     });
   }
 
-  const localCourses = getNzCoursesForProvider(providerSlug);
-  const courses = (
-    await Promise.all(
-      localCourses.map(async (item) => {
-        const authoritative = await resolveAuthoritativeHostedCourse(tenant, item);
-        return authoritative.status === "ok" ? authoritative.course : null;
-      }),
-    )
-  ).filter((item): item is NonNullable<typeof item> => Boolean(item));
+  const listed = await listAuthoritativeHostedCourses(tenant);
+  if (listed.status === "unavailable") {
+    return jsonError(503, "COURSE_CONFIGURATION_UNAVAILABLE");
+  }
+  const courses = listed.courses;
+  const overlayTenant = listed.tenant;
 
   const session = await readNzSession();
   const mismatch = assertSessionTenant(session, providerSlug, courseSlug || undefined);
@@ -146,17 +142,17 @@ export async function GET(request: Request) {
     return mismatch;
   }
 
-  const eligibility = eligibilityForCourse(tenant, undefined);
+  const eligibility = eligibilityForCourse(overlayTenant, undefined);
 
   logNzEnrolmentEvent("checkout_started", {
-    provider_slug: tenant.slug,
+    provider_slug: overlayTenant.slug,
     course_slug: courseSlug || null,
     pay_in_full_available: eligibility.payInFullAvailable,
   });
 
   return Response.json({
     success: true,
-    tenant: toPublicTenant(tenant),
+    tenant: toPublicTenant(overlayTenant),
     courses: courses.map((item) => toPublicCourse(item!)),
     eligibility,
     session: publicSessionView(
@@ -187,7 +183,7 @@ export async function POST(request: Request) {
 
   const providerSlug = body.providerSlug?.trim() || "";
   const courseSlug = body.courseSlug?.trim() || "";
-  const resolved = resolveCourseContext(providerSlug, courseSlug);
+  const resolved = await resolveAuthoritativeCourseContext(providerSlug, courseSlug);
   if (resolved.error || !resolved.tenant || !resolved.course) {
     return resolved.error || jsonError(404, "PROVIDER_NOT_FOUND");
   }
@@ -197,16 +193,9 @@ export async function POST(request: Request) {
     return apiBase.error;
   }
 
-  const { tenant } = resolved;
-  const authoritative = await resolveAuthoritativeHostedCourse(
-    tenant,
-    resolved.course,
-  );
-  if (authoritative.status === "unavailable") {
-    return jsonError(503, "COURSE_CONFIGURATION_UNAVAILABLE");
-  }
-  const course = authoritative.course;
-  const overlayTenant = authoritative.tenant;
+  const tenant = resolved.tenant;
+  const course = resolved.course;
+  const overlayTenant = resolved.tenant;
   const existing = await readNzSession();
   const mismatch = assertSessionTenant(existing, providerSlug, courseSlug);
   if (mismatch) {

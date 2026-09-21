@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { resolveAuthoritativeHostedCourseBySlug } from "./api-catalogue-overlay.ts";
 import { getNzCourse } from "./courses.ts";
 import { jsonError } from "./errors.ts";
 import {
@@ -94,6 +95,31 @@ export function resolveCourseContext(
     return { error: jsonError(404, "CHECKOUT_NOT_FOUND", "Course not found.") };
   }
   return { tenant: tenantResult.tenant, course };
+}
+
+export async function resolveAuthoritativeCourseContext(
+  providerSlug: string,
+  courseSlug: string,
+): Promise<{
+  tenant?: NzTenant;
+  course?: NzCourse;
+  error?: Response;
+}> {
+  const tenantResult = resolveTenantContext(providerSlug);
+  if (tenantResult.error || !tenantResult.tenant) {
+    return tenantResult;
+  }
+  const resolved = await resolveAuthoritativeHostedCourseBySlug(
+    tenantResult.tenant,
+    courseSlug,
+  );
+  if (resolved.status === "not_found") {
+    return { error: jsonError(404, "CHECKOUT_NOT_FOUND", "Course not found.") };
+  }
+  if (resolved.status === "unavailable") {
+    return { error: jsonError(503, "COURSE_CONFIGURATION_UNAVAILABLE") };
+  }
+  return { tenant: resolved.tenant, course: resolved.course };
 }
 
 export function requireTenantKey(tenant: NzTenant): {
