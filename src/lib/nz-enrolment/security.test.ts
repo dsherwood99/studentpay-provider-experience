@@ -32,7 +32,7 @@ describe("NZ enrolment checkout security", () => {
     assert.deepEqual(hits, []);
   });
 
-  it("keeps OLI out of generic checkout control flow", () => {
+  it("keeps OLI and BELA_NZ out of generic checkout control flow", () => {
     const genericDirs = [
       path.join(srcRoot, "components/nz-enrolment"),
       path.join(srcRoot, "app/enrol"),
@@ -51,7 +51,9 @@ describe("NZ enrolment checkout security", () => {
         const text = fs.readFileSync(file, "utf8");
         if (
           /provider(?:Slug|Code)?\s*===\s*['"]oli['"]/i.test(text) ||
-          /if\s*\(\s*provider\s*===\s*['"]OLI['"]/.test(text)
+          /if\s*\(\s*provider\s*===\s*['"]OLI['"]/.test(text) ||
+          /provider(?:Slug|Code)?\s*===\s*['"]bela-nz['"]/i.test(text) ||
+          /if\s*\(\s*provider\s*===\s*['"]BELA_NZ['"]/.test(text)
         ) {
           hits.push(path.relative(srcRoot, file));
         }

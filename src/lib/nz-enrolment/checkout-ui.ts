@@ -257,10 +257,15 @@ export type NzPlanDisplay = {
   rows: { label: string; value: string }[];
 };
 
+export function showsNonZeroUpfront(upfrontAmountCents: number): boolean {
+  return Number.isInteger(upfrontAmountCents) && upfrontAmountCents > 0;
+}
+
 export function planDisplay(preview: NzPlanPreview): NzPlanDisplay {
   const amount = formatNzdFromCents(preview.regularInstalmentAmountCents);
   const period = periodLabel(preview.frequency);
   const adjective = frequencyAdjective(preview.frequency);
+  const showUpfront = showsNonZeroUpfront(preview.upfrontAmountCents);
   const finalPaymentLabel =
     preview.hasResidualFinal && preview.finalInstalmentAmountCents != null
       ? `Final payment of ${formatNzdFromCents(preview.finalInstalmentAmountCents)}`
@@ -272,12 +277,17 @@ export function planDisplay(preview: NzPlanPreview): NzPlanDisplay {
 
   const rows: { label: string; value: string }[] = [
     { label: "Course fee", value: formatNzdFromCents(preview.coursePriceCents) },
-    { label: "Upfront", value: formatNzdFromCents(preview.upfrontAmountCents) },
-    {
-      label: "Regular payment",
-      value: `${amount} ${preview.frequency.toLowerCase()}`,
-    },
   ];
+  if (showUpfront) {
+    rows.push({
+      label: "Upfront",
+      value: formatNzdFromCents(preview.upfrontAmountCents),
+    });
+  }
+  rows.push({
+    label: "Regular payment",
+    value: `${amount} ${preview.frequency.toLowerCase()}`,
+  });
 
   if (finalPaymentLabel && preview.finalInstalmentAmountCents != null) {
     rows.push({
@@ -310,7 +320,9 @@ export function planDisplay(preview: NzPlanPreview): NzPlanDisplay {
 
   return {
     regularLabel: `${amount} per ${period}`,
-    upfrontLabel: `${formatNzdFromCents(preview.upfrontAmountCents)} upfront`,
+    upfrontLabel: showUpfront
+      ? `${formatNzdFromCents(preview.upfrontAmountCents)} upfront`
+      : "",
     regularCountLabel,
     finalPaymentLabel,
     totalLabel: formatNzdFromCents(preview.totalPayableCents),
