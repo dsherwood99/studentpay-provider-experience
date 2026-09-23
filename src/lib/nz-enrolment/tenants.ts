@@ -205,6 +205,7 @@ export const NZ_TENANTS: readonly NzTenant[] = [
     displayName: "Bela Beauty College",
     legalName: "Bela Beauty College",
     supportEmail: "support@belabeautycollege.com",
+    supportPhone: "+64 9 888 6459",
     privacyUrl: "https://belabeautycollege.com/policies/privacy-policy",
     termsUrl: "https://belabeautycollege.com/policies/terms-of-service",
     websiteUrl: "https://belabeautycollege.com",
