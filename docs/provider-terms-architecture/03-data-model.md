@@ -60,10 +60,12 @@ Layer A. Do not copy onto PIC.
 
 | API name | Label | Type | Default | Help |
 | --- | --- | --- | --- | --- |
-| `Establishment_Fee_Amount__c` | Establishment Fee Amount | Currency | empty | Provider charge per activated payment plan. Not a payer charge |
+| `Establishment_Fee_Amount__c` | Establishment Fee Amount | Currency | empty | Provider charge per activated payment plan. Not a payer charge. Bela decision: $60.00, not LIVE |
 | `Establishment_Fee_Basis__c` | Establishment Fee Basis | Picklist None / Per Activated Payment Plan | None | None charges nothing |
+| `Monthly_Account_Fee_Amount__c` | Monthly Account Fee Amount | Currency | empty | Provider charge per activated account per month. Not a payer charge. Bela decision: $5.00, not LIVE |
+| `Monthly_Account_Fee_Basis__c` | Monthly Account Fee Basis | Picklist None / Per Activated Account Month | None | None charges nothing |
 
-Existing `Fixed_Fee_Amount__c` and `Percent_Fee_Rate__c` remain the transaction fee. `Calculation_Mode__c` stays the charging switch. A new establishment amount with basis None, or a null amount, charges nothing. Bela `PCT-00001` stays SHADOW and is not updated in this design’s deployment.
+Existing `Fixed_Fee_Amount__c` and `Percent_Fee_Rate__c` remain on PCT-00001 as a shadow canary ($0.40 + 2.9%). They are not part of the approved $60 + $5 model and were not copied onto it. `Calculation_Mode__c` stays the charging switch. New fee fields default to None or empty, so a schema deploy would charge nothing. These fields are specified here and are not deployed. Bela `PCT-00001` stays SHADOW.
 
 ## Proposed fields on the agreement template
 

@@ -1,31 +1,21 @@
 # 10. Test evidence
 
-Filled after the hosted test run on this branch. Salesforce Apex tests and NZ API tests were not run: those repositories are not in this workspace, and no Salesforce metadata was deployed.
-
-Hosted checks that this change adds:
-
-- Inactive payer treatment produces no payer-fee clauses.
-- Bela skeleton is `DRAFT_NOT_ACTIVE`, not acceptable, contains the $2,800 schedule, and does not contain a $2.50 payer fee, a 2.9% provider fee, or Australian statutory labels.
-- The committed HTML artefact matches the composer byte for byte.
-- Sealing a snapshot and then changing retry and payer fees does not change the stored HTML or hash. A newly composed draft does change, and it stays inactive, marked runtime-not-wired.
-- An OLI-like input with establishment and transaction amounts still chargingAuthorised false omits those amounts from the student-facing skeleton and adds no payer-fee clause.
-- Confirm and course page do not import the composer.
-- Existing hosted suites cover OLI home isolation, Bela host binding, Pay in Full gating, equal-plan and residual behaviour, and Salesforce-authority fail-closed when the provider agreement is absent.
-
-Results on this branch after the skeleton landed:
+Hosted checks after the v2 skeleton. Salesforce Apex tests were not run. The package repository is not accessible, and no metadata was deployed.
 
 | Check | Result |
 | --- | --- |
-| `npm test` | 256 pass, 0 fail (the six new provider-terms tests are included) |
-| `npm run typecheck` | pass |
-| `npm run lint` | pass, 0 warnings |
-| `npm run build` | pass. `/` remains static |
+| Absent policy: no retry date, no late fee, no payer-fee clauses | Hosted specification test |
+| Bela retry date specification: 2026-09-01 plus 4 days = 2026-09-05 | Hosted specification test. Not a Production job |
+| Retry disabled or no policy record | No retry date |
+| Add-to-end | Does not create an automatic catch-up collection |
+| Failed-payment fee | One key per failure id; a replay does not add a second key; a non-qualifying attempt adds none |
+| Late fee | 60 days no fee; 61 days eligible; zero balance no fee; already assessed no fee; closed plan no fee; disabled no fee |
+| Provider $60 and $5 | Present on the Bela fixture, absent from the student HTML. `chargingAuthorised` is false |
+| $0.40 and 2.9% | Absent from the Bela student HTML |
+| Agreement content | 3-day cooling-off, 2-year access, 4-day retry, add-to-end, $2.50 end of plan, $15 when more than 60 days, collections not automatic, provider-controlled suspension, kit unresolved |
+| Immutability | A later late-fee and retry edit changes a new draft hash and leaves the sealed hash unchanged |
+| OLI routes | Confirm and course page do not import the composer |
+| `npm test` | 260 pass, 0 fail |
+| typecheck, lint, build | pass. `/` remains static |
 
-Not run, because the source is not in this workspace and no metadata was deployed: Salesforce Apex tests, NZ API tests.
-
-Explicit regressions covered by the new tests:
-
-- No payer-fee clause for the inactive default.
-- Commercial establishment and transaction amounts do not appear as payer charges.
-- OLI confirm and course routes do not call the composer.
-- A sealed hash does not follow a later settings edit.
+These specification tests do not submit payments, create Payment Attempts, or change OLI.

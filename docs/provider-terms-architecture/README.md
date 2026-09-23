@@ -20,5 +20,7 @@ The attached Australian draft file `StudentPay_AU_Provider_Student_Payment_Plan_
 | [10-test-evidence.md](10-test-evidence.md) | What was executed |
 | [11-deployment-evidence.md](11-deployment-evidence.md) | Why shared Salesforce and API deploys did not run |
 | [12-remaining-manual-actions.md](12-remaining-manual-actions.md) | Actions still required from David |
+| [13-activation-runbook.md](13-activation-runbook.md) | Later order of approval, merge, and certification |
+| [14-runtime-blocker.md](14-runtime-blocker.md) | Why payer-treatment runtime is not deployed |
 
-Inactive skeleton: [artefacts/BELA_NZ_agreement_skeleton.html](artefacts/BELA_NZ_agreement_skeleton.html).
+Inactive skeleton: [artefacts/BELA_NZ_agreement_skeleton.html](artefacts/BELA_NZ_agreement_skeleton.html). Clause template `nz-skeleton-2026-09-23-v2`. Not Active. Kit and NZ legal wording remain open. David’s decided policy values are filled as structured fields.
