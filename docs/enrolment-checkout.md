@@ -66,6 +66,7 @@ Examples:
 - `/enrol/oli/certificate-in-psychology-counselling`
 - `/enrol/oli/certification-course` (sandbox fixture only)
 - `/enrol/fixture-institute/example-certificate` (sandbox only)
+- `/enrol/bela-nz/lash-business-bundle` (sandbox only; Payment Plan only)
 
 Current production origin: `https://enrol.studentpay.co.nz`.
 
@@ -266,6 +267,24 @@ Instalment ceiling: generic 400 recurring schedules, matching Salesforce `Charge
 | Sandbox fixture | `OLI_SANDBOX_CERT_COURSE` $1,200 / 48 × $25 / $0 upfront |
 
 CSV course codes TRA101–TRA104 are duplicated across Personal Training and Trades. Hosted slugs are unique course names. Codes were not invented.
+
+---
+
+## BELA_NZ sandbox Hosted tenant
+
+BELA_NZ reuses the generic Hosted checkout. It is not a second checkout product.
+
+| Field | Value |
+|---|---|
+| Slug | `bela-nz` |
+| Provider code | `BELA_NZ` |
+| Hosted path | `/enrol/bela-nz/lash-business-bundle` |
+| Course | `BELA_LASH_BUSINESS_BUNDLE` / Lash Business Bundle |
+| Plan fixture | NZD 2,800 · $10 upfront · 186 × $15 weekly |
+| Hosted Pay Now | Unavailable until separately certified |
+| Production | Disabled (`sandboxOnly = true`) |
+
+Do not enable Production BELA_NZ Hosted, Production Pay Now, PIC, DNS, or keys from this change.
 
 ---
 

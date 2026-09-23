@@ -57,12 +57,15 @@ describe("NZ enrolment tenant configuration", () => {
   it("loads OLI and a second fixture tenant from config only", () => {
     const oli = getNzTenantBySlug("oli");
     const fixture = getNzTenantBySlug("fixture-institute");
+    const bela = getNzTenantBySlug("bela-nz");
     assert.ok(oli);
     assert.ok(fixture);
+    assert.ok(bela);
     assert.equal(oli?.providerCode, "OLI_NZ");
     assert.equal(fixture?.providerCode, "SANDBOX_DEMO");
+    assert.equal(bela?.providerCode, "BELA_NZ");
     assert.equal("apiBaseUrl" in oli!, false);
-    assert.equal(listActiveNzTenants().length >= 2, true);
+    assert.equal(listActiveNzTenants().length >= 3, true);
   });
 
   it("does not expose API key env names on the public tenant view", () => {
