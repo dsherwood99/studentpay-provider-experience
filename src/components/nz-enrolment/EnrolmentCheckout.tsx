@@ -1297,8 +1297,12 @@ export function NzEnrolmentCheckout({
                   <dt>Payment plan</dt>
                   <dd>
                     {display?.regularLabel || "Weekly payment plan"}
-                    <br />
-                    {display?.upfrontLabel || "$0.00 upfront"}
+                    {display?.upfrontLabel ? (
+                      <>
+                        <br />
+                        <span data-testid="nz-plan-upfront">{display.upfrontLabel}</span>
+                      </>
+                    ) : null}
                   </dd>
                   <dt>Schedule</dt>
                   <dd>

@@ -47,6 +47,7 @@ const managed = [
   "NZ_STUDENTPAY_API_BASE_URL",
   "NZ_ENROLMENT_SESSION_SECRET",
   "E13_INTERNAL_CANARY_HOSTED_ENABLED",
+  "E13_SANDBOX_PAY_IN_FULL_HOSTED_PREVIEW",
 ];
 const previous: Record<string, string | undefined> = {};
 
@@ -99,8 +100,8 @@ describe("Hosted E13 eligibility", () => {
   });
 
   it("2. shows Pay in Full only when env, provider, and catalogue all allow it", () => {
-    const tenant = getNzTenantBySlug("bela-nz")!;
-    const course = getNzCourse("bela-nz", "lash-business-bundle")!;
+    const tenant = getNzTenantBySlug("oli")!;
+    const course = getNzCourse("oli", "studentpay-test-course")!;
     const eligibility = resolveHostedPayInFullEligibility({ tenant, course });
     assert.equal(eligibility.environmentAllowed, true);
     assert.equal(eligibility.providerEnabled, true);
@@ -109,11 +110,29 @@ describe("Hosted E13 eligibility", () => {
   });
 
   it("3. still shows Payment Plan when Pay in Full is available", () => {
-    const tenant = getNzTenantBySlug("bela-nz")!;
-    const course = getNzCourse("bela-nz", "lash-business-bundle")!;
+    const tenant = getNzTenantBySlug("oli")!;
+    const course = getNzCourse("oli", "studentpay-test-course")!;
     const eligibility = resolveHostedPayInFullEligibility({ tenant, course });
     assert.equal(eligibility.paymentPlanAvailable, true);
     assert.equal(toPublicCourse(course).enrolmentPaymentOptions.includes("payment_plan"), true);
+  });
+
+  it("keeps BELA_NZ Hosted Payment Plan only until Pay Now is separately certified", () => {
+    const tenant = getNzTenantBySlug("bela-nz")!;
+    const course = getNzCourse("bela-nz", "lash-business-bundle")!;
+    const eligibility = resolveHostedPayInFullEligibility({ tenant, course });
+    assert.equal(tenant.sandboxOnly, true);
+    assert.equal(tenant.checkout.paymentOptions.pay_in_full.enabled, false);
+    assert.equal(tenant.checkout.paymentOptions.interest_free_payment_plan.enabled, true);
+    assert.equal(eligibility.environmentAllowed, true);
+    assert.equal(eligibility.providerEnabled, false);
+    assert.equal(eligibility.payInFullAvailable, false);
+    assert.equal(eligibility.paymentPlanAvailable, true);
+    process.env.E13_SANDBOX_PAY_IN_FULL_HOSTED_PREVIEW = "true";
+    assert.equal(
+      resolveHostedPayInFullEligibility({ tenant, course }).payInFullAvailable,
+      false,
+    );
   });
 
   it("does not expose Pay in Full on Bela in production Hosted", () => {

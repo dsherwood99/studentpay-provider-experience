@@ -100,6 +100,27 @@ describe("generic provider branding and presentation", () => {
     assert.equal(fixture.presentation.chrome, "provider-native");
     assert.notEqual(fixture.branding.primaryColour, "#3a8f8f");
   });
+
+  it("configures BELA_NZ as a sandbox provider-native Hosted tenant", () => {
+    process.env.STUDENTPAY_ENV = "sandbox";
+    const bela = toPublicTenant(getNzTenantBySlug("bela-nz")!);
+    assert.equal(bela.displayName, "Bela Beauty College");
+    assert.equal(bela.presentation.chrome, "provider-native");
+    assert.equal(bela.branding.primaryColour, "#5A332B");
+    assert.equal(bela.branding.accentColour, "#FBD2D3");
+    assert.equal(bela.branding.backgroundColour, "#FAF7F4");
+    assert.match(bela.branding.headingFontFamily || "", /Playfair Display/);
+    assert.equal(tenantCssVars(bela)["--nz-cta"], "#5A332B");
+    assert.equal(bela.checkout.paymentOptions.pay_in_full.enabled, false);
+    assert.equal(
+      bela.checkout.paymentOptions.interest_free_payment_plan.enabled,
+      true,
+    );
+    assert.equal("apiKeyEnv" in bela, false);
+    assert.equal("providerCode" in bela, false);
+    process.env.STUDENTPAY_ENV = "production";
+    assert.equal(getNzTenantBySlug("bela-nz"), undefined);
+  });
 });
 
 describe("course-specific deep links", () => {

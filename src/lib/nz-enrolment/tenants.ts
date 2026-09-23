@@ -215,6 +215,9 @@ export const NZ_TENANTS: readonly NzTenant[] = [
       mutedTextColour: "#7a5a52",
       textColour: "#5A332B",
       fontFamily: "Arial, sans-serif",
+      headingFontFamily:
+        'var(--font-nz-bela-heading), "Playfair Display", Georgia, serif',
+      ctaColour: "#5A332B",
       buttonRadius: "medium",
       headerStyle: "provider-native",
       footerStyle: "provider-native",
@@ -226,14 +229,16 @@ export const NZ_TENANTS: readonly NzTenant[] = [
       courseUrlPattern:
         "https://belabeautycollege.com/products/the-ultimate-lash-business-bundle",
       knownCourseWebsiteSlugs: ["lash-business-bundle"],
+      headerContextLabel: "Enrolment",
       headerLinks: [
+        { label: "Home", href: "https://belabeautycollege.com" },
         { label: "Courses", href: "https://belabeautycollege.com" },
       ],
     }),
     checkout: {
       paymentOptions: {
         interest_free_payment_plan: { enabled: true },
-        pay_in_full: { enabled: true, comingSoon: false },
+        pay_in_full: { enabled: false, comingSoon: true },
       },
       availableFrequencies: ["Weekly"],
       defaultFrequency: "Weekly",
