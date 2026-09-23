@@ -9,6 +9,10 @@ This document covers the product boundary, architecture, tenant/course
 configuration, security, sandbox certification, and production enablement.
 It does not authorise Production activation.
 
+Provider commercial terms, payer treatment, and the inactive Bela agreement
+skeleton are documented in `docs/provider-terms-architecture/`. That pack does
+not activate a Provider Student Agreement.
+
 ---
 
 ## Product boundary

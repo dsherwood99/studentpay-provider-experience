@@ -1,0 +1,24 @@
+{
+  "status": "DRAFT_NOT_ACTIVE",
+  "activationPermitted": false,
+  "availableForStudentAcceptance": false,
+  "salesforceStatus": "DoNotCreate",
+  "version": "skeleton-2026-09-23",
+  "contentHash": "0c037faf5c18d0a2f1dc7769522f0acb04b869e10f7c57a1f5b3605e69c92ce0",
+  "unresolved": [
+    "NZ_LEGAL_REVIEW",
+    "PROVIDER_APPROVAL",
+    "PART_A_ENROLMENT_TERMS",
+    "LEGAL_NAME",
+    "PROVIDER_TERMS_URL",
+    "EFFECTIVE_DATE",
+    "RETRY_TREATMENT",
+    "CATCH_UP_TREATMENT",
+    "FAILED_PAYMENT_FEE",
+    "LATE_FEE",
+    "COLLECTIONS_AUTHORITY",
+    "COURSE_ACCESS_SUSPENSION",
+    "AU_DRAFT_NOT_APPROVED_FOR_NZ"
+  ],
+  "payerFeeClauses": []
+}
