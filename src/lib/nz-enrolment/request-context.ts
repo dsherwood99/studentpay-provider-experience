@@ -13,6 +13,7 @@ import {
   NZ_ENROLMENT_SESSION_COOKIE,
   NzSessionConfigError,
   nzSessionCookieOptions,
+  sessionProviderMismatch,
 } from "./session.ts";
 import { getNzTenantBySlug } from "./tenants.ts";
 import type { NzCheckoutSession, NzCourse, NzTenant } from "./types.ts";
@@ -133,18 +134,19 @@ export function requireTenantKey(tenant: NzTenant): {
   return { apiKey };
 }
 
+export {
+  resolveReusableSession,
+  sessionAppliesToCourse,
+} from "./session.ts";
+
 export function assertSessionTenant(
   session: NzCheckoutSession | null,
   providerSlug: string,
-  courseSlug?: string,
 ): Response | null {
   if (!session) {
     return null;
   }
-  if (session.providerSlug !== providerSlug) {
-    return jsonError(403, "TENANT_MISMATCH");
-  }
-  if (courseSlug && session.courseSlug !== courseSlug) {
+  if (sessionProviderMismatch(session, providerSlug)) {
     return jsonError(403, "TENANT_MISMATCH");
   }
   return null;

@@ -627,7 +627,10 @@ export function NzEnrolmentCheckout({
           setUpfrontAmountCents(overlaid.planPolicy.upfrontAmountCents);
           setFrequency(overlaid.planPolicy.frequency);
         }
-        if (json.session?.paymentOption === "pay_in_full") {
+        const sessionApplies =
+          json.session?.providerSlug === tenant.slug &&
+          json.session?.courseSlug === course.slug;
+        if (sessionApplies && json.session?.paymentOption === "pay_in_full") {
           setPaymentOption("pay_in_full");
           setPaymentChoiceTouched(true);
         }

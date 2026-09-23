@@ -16,7 +16,7 @@ import {
   publicCardPayment,
   resolveHostedPayInFullEligibility,
 } from "@/lib/nz-enrolment/pay-in-full";
-import { isPayInFullOption, shouldReuseProviderOrderId } from "@/lib/nz-enrolment/pay-in-full-flow";
+import { isPayInFullOption, resolveHostedCreateProviderOrderId } from "@/lib/nz-enrolment/pay-in-full-flow";
 import { defaultFirstPaymentDate } from "@/lib/nz-enrolment/plan-math";
 import {
   assertSessionTenant,
@@ -24,7 +24,9 @@ import {
   requireNzApiBaseUrl,
   requireTenantKey,
   resolveAuthoritativeCourseContext,
+  resolveReusableSession,
   resolveTenantContext,
+  sessionAppliesToCourse,
   writeNzSession,
 } from "@/lib/nz-enrolment/request-context";
 import { toPublicCourse } from "@/lib/nz-enrolment/courses";
@@ -79,7 +81,7 @@ export async function GET(request: Request) {
     );
     if (authoritative.status === "not_found") {
       const session = await readNzSession();
-      const mismatch = assertSessionTenant(session, providerSlug, courseSlug);
+      const mismatch = assertSessionTenant(session, providerSlug);
       if (mismatch) {
         return mismatch;
       }
@@ -94,7 +96,7 @@ export async function GET(request: Request) {
         courses: [],
         eligibility: eligibilityForCourse(tenant, undefined),
         session: publicSessionView(
-          session?.providerSlug === providerSlug ? session : null,
+          resolveReusableSession(session, providerSlug, courseSlug),
         ),
       });
     }
@@ -103,7 +105,7 @@ export async function GET(request: Request) {
     }
 
     const session = await readNzSession();
-    const mismatch = assertSessionTenant(session, providerSlug, courseSlug);
+    const mismatch = assertSessionTenant(session, providerSlug);
     if (mismatch) {
       return mismatch;
     }
@@ -124,7 +126,7 @@ export async function GET(request: Request) {
       courses: [toPublicCourse(course)],
       eligibility,
       session: publicSessionView(
-        session?.providerSlug === providerSlug ? session : null,
+        resolveReusableSession(session, providerSlug, courseSlug),
       ),
     });
   }
@@ -137,7 +139,7 @@ export async function GET(request: Request) {
   const overlayTenant = listed.tenant;
 
   const session = await readNzSession();
-  const mismatch = assertSessionTenant(session, providerSlug, courseSlug || undefined);
+  const mismatch = assertSessionTenant(session, providerSlug);
   if (mismatch) {
     return mismatch;
   }
@@ -156,7 +158,11 @@ export async function GET(request: Request) {
     courses: courses.map((item) => toPublicCourse(item!)),
     eligibility,
     session: publicSessionView(
-      session?.providerSlug === providerSlug ? session : null,
+      courseSlug
+        ? resolveReusableSession(session, providerSlug, courseSlug)
+        : sessionAppliesToCourse(session, providerSlug)
+          ? session
+          : null,
     ),
   });
 }
@@ -197,10 +203,11 @@ export async function POST(request: Request) {
   const course = resolved.course;
   const overlayTenant = resolved.tenant;
   const existing = await readNzSession();
-  const mismatch = assertSessionTenant(existing, providerSlug, courseSlug);
+  const mismatch = assertSessionTenant(existing, providerSlug);
   if (mismatch) {
     return mismatch;
   }
+  const reusable = resolveReusableSession(existing, providerSlug, courseSlug);
 
   const key = requireTenantKey(tenant);
   if (key.error || !key.apiKey) {
@@ -229,15 +236,12 @@ export async function POST(request: Request) {
     });
   }
 
-  const providerOrderId = shouldReuseProviderOrderId({
-    sessionProviderSlug: existing?.providerSlug,
-    sessionCourseSlug: existing?.courseSlug,
+  const providerOrderId = resolveHostedCreateProviderOrderId({
+    session: reusable,
     providerSlug,
     courseSlug,
-    sessionProviderOrderId: existing?.providerOrderId,
-  })
-    ? existing!.providerOrderId
-    : body.providerOrderId?.trim() || hostedOrderId(tenant);
+    fallbackOrderId: hostedOrderId(tenant),
+  });
 
   const origin = publicBaseUrl(request);
   const returnPath = `/enrol/${tenant.slug}/${course.slug}`;
