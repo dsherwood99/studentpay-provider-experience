@@ -9,6 +9,10 @@ This document covers the product boundary, architecture, tenant/course
 configuration, security, sandbox certification, and production enablement.
 It does not authorise Production activation.
 
+Provider commercial terms, payer treatment, and the inactive Bela agreement
+skeleton are documented in `docs/provider-terms-architecture/`. That pack does
+not activate a Provider Student Agreement.
+
 ---
 
 ## Product boundary
@@ -245,6 +249,7 @@ Dedicated NZ Enrolment Checkout (intended Production host `enrol.studentpay.co.n
 | `NZ_STUDENTPAY_API_BASE_URL` | Sandbox: `https://sandbox-api.studentpay.co.nz`. Production: `https://api.studentpay.co.nz` | Production + sandbox URL or missing → 503 |
 | `NZ_ENROLMENT_SESSION_SECRET` | HttpOnly session HMAC | Production missing/short → 503; no dev fallback |
 | `PROVIDER_API_KEY_OLI_NZ` | Server-side provider key | Create/confirm 503 |
+| `NZ_HOSTED_TENANT_SLUG` | Optional dedicated tenant slug. Unset keeps the current shared default. When set, only that slug resolves and `/` redirects there | Unknown slug on an NZ host → home 404, no other provider |
 
 Bela Production (`STUDENTPAY_PROVIDER_CODE=BELA`) and Academy (`ACADEMYAU`) are not NZ hosted product deployments. NZ routes must not render there.
 

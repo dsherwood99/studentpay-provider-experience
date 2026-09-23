@@ -3,7 +3,10 @@ import { Caveat, Inter, Montserrat, Plus_Jakarta_Sans, Poppins } from "next/font
 import { PlatformFooter } from "@/components/layout/PlatformFooter";
 import { PlatformHeader } from "@/components/layout/PlatformHeader";
 import { isNzEnrolmentProductAvailable } from "@/lib/nz-enrolment/environment";
-import { listActiveNzTenants } from "@/lib/nz-enrolment/tenants";
+import {
+  getDefaultProductionNzTenantSlug,
+  listActiveNzTenants,
+} from "@/lib/nz-enrolment/tenants";
 import { getPlatformBrand } from "@/lib/provider-experience/branding";
 import "./globals.css";
 import "../styles/studentpay-platform.css";
@@ -42,7 +45,9 @@ export function generateMetadata(): Metadata {
   const brand = getPlatformBrand();
 
   if (isNzEnrolmentProductAvailable()) {
-    const tenant = listActiveNzTenants().find((item) => !item.sandboxOnly);
+    const tenants = listActiveNzTenants();
+    const defaultSlug = getDefaultProductionNzTenantSlug(tenants);
+    const tenant = tenants.find((item) => item.slug === defaultSlug);
     if (tenant) {
       return {
         title: {

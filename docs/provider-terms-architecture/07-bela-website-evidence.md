@@ -1,0 +1,30 @@
+# 7. Bela website evidence and conflicts
+
+Checked 23 September 2026 against the live site. Statements are paraphrased. Conflicts are recorded and not resolved. Website prices are not the StudentPay course authority.
+
+| Source | URL | Subject | What it says | NZ relevance | Consistency | Safe as structured data | Provider approval |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Terms of service | https://belabeautycollege.com/policies/terms-of-service | Deemed acceptance | Terms are assumed accepted unless the student says otherwise within 24 hours of enrolment | Applies if this page is the NZ contract. The page is not labelled NZ-only | Conflicts with the 3-day cooling-off section on the same page | No | Yes |
+| Terms of service | same | Cooling-off | Course access is a one-time purchase, including when financed. Cancel and full refund inside 3 days / 72 hours from consultant confirmation. After that, final and non-refundable | NZ students can open this page | Conflicts with FAQ “cancel anytime” and with the self-enrolment exclusion | No | Yes |
+| Terms of service | same | Cooling-off waiver | Cooling-off ends if the student waives it, or if more than half of a single course has been viewed | Same | Narrows the 3-day right | No | Yes |
+| Terms of service | same | Self-enrolment | Self-enrolments have no cooling-off and cannot be cancelled | Hosted checkout is a form of self-service. Whether Bela treats it as “self-enrolment” is undecided | Conflicts with the general 3-day right | No | Yes |
+| Terms of service | same | Withdrawal notice | Withdrawal email address on the page is misspelled (`belabeauycollege.com`). Elsewhere the site uses `support@belabeautycollege.com` | Operational for NZ students | Unclear which address is intended | No. Support email already stored is the published `support@` address | Yes, for the notice address only |
+| Terms of service | same | Admin fee | An administration fee may be charged on a cooling-off withdrawal, depending on circumstances | Amount not stated | Unclear | No | Yes |
+| Terms of service | same | Arrears | Course access may be suspended until the plan is up to date | This is Bela’s access system, not a StudentPay field | Not contradicted on this page | No. Do not model as a StudentPay switch yet | Yes |
+| Terms of service | same | Collections | Bela says it may send an unpaid account to debt collection | Does not say StudentPay is authorised to do that | Separate from StudentPay collections authority | No | Yes |
+| Terms of service | same | Kit | Kit sends after cooling-off. Early send waives remaining cooling-off. Unused kit must be returned at the student’s cost. Kit is in the course cost. A free-kit promotion requires four successful payments | May apply to NZ if this page governs the enrolment | “Optional kit” on the product page is a different offer | No | Yes |
+| Terms of service | same | Currency | Prices on the page are Australian dollars and GST exclusive. Delivery text refers to Australia | Conflicts with an NZ StudentPay plan in NZD | Conflicting for NZ customers | No | Yes |
+| Refund policy | https://belabeautycollege.com/policies/refund-policy | Cooling-off | Repeats the 3-day, non-subscription, non-refundable-after-cooling-off position | Same as the terms page | Consistent with terms section 3, not with the FAQ | No | Yes |
+| LMS terms | https://courses.belabeautycollege.com/terms-and-conditions | Cooling-off, currency, suspension, collections | Same cooling-off, self-enrolment exclusion, AUD wording, access suspension, and debt-collection sentences. “Cancel anytime” does not appear | Course platform students, including possible NZ learners | Consistent with the Shopify terms page. Conflicts with the marketing FAQ | No | Yes |
+| Privacy policy | https://belabeautycollege.com/policies/privacy-policy | Privacy law | Refers to the Australian Privacy Principles | NZ customers also use the site | Unclear for NZ | URL itself is already stored. The legal basis is not | Yes, for NZ privacy wording |
+| Contact | https://belabeautycollege.com/pages/contact-us | NZ office | Newmarket address, phone shown as 9888 6459, email support@belabeautycollege.com | Direct NZ contact | Consistent with the approved +64 9 888 6459 and support email. Other countries’ numbers are also listed | Phone and email already stored. Do not import other countries’ numbers | Already approved for those two values |
+| Homepage | https://belabeautycollege.com/ | Access | “2-year access” | Global marketing, including NZ | Conflicts with lifetime-access claims | No | Yes |
+| FAQ | https://belabeautycollege.com/pages/faqs | Access | Lifetime access to course materials | Same site | Conflicts with 2-year claims | No | Yes |
+| FAQ | same | Marketing plan | “$22 per week — cancel anytime, no lock-in contracts” | Marketing, not a schedule | Conflicts with terms that refuse cancellation after cooling-off. $22 is not the StudentPay instalment | No | Yes |
+| Lash product | https://belabeautycollege.com/products/the-ultimate-lash-business-bundle | Access | Page says both “2 years Course Access” and “lifetime access” | NZ shoppers can view it | Conflicting on one page | No | Yes |
+| Lash product | same | Price | Shopify price $2,880 (compare-at $3,600). Weekly plan shown as $24.16 per week. Hero also says $22 per week. Kit described as optional | Public price is not the StudentPay Production price | Conflicts with StudentPay $2,800, $10 upfront, $15 weekly, 186 instalments | No. StudentPay price version remains the hosted authority | Yes, only if Bela wants the website offer instead. This run does not change Salesforce |
+| Older training page | https://belabeautycollege.com/product/eyelash-extensions-training-nz/ | Access | Lifetime access is advertised on an NZ training URL | NZ-labelled URL | Conflicts with 2-year claims. It is not the Lash Business Bundle Salesforce course | No | Yes |
+
+Pages that did not load: `/pages/faq` (404), `/pages/about` (503). They were not used as evidence.
+
+No page inspected here is a clean, single NZ enrolment contract that matches the StudentPay $2,800 schedule.
