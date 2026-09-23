@@ -97,3 +97,35 @@ export function publicSessionView(session: NzCheckoutSession | null) {
     paymentOption: session.paymentOption || session.plan?.paymentOption || null,
   };
 }
+
+export function sessionAppliesToCourse(
+  session: NzCheckoutSession | null,
+  providerSlug: string,
+  courseSlug?: string,
+): session is NzCheckoutSession {
+  if (!session) {
+    return false;
+  }
+  if (session.providerSlug !== providerSlug) {
+    return false;
+  }
+  if (courseSlug && session.courseSlug !== courseSlug) {
+    return false;
+  }
+  return true;
+}
+
+export function resolveReusableSession(
+  session: NzCheckoutSession | null,
+  providerSlug: string,
+  courseSlug: string,
+): NzCheckoutSession | null {
+  return sessionAppliesToCourse(session, providerSlug, courseSlug) ? session : null;
+}
+
+export function sessionProviderMismatch(
+  session: NzCheckoutSession | null,
+  providerSlug: string,
+): boolean {
+  return Boolean(session && session.providerSlug !== providerSlug);
+}

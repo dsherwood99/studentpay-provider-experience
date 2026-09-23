@@ -234,3 +234,27 @@ export function shouldReuseProviderOrderId(input: {
       input.sessionCourseSlug === input.courseSlug,
   );
 }
+
+export function resolveHostedCreateProviderOrderId(input: {
+  session?: {
+    providerSlug?: string | null;
+    courseSlug?: string | null;
+    providerOrderId?: string | null;
+  } | null;
+  providerSlug: string;
+  courseSlug: string;
+  fallbackOrderId: string;
+}): string {
+  if (
+    shouldReuseProviderOrderId({
+      sessionProviderSlug: input.session?.providerSlug,
+      sessionCourseSlug: input.session?.courseSlug,
+      providerSlug: input.providerSlug,
+      courseSlug: input.courseSlug,
+      sessionProviderOrderId: input.session?.providerOrderId,
+    })
+  ) {
+    return String(input.session?.providerOrderId);
+  }
+  return input.fallbackOrderId;
+}
