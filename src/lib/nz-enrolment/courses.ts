@@ -1,4 +1,9 @@
-import { allowSandboxFixtures, isInternalE13CanaryHostedEnabled } from "./environment.ts";
+import {
+  allowSandboxFixtures,
+  configuredNzHostedTenantSlug,
+  isInternalE13CanaryHostedEnabled,
+} from "./environment.ts";
+import { getNzTenantBySlug } from "./tenants.ts";
 import { courseEnrolmentPaymentOptions } from "./pay-in-full.ts";
 import oliProduction from "./catalogues/oli-production.json" with { type: "json" };
 import type {
@@ -72,10 +77,10 @@ const SANDBOX_FIXTURE_COURSES: readonly NzCourse[] = [
     providerSlug: "bela-nz",
     name: "Lash Business Bundle",
     description:
-      "StudentPay NZ sandbox course for Bela Beauty College hosted Pay in Full and payment-plan enrolment. Matches E3 catalogue BELA_LASH_BUSINESS_BUNDLE.",
+      "Lash Business Bundle — Bela Beauty College. Payment-plan course fee is the StudentPay financed amount. Hosted Pay in Full is disabled.",
     paymentPlanCourseFeeCents: 280_000,
     paymentInFullCourseFeeCents: 280_000,
-    enrolmentPaymentOptions: ["payment_plan", "pay_in_full"],
+    enrolmentPaymentOptions: ["payment_plan"],
     status: "active",
     sandboxOnly: true,
     duration: "Self-paced",
@@ -155,8 +160,18 @@ function courseVisible(course: NzCourse): boolean {
   if (course.internalCanary) {
     return isInternalE13CanaryHostedEnabled();
   }
+  const boundSlug = configuredNzHostedTenantSlug();
+  if (boundSlug && course.providerSlug !== boundSlug) {
+    return false;
+  }
   if (course.sandboxOnly) {
-    return allowSandboxFixtures();
+    if (allowSandboxFixtures()) {
+      return true;
+    }
+    if (boundSlug && course.providerSlug === boundSlug) {
+      return getNzTenantBySlug(boundSlug)?.sandboxOnly === true;
+    }
+    return false;
   }
   return true;
 }

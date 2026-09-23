@@ -21,6 +21,7 @@ const managed = [
   "ACADEMY_PROVIDER_CODE",
   "PROVIDER_API_KEY_OLI_NZ",
   "E13_INTERNAL_CANARY_HOSTED_ENABLED",
+  "NZ_HOSTED_TENANT_SLUG",
 ];
 
 const previous: Record<string, string | undefined> = {};
@@ -115,13 +116,27 @@ describe("NZ hosted product and environment isolation", () => {
     assert.equal(getNzCourse("fixture-institute", "example-certificate"), undefined);
   });
 
-  it("I2. Bela NZ hosted tenant is sandbox-only", () => {
+  it("I2. Bela NZ hosted tenant stays hidden on an unbound production host", () => {
     process.env.STUDENTPAY_ENV = "production";
     assert.equal(getNzTenantBySlug("bela-nz"), undefined);
     assert.equal(getNzCourse("bela-nz", "lash-business-bundle"), undefined);
     process.env.STUDENTPAY_ENV = "sandbox";
     assert.ok(getNzTenantBySlug("bela-nz"));
     assert.equal(getNzTenantBySlug("bela-nz")?.providerCode, "BELA_NZ");
+  });
+
+  it("I2b. a dedicated production host serves only the bound tenant", () => {
+    process.env.HOSTED_PRODUCT_MODE = "nz_enrolment";
+    process.env.STUDENTPAY_ENV = "production";
+    process.env.NZ_STUDENTPAY_API_BASE_URL = "https://api.studentpay.co.nz";
+    process.env.NZ_HOSTED_TENANT_SLUG = "bela-nz";
+
+    assert.equal(getNzTenantBySlug("bela-nz")?.providerCode, "BELA_NZ");
+    assert.equal(getNzCourse("bela-nz", "lash-business-bundle")?.courseCode, "BELA_LASH_BUSINESS_BUNDLE");
+    assert.equal(getNzTenantBySlug("oli"), undefined);
+    assert.equal(getNzCourse("oli", "certificate-in-psychology-counselling"), undefined);
+    assert.equal(getNzCourse("bela-nz", "certificate-in-psychology-counselling"), undefined);
+    assert.equal(getNzCoursesForProvider("oli").length, 0);
   });
 
   it("I3. internal E13 canary is Production-flagged and not the default tenant", () => {

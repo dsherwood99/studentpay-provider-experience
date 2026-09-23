@@ -33,6 +33,16 @@ export function getStudentpayEnv(): StudentpayEnv | null {
   return null;
 }
 
+/**
+ * Optional dedicated NZ Hosted deployment.
+ * Unset keeps the shared production default (first non-sandbox tenant).
+ * When set, only this tenant slug is visible on the deployment.
+ */
+export function configuredNzHostedTenantSlug(): string | null {
+  const value = process.env.NZ_HOSTED_TENANT_SLUG?.trim().toLowerCase() || "";
+  return value || null;
+}
+
 export function isProductionAppEnv(): boolean {
   return getStudentpayEnv() === "production";
 }

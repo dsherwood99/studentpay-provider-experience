@@ -1,5 +1,8 @@
 import oliWebsiteSlugs from "./catalogues/oli-website-slugs.json" with { type: "json" };
-import { isInternalE13CanaryHostedEnabled } from "./environment.ts";
+import {
+  configuredNzHostedTenantSlug,
+  isInternalE13CanaryHostedEnabled,
+} from "./environment.ts";
 import { defaultPresentation } from "./presentation.ts";
 import type { NzPublicTenant, NzTenant } from "./types.ts";
 
@@ -201,7 +204,7 @@ export const NZ_TENANTS: readonly NzTenant[] = [
     providerCode: "BELA_NZ",
     displayName: "Bela Beauty College",
     legalName: "Bela Beauty College",
-    supportEmail: "hello@belabeautycollege.com",
+    supportEmail: "support@belabeautycollege.com",
     privacyUrl: "https://belabeautycollege.com/policies/privacy-policy",
     termsUrl: "https://belabeautycollege.com/policies/terms-of-service",
     websiteUrl: "https://belabeautycollege.com",
@@ -233,7 +236,7 @@ export const NZ_TENANTS: readonly NzTenant[] = [
     checkout: {
       paymentOptions: {
         interest_free_payment_plan: { enabled: true },
-        pay_in_full: { enabled: true, comingSoon: false },
+        pay_in_full: { enabled: false, comingSoon: true },
       },
       availableFrequencies: ["Weekly"],
       defaultFrequency: "Weekly",
@@ -298,6 +301,16 @@ function tenantVisible(tenant: NzTenant): boolean {
   if (!tenant.active) {
     return false;
   }
+  const boundSlug = configuredNzHostedTenantSlug();
+  if (boundSlug) {
+    if (tenant.slug !== boundSlug) {
+      return false;
+    }
+    if (tenant.internalCanary) {
+      return isInternalE13CanaryHostedEnabled();
+    }
+    return true;
+  }
   if (tenant.internalCanary) {
     return isInternalE13CanaryHostedEnabled();
   }
@@ -328,6 +341,10 @@ export function listActiveNzTenants(): NzTenant[] {
 export function getDefaultProductionNzTenantSlug(
   tenants: readonly NzTenant[] = listActiveNzTenants(),
 ): string | undefined {
+  const boundSlug = configuredNzHostedTenantSlug();
+  if (boundSlug) {
+    return tenants.find((tenant) => tenant.slug === boundSlug)?.slug;
+  }
   return tenants.find(
     (tenant) => tenant.active && !tenant.sandboxOnly && !tenant.internalCanary,
   )?.slug;
