@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { formatNzdFromCents } from "@/lib/nz-enrolment/plan-math";
+import { formatNzdFromCents, describeDerivedWeeklyPlan } from "@/lib/nz-enrolment/plan-math";
 import { coursePath } from "@/lib/nz-enrolment/presentation";
 import type { NzPublicCourse, NzPublicTenant } from "@/lib/nz-enrolment/types";
 import { ProviderNativeHeader } from "@/components/nz-enrolment/ProviderNativeHeader";
@@ -39,10 +39,15 @@ export function NzCourseCatalogue({ tenant, courses }: Props) {
         If you arrived from a {tenant.displayName} course page, use that course’s enrolment
         link instead. This list is the fallback if you need to find a course here.
       </p>
+      {courses.some((course) => course.legalGateClosed) ? (
+        <p className={styles.catalogueLead}>
+          Payment plan amounts come from the provider catalogue. Enrolment stays closed
+          until the provider agreement is active.
+        </p>
+      ) : null}
       {courses.some((course) => course.catalogueOnly) ? (
         <p className={styles.catalogueLead}>
-          Published prices are the provider’s website prices. A StudentPay payment plan is
-          open only on courses that offer one here.
+          Courses without an open payment plan show the provider’s published price.
         </p>
       ) : null}
       <div className={styles.filters}>
@@ -70,18 +75,46 @@ export function NzCourseCatalogue({ tenant, courses }: Props) {
         {filtered.length === 0 ? (
           <li className={styles.empty}>No courses match that search.</li>
         ) : (
-          filtered.map((course) => (
+          filtered.map((course) => {
+            const described =
+              course.planPolicy.mode === "derived_regular"
+                ? describeDerivedWeeklyPlan({
+                    coursePriceCents: course.paymentPlanCourseFeeCents,
+                    upfrontAmountCents: course.planPolicy.upfrontAmountCents,
+                    regularInstalmentCents: course.planPolicy.regularInstalmentCents,
+                  })
+                : null;
+            const canStartPlan =
+              !course.catalogueOnly &&
+              !course.legalGateClosed &&
+              course.enrolmentPaymentOptions.includes("payment_plan");
+            return (
             <li key={course.slug}>
               <article className={styles.card}>
                 {course.category ? <p className={styles.category}>{course.category}</p> : null}
                 <h2>
-                  {course.catalogueOnly ? (
-                    <a href={coursePath(tenant, course)}>{course.name}</a>
-                  ) : (
-                    course.name
-                  )}
+                  <a href={coursePath(tenant, course)}>{course.name}</a>
                 </h2>
-                {course.catalogueOnly ? (
+                {described ? (
+                  <>
+                    <p className={styles.price}>
+                      Course fee{" "}
+                      <strong>{formatNzdFromCents(course.paymentPlanCourseFeeCents)}</strong>
+                    </p>
+                    <p className={styles.note}>{described.summary}</p>
+                    {canStartPlan ? (
+                      <a className={styles.enrol} href={coursePath(tenant, course)}>
+                        Start payment plan
+                      </a>
+                    ) : (
+                      <p className={styles.note}>
+                        {course.legalGateClosed
+                          ? "Enrolment is not open until the provider agreement is active."
+                          : "StudentPay payment plan is not open yet."}
+                      </p>
+                    )}
+                  </>
+                ) : (
                   <>
                     <p className={styles.price}>
                       Published price{" "}
@@ -92,21 +125,11 @@ export function NzCourseCatalogue({ tenant, courses }: Props) {
                       <a href={course.websiteUrl}>View on the provider website</a>
                     ) : null}
                   </>
-                ) : (
-                  <>
-                    <p className={styles.price}>
-                      Course fee{" "}
-                      <strong>{formatNzdFromCents(course.paymentPlanCourseFeeCents)}</strong>
-                    </p>
-                    <p className={styles.price}>Payment plan available</p>
-                    <a className={styles.enrol} href={coursePath(tenant, course)}>
-                      Start payment plan
-                    </a>
-                  </>
                 )}
               </article>
             </li>
-          ))
+            );
+          })
         )}
       </ul>
     </section>

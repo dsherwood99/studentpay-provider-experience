@@ -130,6 +130,7 @@ function asCourse(row: {
   catalogueOnly?: boolean;
   showWhenEnrolmentClosed?: boolean;
   websiteUrl?: string;
+  sortOrder?: number;
   sandboxOnly?: boolean;
   internalCanary?: boolean;
   sourceRow?: number;
@@ -151,6 +152,7 @@ function asCourse(row: {
     catalogueOnly: row.catalogueOnly,
     showWhenEnrolmentClosed: row.showWhenEnrolmentClosed,
     websiteUrl: row.websiteUrl,
+    sortOrder: row.sortOrder,
     sandboxOnly: row.sandboxOnly,
     internalCanary: row.internalCanary,
     sourceRow: row.sourceRow,
@@ -168,6 +170,7 @@ type BelaWebsiteRow = {
   category: string;
   publishedPriceCents: number;
   sourceUrl: string;
+  sortOrder: number;
   studentPaySlug?: string;
 };
 
@@ -187,7 +190,12 @@ function belaWebsiteCourses(): NzCourse[] {
   const rows = belaWebsiteCatalogue.courses as BelaWebsiteRow[];
   return rows.map((row) => {
     if (row.studentPaySlug === lash.slug) {
-      return lash;
+      return {
+        ...lash,
+        category: row.category,
+        sortOrder: row.sortOrder,
+        websiteUrl: row.sourceUrl,
+      };
     }
     return {
       courseCode: belaCourseCode(row.handle),
@@ -203,6 +211,7 @@ function belaWebsiteCourses(): NzCourse[] {
       status: "active" as const,
       catalogueOnly: true,
       sandboxOnly: true,
+      sortOrder: row.sortOrder,
       websiteUrl: row.sourceUrl,
       planPolicy: {
         mode: "derived_regular" as const,
@@ -293,6 +302,7 @@ export function toPublicCourse(course: NzCourse): NzPublicCourse {
     planDefaults,
     enrolmentPaymentOptions: courseEnrolmentPaymentOptions(course),
     catalogueOnly: course.catalogueOnly,
+    legalGateClosed: course.legalGateClosed,
     websiteUrl: course.websiteUrl,
     ...(course.providerStudentAgreement
       ? { providerStudentAgreement: course.providerStudentAgreement }

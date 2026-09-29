@@ -129,6 +129,92 @@ test("Salesforce authority keeps website courses listed without opening a plan",
   }
 });
 
+test("Salesforce plan economics override local prices and keep enrolment closed", async () => {
+  process.env.HOSTED_PRODUCT_MODE = "nz_enrolment";
+  process.env.STUDENTPAY_ENV = "sandbox";
+  process.env.NZ_STUDENTPAY_API_BASE_URL = "https://sandbox-api.studentpay.co.nz";
+  process.env.NZ_CATALOGUE_AUTHORITY_BELA_NZ = "salesforce";
+  process.env.PROVIDER_API_KEY_BELA_NZ = "test-key";
+
+  const tenant = getNzTenantBySlug("bela-nz")!;
+  const listed = await listAuthoritativeHostedCourses(tenant, async () => {
+    return new Response(
+      JSON.stringify({
+        courses: [
+          {
+            course_code: "BELA_LASH_BUSINESS_BUNDLE",
+            slug: "lash-business-bundle",
+            name: "Lash Business Bundle",
+            enrolment_payment_options: ["payment_plan"],
+            payment_in_full_course_fee_cents: 280_000,
+            payment_plan_course_fee_cents: 280_000,
+            frequency: "Weekly",
+            plan_mode: "derived_regular",
+            regular_instalment_cents: 1_500,
+            number_of_instalments: 186,
+            upfront_amount_cents: 1_000,
+          },
+          {
+            course_code: "BELA_MAKEUP_ARTISTRY_COURSE",
+            slug: "makeup-artistry-course",
+            name: "Makeup Artistry Course",
+            enrolment_payment_options: ["payment_plan", "pay_in_full"],
+            payment_in_full_course_fee_cents: 240_000,
+            payment_plan_course_fee_cents: 240_000,
+            frequency: "Weekly",
+            plan_mode: "derived_regular",
+            regular_instalment_cents: 2_000,
+            number_of_instalments: 120,
+            upfront_amount_cents: 1_000,
+          },
+        ],
+        provider_config: {
+          provider_code: "BELA_NZ",
+          brand_name: "Bela Beauty College",
+          support_email: "support@belabeautycollege.com",
+          support_phone: "+64 9 888 6459",
+          privacy_url: "https://belabeautycollege.com/policies/privacy-policy",
+          pay_in_full_enabled: false,
+        },
+      }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+  });
+  assert.equal(listed.status, "ok");
+  if (listed.status !== "ok") return;
+  const lash = listed.courses.find((course) => course.slug === "lash-business-bundle");
+  assert.equal(lash?.legalGateClosed, true);
+  assert.equal(lash?.catalogueOnly, undefined);
+  assert.equal(lash?.paymentPlanCourseFeeCents, 280_000);
+  assert.equal(lash?.planPolicy.mode, "derived_regular");
+  if (lash?.planPolicy.mode === "derived_regular") {
+    assert.equal(lash.planPolicy.regularInstalmentCents, 1_500);
+    assert.equal(lash.planPolicy.upfrontAmountCents, 1_000);
+  }
+  assert.deepEqual(courseEnrolmentPaymentOptions(lash!), []);
+
+  const makeup = listed.courses.find((course) => course.slug === "makeup-artistry-course");
+  assert.equal(makeup?.legalGateClosed, true);
+  assert.equal(makeup?.paymentPlanCourseFeeCents, 240_000);
+  if (makeup?.planPolicy.mode === "derived_regular") {
+    assert.equal(makeup.planPolicy.regularInstalmentCents, 2_000);
+  }
+  assert.equal(makeup?.enrolmentPaymentOptions?.includes("pay_in_full"), false);
+
+  const fullBeauty = listed.courses.find((course) => course.slug === "full-beauty-bundle");
+  assert.equal(fullBeauty?.catalogueOnly, true);
+  assert.equal(fullBeauty?.paymentPlanCourseFeeCents, 960_000);
+  assert.equal(listed.courses.length, 26);
+  assert.deepEqual(
+    listed.courses.map((course) => course.slug),
+    belaWebsite.courses.map((course) =>
+      "studentPaySlug" in course && course.studentPaySlug
+        ? course.studentPaySlug
+        : course.handle,
+    ),
+  );
+});
+
 test("a dedicated Bela host lists every website course with only the approved plan open", () => {
   process.env.HOSTED_PRODUCT_MODE = "nz_enrolment";
   process.env.STUDENTPAY_ENV = "production";

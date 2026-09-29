@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { CatalogueUnavailable } from "@/components/courses/CatalogueUnavailable";
 import { EnrolmentWizard } from "@/components/enrolment/EnrolmentWizard";
 import { NzCourseConfigurationUnavailable } from "@/components/nz-enrolment/CourseConfigurationUnavailable";
+import { NzCourseLegalGate } from "@/components/nz-enrolment/CourseLegalGate";
 import { NzCoursePlanNotOpen } from "@/components/nz-enrolment/CoursePlanNotOpen";
 import { NzCourseNotFound } from "@/components/nz-enrolment/CourseNotFound";
 import { NzEnrolmentCheckout } from "@/components/nz-enrolment/EnrolmentCheckout";
@@ -95,6 +96,14 @@ export default async function EnrolmentPage({
     }
     const nzCourse = resolved.course;
     const overlayTenant = resolved.tenant;
+    if (nzCourse.legalGateClosed) {
+      return (
+        <NzCourseLegalGate
+          tenant={toPublicTenant(overlayTenant)}
+          course={toPublicCourse(nzCourse)}
+        />
+      );
+    }
     if (nzCourse.catalogueOnly) {
       return (
         <NzCoursePlanNotOpen

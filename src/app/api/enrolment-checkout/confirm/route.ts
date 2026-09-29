@@ -59,6 +59,10 @@ export async function POST(request: Request) {
     return resolved.error || jsonError(404, "PROVIDER_NOT_FOUND");
   }
 
+  if (resolved.course?.legalGateClosed || resolved.course?.catalogueOnly) {
+    return jsonError(503, "COURSE_CONFIGURATION_UNAVAILABLE");
+  }
+
   const declarations = {
     payment_plan_accepted: Boolean(body.declarations?.payment_plan_accepted),
     information_confirmed: Boolean(body.declarations?.information_confirmed),

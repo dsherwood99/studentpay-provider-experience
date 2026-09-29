@@ -250,6 +250,37 @@ export function assertCanonicalInvariants(preview: NzPlanPreview): void {
   }
 }
 
+export function describeDerivedWeeklyPlan(input: {
+  coursePriceCents: number;
+  upfrontAmountCents: number;
+  regularInstalmentCents: number;
+}): {
+  preview: NzPlanPreview;
+  summary: string;
+} | null {
+  if (input.regularInstalmentCents <= 0) {
+    return null;
+  }
+  try {
+    const preview = derivePlanFromRegularInstalment({
+      coursePriceCents: input.coursePriceCents,
+      upfrontAmountCents: input.upfrontAmountCents,
+      regularInstalmentCents: input.regularInstalmentCents,
+      frequency: "Weekly",
+      firstPaymentDate: "2026-01-01",
+    });
+    const upfront = formatNzdFromCents(preview.upfrontAmountCents);
+    const regular = formatNzdFromCents(preview.regularInstalmentAmountCents);
+    const summary =
+      preview.finalInstalmentAmountCents == null
+        ? `${upfront} upfront, then ${regular} weekly for ${preview.numberOfInstalments} weeks`
+        : `${upfront} upfront, then ${regular} weekly, final payment ${formatNzdFromCents(preview.finalInstalmentAmountCents)}`;
+    return { preview, summary };
+  } catch {
+    return null;
+  }
+}
+
 export function formatNzdFromCents(cents: number): string {
   return new Intl.NumberFormat("en-NZ", {
     style: "currency",

@@ -15,10 +15,15 @@ not activate a Provider Student Agreement.
 
 The Bela course list includes the courses and bundles published at
 `https://belabeautycollege.com/collections/all-courses-bundles`, captured
-2026-09-29. Lash Business Bundle keeps the StudentPay plan of $2,800, $10
-upfront, and $15 weekly for 186 weeks. The other 25 products are listed with
-their published website prices, and a StudentPay payment plan is not open for
-them.
+2026-09-29. Salesforce Production is the payment-plan authority for the courses
+that fit the generic 400-instalment ceiling. Lash Business Bundle keeps
+$2,800, $10 upfront, and $15 weekly for 186 weeks. The other created courses
+use $10 upfront and $20 weekly, with an exact final instalment when the
+financed amount does not divide evenly. Full Beauty Bundle + Kits is listed
+from the website and has no Salesforce plan, because that plan would need 480
+weekly instalments. Enrolment stays closed while the Bela provider agreement
+is not Active. The authority table is in
+`docs/provider-terms-architecture/BELA_NZ_FULL_CATALOGUE.md`.
 
 ---
 

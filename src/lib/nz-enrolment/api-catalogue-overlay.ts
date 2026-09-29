@@ -346,8 +346,16 @@ function hostedCoursesFromCatalogue(
       parseHostedProviderStudentAgreement(apiCourse.provider_student_agreement) ||
       listAgreement;
     const course = hostedCourseFromApi(overlaidTenant, apiCourse, agreement);
-    if (!course || !course.providerStudentAgreement) {
+    if (!course) {
       logUnavailable("malformed", apiCourse.course_code);
+      continue;
+    }
+    if (!course.providerStudentAgreement) {
+      courses.push({
+        ...course,
+        legalGateClosed: true,
+        enrolmentPaymentOptions: [],
+      });
       continue;
     }
     courses.push(course);
@@ -367,6 +375,32 @@ function closedCatalogueListing(tenant: NzTenant, slug: string): NzCourse | null
     return { ...local, catalogueOnly: true };
   }
   return null;
+}
+
+function applyLocalPresentationOrder(
+  tenant: NzTenant,
+  courses: NzCourse[],
+): NzCourse[] {
+  const localBySlug = new Map(
+    getNzCoursesForProvider(tenant.slug).map((course) => [course.slug, course]),
+  );
+  const ordered = courses.map((course) => {
+    const presentation = localBySlug.get(course.slug);
+    if (!presentation) {
+      return course;
+    }
+    return {
+      ...course,
+      sortOrder: presentation.sortOrder ?? course.sortOrder,
+      websiteUrl: course.websiteUrl || presentation.websiteUrl,
+      category: course.category || presentation.category,
+    };
+  });
+  return ordered.sort((left, right) => {
+    const leftOrder = left.sortOrder ?? Number.MAX_SAFE_INTEGER;
+    const rightOrder = right.sortOrder ?? Number.MAX_SAFE_INTEGER;
+    return leftOrder - rightOrder;
+  });
 }
 
 function withClosedCatalogueListings(
@@ -446,7 +480,10 @@ export async function listAuthoritativeHostedCourses(
       logUnavailable("malformed");
       return { status: "unavailable", reason: "malformed" };
     }
-    const courses = withClosedCatalogueListings(mapped.tenant, mapped.courses);
+    const courses = applyLocalPresentationOrder(
+      mapped.tenant,
+      withClosedCatalogueListings(mapped.tenant, mapped.courses),
+    );
     if (courses.length === 0) {
       logUnavailable("malformed");
       return { status: "unavailable", reason: "malformed" };

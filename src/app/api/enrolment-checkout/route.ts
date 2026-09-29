@@ -201,6 +201,9 @@ export async function POST(request: Request) {
 
   const tenant = resolved.tenant;
   const course = resolved.course;
+  if (course.legalGateClosed) {
+    return jsonError(503, "COURSE_CONFIGURATION_UNAVAILABLE");
+  }
   if (course.catalogueOnly) {
     return jsonError(
       409,

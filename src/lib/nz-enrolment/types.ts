@@ -178,6 +178,13 @@ export type NzCourse = {
   /** Listed from the provider website. No StudentPay payment plan is open. */
   catalogueOnly?: boolean;
   /**
+   * Plan economics are known, but enrolment stays closed until an Active
+   * provider student agreement exists.
+   */
+  legalGateClosed?: boolean;
+  /** Presentation order from the provider catalogue. Not a price authority. */
+  sortOrder?: number;
+  /**
    * Keep the course on a Salesforce-authority list when that course is not
    * enrolable yet. The list copy does not open checkout.
    */
@@ -278,6 +285,7 @@ export type NzPublicCourse = {
   paymentInFullCourseFeeCents: number;
   enrolmentPaymentOptions: readonly NzEnrolmentPaymentOption[];
   catalogueOnly?: boolean;
+  legalGateClosed?: boolean;
   websiteUrl?: string;
   duration?: string;
   planPolicy: NzPlanPolicy;
