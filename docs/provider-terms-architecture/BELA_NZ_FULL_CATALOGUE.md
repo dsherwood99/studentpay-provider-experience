@@ -10,11 +10,11 @@ Salesforce is the payment-plan authority for the courses below. The website JSON
 
 ## Plan rule
 
-Other courses use integer cents: upfront $10.00, regular weekly $20.00, finance = course fee − $10.00. Full regular count is floor(finance / $20). A non-zero remainder becomes one final instalment smaller than $20. Number of instalments stored in Salesforce is the total, including that final instalment. Plan mode is Derived Regular. Pay in Full is false.
+Other courses use integer cents: upfront $10.00, regular weekly $20.00, finance = course fee − $10.00. Full regular count is floor(finance / regular weekly amount). A non-zero remainder becomes one final instalment smaller than that weekly amount. Number of instalments stored in Salesforce is the total, including that final instalment. Plan mode is Derived Regular. Pay in Full is false.
 
 Lash Business Bundle is the existing price version: $2,800, $10 upfront, $15 weekly, 186 instalments, no residual. The website product Lash Bundle + Kits at $2,880 is not a second course and is not the StudentPay fee.
 
-The generic recurring ceiling is 400 instalments. Full Beauty Bundle + Kits at $9,600 needs 480 instalments, so it was not created.
+The generic recurring ceiling stays 400 instalments. A $20 weekly plan for Full Beauty Bundle + Kits needs 480 instalments, so that default was not stored. David approved a course-specific Salesforce price of $25 weekly for that course only. That price version is data: 383 payments of $25 plus a $15 final payment, 384 recurring instalments in total, under the same 400 ceiling. Hosted code does not branch on the course name.
 
 ## Authority table
 
@@ -42,7 +42,7 @@ The generic recurring ceiling is 400 instalments. Full Beauty Bundle + Kits at $
 | 19 | Certificate in Body Waxing | certificate-in-body-waxing | BELA_CERTIFICATE_IN_BODY_WAXING | PC-000085 a0TRE00000w0b7t2AA | PCPV-000085 a0SRE00000Bcfwf2AB | 2026-09-29 | 2400.00 | 10.00 | 20.00 | 120 | 10.00 | PASS |
 | 20 | Russian Volume Lash Extension Course | russian-volume-lash-extension-course | BELA_RUSSIAN_VOLUME_LASH_EXTENSION_COURSE | PC-000086 a0TRE00000w0XsO2AU | PCPV-000086 a0SRE00000Bce2x2AB | 2026-09-29 | 1440.00 | 10.00 | 20.00 | 72 | 10.00 | PASS |
 | 21 | Bridal Freelancer Bundle + Kits | bridal-and-events-freelancer-program | BELA_BRIDAL_AND_EVENTS_FREELANCER_PROGRAM | PC-000087 a0TRE00000w0QCr2AM | PCPV-000087 a0SRE00000BcflO2AR | 2026-09-29 | 2800.00 | 10.00 | 20.00 | 140 | 10.00 | PASS |
-| 22 | Full Beauty Bundle + Kits | full-beauty-bundle | BELA_FULL_BEAUTY_BUNDLE | not created | not created | — | 9600.00 | 10.00 | 20.00 | 480 | 10.00 | BLOCKED over 400 |
+| 22 | Full Beauty Bundle + Kits | full-beauty-bundle | BELA_FULL_BEAUTY_BUNDLE | PC-000091 a0TRE00000w0XXb2AM | PCPV-000091 a0SRE00000BcjfJ2AR | 2026-09-29 | 9600.00 | 10.00 | 25.00 | 384 | 15.00 | PASS |
 | 23 | Beauty Therapist Bundle + Kits | certified-beauty-therapist-bundle | BELA_CERTIFIED_BEAUTY_THERAPIST_BUNDLE | PC-000088 a0TRE00000w0eaP2AQ | PCPV-000088 a0SRE00000BcfyH2AR | 2026-09-29 | 6800.00 | 10.00 | 20.00 | 340 | 10.00 | PASS |
 | 24 | Lash & Brow Bundle + Kits | the-brow-and-lash-ceo-bundle | BELA_THE_BROW_AND_LASH_CEO_BUNDLE | PC-000089 a0TRE00000vzy772AA | PCPV-000089 a0SRE00000Bcfzt2AB | 2026-09-29 | 4704.00 | 10.00 | 20.00 | 235 | 14.00 | PASS |
 | 25 | Nail Bundle | nail-bundle-kits-fblp | BELA_NAIL_BUNDLE_KITS_FBLP | PC-000090 a0TRE00000w0SmM2AU | PCPV-000090 a0SRE00000Bcg1V2AR | 2026-09-29 | 3080.00 | 10.00 | 20.00 | 154 | 10.00 | PASS |
@@ -75,7 +75,7 @@ Hosted slug equals Salesforce slug for every created course. No alternate slug w
 | certificate-in-body-waxing | certificate-in-body-waxing | Match |
 | russian-volume-lash-extension-course | russian-volume-lash-extension-course | Match |
 | bridal-and-events-freelancer-program | bridal-and-events-freelancer-program | Match |
-| full-beauty-bundle | — | Hosted listing only. Not created in Salesforce. |
+| full-beauty-bundle | full-beauty-bundle | Salesforce weekly amount is $25 because $20 weekly needs 480 instalments. Ceiling remains 400. |
 | certified-beauty-therapist-bundle | certified-beauty-therapist-bundle | Match |
 | the-brow-and-lash-ceo-bundle | the-brow-and-lash-ceo-bundle | Match |
 | nail-bundle-kits-fblp | nail-bundle-kits-fblp | Website title Nail Bundle. Distinct from Nail Bundle + Kits. |
@@ -88,7 +88,11 @@ The current Salesforce template object stores static HTML and has no course-amou
 
 ## API verification
 
-GET https://api.studentpay.co.nz/v1/providers/BELA_NZ/courses with the injected BELA_NZ credential returned HTTP 403 Invalid API key. The credential was not printed or rotated. The Production API catalogue was not verified in this run.
+`GET https://api.studentpay.co.nz/v1/providers/BELA_NZ/courses` is served. With no Authorization header the API returns 401 `MISSING_API_KEY`. `X-Api-Key` is ignored and returns the same 401. `Authorization: Bearer` is the header the route reads.
+
+The value currently injected as `PROVIDER_API_KEY_BELA_NZ` in this agent environment is an 8-character placeholder. It does not use the provider key format, and it has no leading or trailing whitespace. Production and sandbox both return 403 `INVALID_API_KEY` for that value. The same value is rejected on `POST /v1/provider-checkouts` and on the OLI catalogue route, so the catalogue check is the shared provider-key check rather than a Bela-only permission. PIC-00001 is Active, API enabled, environment Production, provider code BELA_NZ. Pay in Full on that PIC is false.
+
+The private NZ API repository is not visible to this credential, so the middleware source was not opened. No API code was changed. The existing BELA_NZ key was not rotated, revoked, or replaced. The live 26-course read-back is waiting on the existing Production secret being available to this environment. Vercel project `studentpay-nz-bela-enrolment` is the place that secret is already expected, under `PROVIDER_API_KEY_BELA_NZ`.
 
 ## Commercial terms
 

@@ -167,6 +167,19 @@ test("Salesforce plan economics override local prices and keep enrolment closed"
             number_of_instalments: 120,
             upfront_amount_cents: 1_000,
           },
+          {
+            course_code: "BELA_FULL_BEAUTY_BUNDLE",
+            slug: "full-beauty-bundle",
+            name: "Full Beauty Bundle + Kits",
+            enrolment_payment_options: ["payment_plan"],
+            payment_in_full_course_fee_cents: 960_000,
+            payment_plan_course_fee_cents: 960_000,
+            frequency: "Weekly",
+            plan_mode: "derived_regular",
+            regular_instalment_cents: 2_500,
+            number_of_instalments: 384,
+            upfront_amount_cents: 1_000,
+          },
         ],
         provider_config: {
           provider_code: "BELA_NZ",
@@ -202,8 +215,14 @@ test("Salesforce plan economics override local prices and keep enrolment closed"
   assert.equal(makeup?.enrolmentPaymentOptions?.includes("pay_in_full"), false);
 
   const fullBeauty = listed.courses.find((course) => course.slug === "full-beauty-bundle");
-  assert.equal(fullBeauty?.catalogueOnly, true);
+  assert.equal(fullBeauty?.legalGateClosed, true);
+  assert.equal(fullBeauty?.catalogueOnly, undefined);
   assert.equal(fullBeauty?.paymentPlanCourseFeeCents, 960_000);
+  if (fullBeauty?.planPolicy.mode === "derived_regular") {
+    assert.equal(fullBeauty.planPolicy.regularInstalmentCents, 2_500);
+    assert.equal(fullBeauty.planPolicy.upfrontAmountCents, 1_000);
+  }
+  assert.deepEqual(courseEnrolmentPaymentOptions(fullBeauty!), []);
   assert.equal(listed.courses.length, 26);
   assert.deepEqual(
     listed.courses.map((course) => course.slug),

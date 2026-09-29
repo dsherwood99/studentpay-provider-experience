@@ -1,34 +1,39 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import belaWebsite from "./catalogues/bela-website-courses.json" with { type: "json" };
+import { GENERIC_MAX_RECURRING_INSTALMENTS } from "./environment.ts";
 import { describeDerivedWeeklyPlan } from "./plan-math.ts";
 
-const MAX_INSTALMENTS = 400;
+const APPROVED_WEEKLY_CENTS: Record<string, number> = {
+  "lash-business-bundle": 1_500,
+  "full-beauty-bundle": 2_500,
+};
 
 test("Bela default weekly plans reconcile from catalogue prices", () => {
   assert.equal(belaWebsite.courses.length, 26);
+  assert.equal(GENERIC_MAX_RECURRING_INSTALMENTS, 400);
   const slugs = belaWebsite.courses.map(
     (course) => course.studentPaySlug || course.handle,
   );
   assert.equal(new Set(slugs).size, 26);
 
+  const defaultFullBeauty = describeDerivedWeeklyPlan({
+    coursePriceCents: 960_000,
+    upfrontAmountCents: 1_000,
+    regularInstalmentCents: 2_000,
+  });
+  assert.equal(defaultFullBeauty, null);
+
   for (const course of belaWebsite.courses) {
     const slug = course.studentPaySlug || course.handle;
     const lash = slug === "lash-business-bundle";
     const coursePriceCents = lash ? 280_000 : course.publishedPriceCents;
-    const regularInstalmentCents = lash ? 1_500 : 2_000;
+    const regularInstalmentCents = APPROVED_WEEKLY_CENTS[slug] ?? 2_000;
     const described = describeDerivedWeeklyPlan({
       coursePriceCents,
       upfrontAmountCents: 1_000,
       regularInstalmentCents,
     });
-
-    if (slug === "full-beauty-bundle") {
-      assert.equal(described, null);
-      const financed = coursePriceCents - 1_000;
-      assert.equal(Math.floor(financed / regularInstalmentCents) + 1, 480);
-      continue;
-    }
 
     assert.ok(described);
     const preview = described!.preview;
@@ -43,7 +48,7 @@ test("Bela default weekly plans reconcile from catalogue prices", () => {
           residual;
     assert.equal(preview.upfrontAmountCents + recurring, coursePriceCents);
     assert.notEqual(coursePriceCents, coursePriceCents + 6_000);
-    assert.ok(preview.numberOfInstalments <= MAX_INSTALMENTS);
+    assert.ok(preview.numberOfInstalments <= GENERIC_MAX_RECURRING_INSTALMENTS);
     if (residual == null) {
       assert.equal(
         preview.numberOfInstalments * preview.regularInstalmentAmountCents,
@@ -53,7 +58,7 @@ test("Bela default weekly plans reconcile from catalogue prices", () => {
       assert.ok(residual > 0);
       assert.ok(residual < preview.regularInstalmentAmountCents);
     }
-    if (!lash) {
+    if (!APPROVED_WEEKLY_CENTS[slug]) {
       assert.equal(preview.regularInstalmentAmountCents, 2_000);
       assert.equal(coursePriceCents, course.publishedPriceCents);
     }
@@ -84,12 +89,17 @@ test("Bela default weekly plans reconcile from catalogue prices", () => {
     "$10.00 upfront, then $20.00 weekly, final payment $10.00",
   );
 
-  const exact = describeDerivedWeeklyPlan({
-    coursePriceCents: 3_000,
+  const fullBeauty = describeDerivedWeeklyPlan({
+    coursePriceCents: 960_000,
     upfrontAmountCents: 1_000,
-    regularInstalmentCents: 2_000,
+    regularInstalmentCents: 2_500,
   });
-  assert.equal(exact?.preview.finalInstalmentAmountCents, null);
-  assert.equal(exact?.preview.numberOfInstalments, 1);
-  assert.equal(exact?.preview.upfrontAmountCents + 2_000, 3_000);
+  assert.equal(fullBeauty?.preview.numberOfInstalments, 384);
+  assert.equal(fullBeauty?.preview.fullRegularInstalmentCount, 383);
+  assert.equal(fullBeauty?.preview.finalInstalmentAmountCents, 1_500);
+  assert.equal(fullBeauty?.preview.amountToFinanceCents, 959_000);
+  assert.equal(
+    fullBeauty?.summary,
+    "$10.00 upfront, then $25.00 weekly, final payment $15.00",
+  );
 });
