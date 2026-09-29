@@ -175,6 +175,14 @@ export type NzCourse = {
    */
   enrolmentPaymentOptions?: readonly NzEnrolmentPaymentOption[];
   status: "active" | "inactive";
+  /** Listed from the provider website. No StudentPay payment plan is open. */
+  catalogueOnly?: boolean;
+  /**
+   * Keep the course on a Salesforce-authority list when that course is not
+   * enrolable yet. The list copy does not open checkout.
+   */
+  showWhenEnrolmentClosed?: boolean;
+  websiteUrl?: string;
   sandboxOnly?: boolean;
   internalCanary?: boolean;
   duration?: string;
@@ -269,6 +277,8 @@ export type NzPublicCourse = {
   paymentPlanCourseFeeCents: number;
   paymentInFullCourseFeeCents: number;
   enrolmentPaymentOptions: readonly NzEnrolmentPaymentOption[];
+  catalogueOnly?: boolean;
+  websiteUrl?: string;
   duration?: string;
   planPolicy: NzPlanPolicy;
   planDefaults: NzCoursePlanDefaults;

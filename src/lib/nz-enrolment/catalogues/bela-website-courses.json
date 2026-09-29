@@ -1,0 +1,241 @@
+{
+  "sourceCollectionUrl": "https://belabeautycollege.com/collections/all-courses-bundles",
+  "capturedOn": "2026-09-29",
+  "courses": [
+    {
+      "handle": "nail-technology-course",
+      "name": "Nail Technology Course",
+      "category": "Courses",
+      "publishedPriceCents": 192000,
+      "compareAtPriceCents": 240000,
+      "sourceUrl": "https://belabeautycollege.com/products/nail-technology-course",
+      "sortOrder": 0
+    },
+    {
+      "handle": "the-ultimate-lash-business-bundle",
+      "name": "Lash Bundle + Kits",
+      "category": "Bundle",
+      "publishedPriceCents": 288000,
+      "compareAtPriceCents": 360000,
+      "sourceUrl": "https://belabeautycollege.com/products/the-ultimate-lash-business-bundle",
+      "sortOrder": 1,
+      "studentPaySlug": "lash-business-bundle"
+    },
+    {
+      "handle": "advanced-nail-bundle",
+      "name": "Advanced Nail Bundle + Kits",
+      "category": "Bundle",
+      "publishedPriceCents": 392000,
+      "compareAtPriceCents": 490000,
+      "sourceUrl": "https://belabeautycollege.com/products/advanced-nail-bundle",
+      "sortOrder": 2
+    },
+    {
+      "handle": "makeup-artistry-course",
+      "name": "Makeup Artistry Course",
+      "category": "Courses",
+      "publishedPriceCents": 240000,
+      "compareAtPriceCents": 300000,
+      "sourceUrl": "https://belabeautycollege.com/products/makeup-artistry-course",
+      "sortOrder": 3
+    },
+    {
+      "handle": "nail-bundle",
+      "name": "Nail Bundle + Kits",
+      "category": "Bundle",
+      "publishedPriceCents": 308000,
+      "compareAtPriceCents": 385000,
+      "sourceUrl": "https://belabeautycollege.com/products/nail-bundle",
+      "sortOrder": 4
+    },
+    {
+      "handle": "hair-extension-course",
+      "name": "Hair Extension Course",
+      "category": "Courses",
+      "publishedPriceCents": 264000,
+      "compareAtPriceCents": 330000,
+      "sourceUrl": "https://belabeautycollege.com/products/hair-extension-course",
+      "sortOrder": 5
+    },
+    {
+      "handle": "the-hair-business-bundle",
+      "name": "Hair Bundle + Kits",
+      "category": "Bundle",
+      "publishedPriceCents": 470400,
+      "compareAtPriceCents": 588000,
+      "sourceUrl": "https://belabeautycollege.com/products/the-hair-business-bundle",
+      "sortOrder": 6
+    },
+    {
+      "handle": "brow-mastery",
+      "name": "Brow Mastery Course",
+      "category": "Courses",
+      "publishedPriceCents": 240000,
+      "compareAtPriceCents": 300000,
+      "sourceUrl": "https://belabeautycollege.com/products/brow-mastery",
+      "sortOrder": 7
+    },
+    {
+      "handle": "classic-hybrid-pre-made-volume-lash-course",
+      "name": "Classic, Hybrid and Pre-made Volume Lash Course",
+      "category": "Courses",
+      "publishedPriceCents": 144000,
+      "compareAtPriceCents": 180000,
+      "sourceUrl": "https://belabeautycollege.com/products/classic-hybrid-pre-made-volume-lash-course",
+      "sortOrder": 8
+    },
+    {
+      "handle": "nail-art-course",
+      "name": "Nail Art Course",
+      "category": "Courses",
+      "publishedPriceCents": 144000,
+      "compareAtPriceCents": 180000,
+      "sourceUrl": "https://belabeautycollege.com/products/nail-art-course",
+      "sortOrder": 9
+    },
+    {
+      "handle": "waxing-mastery-bundle",
+      "name": "Waxing Mastery Bundle + Kits",
+      "category": "Bundle",
+      "publishedPriceCents": 352000,
+      "compareAtPriceCents": 440000,
+      "sourceUrl": "https://belabeautycollege.com/products/waxing-mastery-bundle",
+      "sortOrder": 10
+    },
+    {
+      "handle": "manicure-and-pedicure-course",
+      "name": "Manicure and Pedicure Course",
+      "category": "Courses",
+      "publishedPriceCents": 144000,
+      "compareAtPriceCents": 180000,
+      "sourceUrl": "https://belabeautycollege.com/products/manicure-and-pedicure-course",
+      "sortOrder": 11
+    },
+    {
+      "handle": "professional-hair-styling-course",
+      "name": "Professional Hair Styling Course",
+      "category": "Courses",
+      "publishedPriceCents": 240000,
+      "compareAtPriceCents": 300000,
+      "sourceUrl": "https://belabeautycollege.com/products/professional-hair-styling-course",
+      "sortOrder": 12
+    },
+    {
+      "handle": "lash-lift-and-tint-course",
+      "name": "Lash Lift and Tint Course",
+      "category": "Courses",
+      "publishedPriceCents": 115200,
+      "compareAtPriceCents": 144000,
+      "sourceUrl": "https://belabeautycollege.com/products/lash-lift-and-tint-course",
+      "sortOrder": 13
+    },
+    {
+      "handle": "spray-tan-course",
+      "name": "Spray Tan Course",
+      "category": "Courses",
+      "publishedPriceCents": 176000,
+      "compareAtPriceCents": 220000,
+      "sourceUrl": "https://belabeautycollege.com/products/spray-tan-course",
+      "sortOrder": 14
+    },
+    {
+      "handle": "mega-volume-lash-extension-course",
+      "name": "Mega Volume Lash Extension Course",
+      "category": "Courses",
+      "publishedPriceCents": 120000,
+      "compareAtPriceCents": 96000,
+      "sourceUrl": "https://belabeautycollege.com/products/mega-volume-lash-extension-course",
+      "sortOrder": 15
+    },
+    {
+      "handle": "eyebrow-lamination-course",
+      "name": "Eyebrow Lamination Course",
+      "category": "Courses",
+      "publishedPriceCents": 144000,
+      "compareAtPriceCents": 180000,
+      "sourceUrl": "https://belabeautycollege.com/products/eyebrow-lamination-course",
+      "sortOrder": 16
+    },
+    {
+      "handle": "beauty-business-mastery-bbm",
+      "name": "Beauty Business Mastery: Scale to 10k Months",
+      "category": "Courses",
+      "publishedPriceCents": 9700,
+      "compareAtPriceCents": null,
+      "sourceUrl": "https://belabeautycollege.com/products/beauty-business-mastery-bbm",
+      "sortOrder": 17
+    },
+    {
+      "handle": "social-media-certificate",
+      "name": "GET MORE CLIENTS: Social Media Course",
+      "category": "Courses",
+      "publishedPriceCents": 29900,
+      "compareAtPriceCents": null,
+      "sourceUrl": "https://belabeautycollege.com/products/social-media-certificate",
+      "sortOrder": 18
+    },
+    {
+      "handle": "certificate-in-body-waxing",
+      "name": "Certificate in Body Waxing",
+      "category": "Courses",
+      "publishedPriceCents": 240000,
+      "compareAtPriceCents": 300000,
+      "sourceUrl": "https://belabeautycollege.com/products/certificate-in-body-waxing",
+      "sortOrder": 19
+    },
+    {
+      "handle": "russian-volume-lash-extension-course",
+      "name": "Russian Volume Lash Extension Course",
+      "category": "Courses",
+      "publishedPriceCents": 144000,
+      "compareAtPriceCents": 180000,
+      "sourceUrl": "https://belabeautycollege.com/products/russian-volume-lash-extension-course",
+      "sortOrder": 20
+    },
+    {
+      "handle": "bridal-and-events-freelancer-program",
+      "name": "Bridal Freelancer Bundle + Kits",
+      "category": "Bundle",
+      "publishedPriceCents": 280000,
+      "compareAtPriceCents": 350000,
+      "sourceUrl": "https://belabeautycollege.com/products/bridal-and-events-freelancer-program",
+      "sortOrder": 21
+    },
+    {
+      "handle": "full-beauty-bundle",
+      "name": "Full Beauty Bundle + Kits",
+      "category": "Bundle",
+      "publishedPriceCents": 960000,
+      "compareAtPriceCents": 1200000,
+      "sourceUrl": "https://belabeautycollege.com/products/full-beauty-bundle",
+      "sortOrder": 22
+    },
+    {
+      "handle": "certified-beauty-therapist-bundle",
+      "name": "Beauty Therapist Bundle + Kits",
+      "category": "Bundle",
+      "publishedPriceCents": 680000,
+      "compareAtPriceCents": 850000,
+      "sourceUrl": "https://belabeautycollege.com/products/certified-beauty-therapist-bundle",
+      "sortOrder": 23
+    },
+    {
+      "handle": "the-brow-and-lash-ceo-bundle",
+      "name": "Lash & Brow Bundle + Kits",
+      "category": "Bundle",
+      "publishedPriceCents": 470400,
+      "compareAtPriceCents": 588000,
+      "sourceUrl": "https://belabeautycollege.com/products/the-brow-and-lash-ceo-bundle",
+      "sortOrder": 24
+    },
+    {
+      "handle": "nail-bundle-kits-fblp",
+      "name": "Nail Bundle",
+      "category": "Bundle",
+      "publishedPriceCents": 308000,
+      "compareAtPriceCents": 385000,
+      "sourceUrl": "https://belabeautycollege.com/products/nail-bundle-kits-fblp",
+      "sortOrder": 25
+    }
+  ]
+}

@@ -33,6 +33,8 @@ const SAFE_MESSAGES: Record<string, string> = {
   SESSION_NOT_CONFIGURED: "This enrolment page is not configured yet. Please try again later.",
   COURSE_CONFIGURATION_UNAVAILABLE:
     "We’re unable to load the current enrolment options for this course. Please try again shortly.",
+  COURSE_NOT_OPEN:
+    "A StudentPay payment plan is not open for this course yet.",
 };
 
 export function hostedErrorMessage(

@@ -13,6 +13,13 @@ Provider commercial terms, payer treatment, and the inactive Bela agreement
 skeleton are documented in `docs/provider-terms-architecture/`. That pack does
 not activate a Provider Student Agreement.
 
+The Bela course list includes the courses and bundles published at
+`https://belabeautycollege.com/collections/all-courses-bundles`, captured
+2026-09-29. Lash Business Bundle keeps the StudentPay plan of $2,800, $10
+upfront, and $15 weekly for 186 weeks. The other 25 products are listed with
+their published website prices, and a StudentPay payment plan is not open for
+them.
+
 ---
 
 ## Product boundary

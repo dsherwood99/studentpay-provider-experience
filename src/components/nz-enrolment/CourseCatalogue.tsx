@@ -39,6 +39,12 @@ export function NzCourseCatalogue({ tenant, courses }: Props) {
         If you arrived from a {tenant.displayName} course page, use that course’s enrolment
         link instead. This list is the fallback if you need to find a course here.
       </p>
+      {courses.some((course) => course.catalogueOnly) ? (
+        <p className={styles.catalogueLead}>
+          Published prices are the provider’s website prices. A StudentPay payment plan is
+          open only on courses that offer one here.
+        </p>
+      ) : null}
       <div className={styles.filters}>
         <input
           type="search"
@@ -68,15 +74,36 @@ export function NzCourseCatalogue({ tenant, courses }: Props) {
             <li key={course.slug}>
               <article className={styles.card}>
                 {course.category ? <p className={styles.category}>{course.category}</p> : null}
-                <h2>{course.name}</h2>
-                <p className={styles.price}>
-                  Course fee{" "}
-                  <strong>{formatNzdFromCents(course.paymentPlanCourseFeeCents)}</strong>
-                </p>
-                <p className={styles.price}>Payment plan available</p>
-                <a className={styles.enrol} href={coursePath(tenant, course)}>
-                  Start payment plan
-                </a>
+                <h2>
+                  {course.catalogueOnly ? (
+                    <a href={coursePath(tenant, course)}>{course.name}</a>
+                  ) : (
+                    course.name
+                  )}
+                </h2>
+                {course.catalogueOnly ? (
+                  <>
+                    <p className={styles.price}>
+                      Published price{" "}
+                      <strong>{formatNzdFromCents(course.paymentPlanCourseFeeCents)}</strong>
+                    </p>
+                    <p className={styles.note}>StudentPay payment plan is not open yet.</p>
+                    {course.websiteUrl ? (
+                      <a href={course.websiteUrl}>View on the provider website</a>
+                    ) : null}
+                  </>
+                ) : (
+                  <>
+                    <p className={styles.price}>
+                      Course fee{" "}
+                      <strong>{formatNzdFromCents(course.paymentPlanCourseFeeCents)}</strong>
+                    </p>
+                    <p className={styles.price}>Payment plan available</p>
+                    <a className={styles.enrol} href={coursePath(tenant, course)}>
+                      Start payment plan
+                    </a>
+                  </>
+                )}
               </article>
             </li>
           ))

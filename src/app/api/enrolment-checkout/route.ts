@@ -201,6 +201,13 @@ export async function POST(request: Request) {
 
   const tenant = resolved.tenant;
   const course = resolved.course;
+  if (course.catalogueOnly) {
+    return jsonError(
+      409,
+      "COURSE_NOT_OPEN",
+      "A StudentPay payment plan is not open for this course.",
+    );
+  }
   const overlayTenant = resolved.tenant;
   const existing = await readNzSession();
   const mismatch = assertSessionTenant(existing, providerSlug);

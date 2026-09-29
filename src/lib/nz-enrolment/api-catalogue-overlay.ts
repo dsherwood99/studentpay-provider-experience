@@ -355,6 +355,40 @@ function hostedCoursesFromCatalogue(
   return { courses, tenant: overlaidTenant };
 }
 
+function closedCatalogueListing(tenant: NzTenant, slug: string): NzCourse | null {
+  const local = getNzCourse(tenant.slug, slug);
+  if (!local) {
+    return null;
+  }
+  if (local.catalogueOnly) {
+    return local;
+  }
+  if (local.showWhenEnrolmentClosed) {
+    return { ...local, catalogueOnly: true };
+  }
+  return null;
+}
+
+function withClosedCatalogueListings(
+  tenant: NzTenant,
+  enrolable: NzCourse[],
+): NzCourse[] {
+  const enrolableSlugs = new Set(enrolable.map((course) => course.slug));
+  const extras = getNzCoursesForProvider(tenant.slug).flatMap((course) => {
+    if (enrolableSlugs.has(course.slug)) {
+      return [];
+    }
+    if (course.catalogueOnly) {
+      return [course];
+    }
+    if (course.showWhenEnrolmentClosed) {
+      return [{ ...course, catalogueOnly: true }];
+    }
+    return [];
+  });
+  return [...enrolable, ...extras];
+}
+
 function salesforceAuthorityConfig(tenant: NzTenant):
   | { ok: true; url: string; apiKey: string }
   | { ok: false; reason: CatalogueUnavailableReason } {
@@ -408,16 +442,18 @@ export async function listAuthoritativeHostedCourses(
       return { status: "unavailable", reason: remote.reason };
     }
     const mapped = hostedCoursesFromCatalogue(tenant, remote.catalogue);
-    if (
-      !mapped ||
-      (mapped.courses.length === 0 && remote.catalogue.courses.length > 0)
-    ) {
+    if (!mapped) {
+      logUnavailable("malformed");
+      return { status: "unavailable", reason: "malformed" };
+    }
+    const courses = withClosedCatalogueListings(mapped.tenant, mapped.courses);
+    if (courses.length === 0) {
       logUnavailable("malformed");
       return { status: "unavailable", reason: "malformed" };
     }
     return {
       status: "ok",
-      courses: mapped.courses,
+      courses,
       tenant: mapped.tenant,
       source: "api",
     };
@@ -464,8 +500,17 @@ export async function resolveAuthoritativeHostedCourseBySlug(
       logUnavailable("malformed");
       return { status: "unavailable", reason: "malformed" };
     }
-    const match = mapped.courses.find((course) => course.slug === slug);
+    const match = mapped?.courses.find((course) => course.slug === slug);
     if (!match) {
+      const listing = closedCatalogueListing(tenant, slug);
+      if (listing && mapped) {
+        return {
+          status: "ok",
+          course: listing,
+          tenant: mapped.tenant,
+          source: "local",
+        };
+      }
       const raw = remote.catalogue.courses.find(
         (course) => String(course.slug || "").trim().toLowerCase() === slug,
       );

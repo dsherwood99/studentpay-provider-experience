@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { CatalogueUnavailable } from "@/components/courses/CatalogueUnavailable";
 import { EnrolmentWizard } from "@/components/enrolment/EnrolmentWizard";
 import { NzCourseConfigurationUnavailable } from "@/components/nz-enrolment/CourseConfigurationUnavailable";
+import { NzCoursePlanNotOpen } from "@/components/nz-enrolment/CoursePlanNotOpen";
 import { NzCourseNotFound } from "@/components/nz-enrolment/CourseNotFound";
 import { NzEnrolmentCheckout } from "@/components/nz-enrolment/EnrolmentCheckout";
 import { getCourseBySlug } from "@/config/courses";
@@ -94,6 +95,14 @@ export default async function EnrolmentPage({
     }
     const nzCourse = resolved.course;
     const overlayTenant = resolved.tenant;
+    if (nzCourse.catalogueOnly) {
+      return (
+        <NzCoursePlanNotOpen
+          tenant={toPublicTenant(overlayTenant)}
+          course={toPublicCourse(nzCourse)}
+        />
+      );
+    }
 
     const ddaReturn = dda === "return" || dda === "cancelled" ? dda : null;
     const eligibility = resolveHostedPayInFullEligibility({

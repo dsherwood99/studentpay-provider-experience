@@ -59,8 +59,11 @@ export function hostedStripePublishableKeyIsSafe(
 }
 
 export function courseEnrolmentPaymentOptions(
-  course: Pick<NzCourse, "enrolmentPaymentOptions">,
+  course: Pick<NzCourse, "enrolmentPaymentOptions" | "catalogueOnly">,
 ): readonly NzEnrolmentPaymentOption[] {
+  if (course.catalogueOnly) {
+    return [];
+  }
   if (course.enrolmentPaymentOptions && course.enrolmentPaymentOptions.length > 0) {
     return course.enrolmentPaymentOptions;
   }
@@ -80,7 +83,7 @@ export function providerAllowsPayInFull(tenant: NzTenant): boolean {
 
 export function resolveHostedPayInFullEligibility(input: {
   tenant: NzTenant;
-  course: Pick<NzCourse, "enrolmentPaymentOptions">;
+  course: Pick<NzCourse, "enrolmentPaymentOptions" | "catalogueOnly">;
 }): NzHostedEligibility & {
   providerEnabled: boolean;
   courseAllows: boolean;
