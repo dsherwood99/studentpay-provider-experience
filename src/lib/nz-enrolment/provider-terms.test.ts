@@ -50,9 +50,10 @@ test("Bela skeleton records decided policy and stays inactive", () => {
   assert.equal(draft.status, "DRAFT_NOT_ACTIVE");
   assert.equal(draft.activationPermitted, false);
   assert.equal(draft.availableForStudentAcceptance, false);
-  assert.equal(draft.salesforceStatus, "DoNotCreate");
+  assert.equal(draft.salesforceStatus, "Draft");
   assert.equal(draft.auStatutoryWordingIncluded, false);
-  assert.equal(draft.version, "nz-skeleton-2026-09-23-v2");
+  assert.equal(draft.version, "nz-provider-student-2026-09-30-v1");
+  assert.equal(draft.kitPolicy, "KIT_NOT_INCLUDED");
   assert.equal(planMathsHold(input.course), true);
   assert.match(draft.html, /Jessica Buff trading as Bela Beauty College/);
   assert.match(draft.html, /Cooling-off:<\/strong> 3 days/);
@@ -64,11 +65,14 @@ test("Bela skeleton records decided policy and stays inactive", () => {
   assert.match(draft.html, /last business day of the month/);
   assert.match(draft.html, /does not refer an account by itself/);
   assert.match(draft.html, /StudentPay does not automatically suspend course access/);
-  assert.match(draft.html, /\{\{UNRESOLVED:KIT\}\}/);
+  assert.match(draft.html, /Kit not included/);
   assert.match(draft.html, /NZ LEGAL \/ PROVIDER APPROVAL REQUIRED/);
-  assert.match(draft.html, /\$2800\.00/);
-  assert.match(draft.html, /\$10\.00/);
-  assert.match(draft.html, /\$2790\.00/);
+  assert.doesNotMatch(draft.html, /\$2800\.00/);
+  assert.match(draft.enrolmentSnapshotHtml, /\$2800\.00/);
+  assert.match(draft.enrolmentSnapshotHtml, /\$10\.00/);
+  assert.match(draft.enrolmentSnapshotHtml, /\$2790\.00/);
+  assert.match(draft.enrolmentSnapshotHtml, /Final instalment:<\/li>|Final instalment: None/);
+  assert.match(draft.enrolmentSnapshotHtml, /Final instalment: None/);
   assert.doesNotMatch(draft.html, /\$60\.00/);
   assert.doesNotMatch(draft.html, /\$5\.00/);
   assert.doesNotMatch(draft.html, /2\.9%/);
@@ -78,7 +82,9 @@ test("Bela skeleton records decided policy and stays inactive", () => {
   assert.doesNotMatch(draft.html, /lifetime access/i);
   assert.doesNotMatch(draft.html, /self-enrolments cannot/i);
   assert.doesNotMatch(draft.html, /National Credit/);
-  assert.ok(draft.unresolved.includes("KIT"));
+  assert.doesNotMatch(draft.html, /Australian Consumer Law/);
+  assert.doesNotMatch(draft.html, /Australian Privacy Principles/);
+  assert.ok(!draft.unresolved.includes("KIT"));
   assert.ok(draft.unresolved.includes("EFFECTIVE_DATE"));
   assert.ok(draft.unresolved.includes("RUNTIME_NOT_WIRED"));
   assert.ok(draft.unresolved.includes("NZ_LEGAL_REVIEW"));
@@ -141,6 +147,8 @@ test("provider commercial amounts do not become payer clauses", () => {
       transactionPercent: 2.9,
       chargingAuthorised: false,
     },
+    runtimeWired: false,
+    persistDraftRecord: false,
   };
   const draft = composeProviderTermsSkeleton(input);
   assert.deepEqual(draft.payerFeeClauses, []);
@@ -223,4 +231,79 @@ test("add-to-end does not create an automatic catch-up collection", () => {
     true,
   );
   assert.equal(specifiedCatchUpCreatesAutomaticCollection("unset"), false);
+});
+
+test("one provider template covers different Bela course economics", () => {
+  const base = belaNzSkeletonInput();
+  const courses = [
+    base.course,
+    {
+      courseCode: "BELA_FULL_BEAUTY_BUNDLE",
+      courseName: "Full Beauty Bundle + Kits",
+      courseFeeCents: 960_000,
+      upfrontCents: 1_000,
+      financedCents: 959_000,
+      frequency: "Weekly",
+      regularInstalmentCents: 2_500,
+      instalmentCount: 384,
+      residualCents: 1_500,
+      payInFullEnabled: false,
+    },
+    {
+      courseCode: "BELA_THE_HAIR_BUSINESS_BUNDLE",
+      courseName: "Hair Bundle + Kits",
+      courseFeeCents: 470_400,
+      upfrontCents: 1_000,
+      financedCents: 469_400,
+      frequency: "Weekly",
+      regularInstalmentCents: 2_000,
+      instalmentCount: 235,
+      residualCents: 1_400,
+      payInFullEnabled: false,
+    },
+    {
+      courseCode: "BELA_BEAUTY_BUSINESS_MASTERY_BBM",
+      courseName: "Beauty Business Mastery: Scale to 10k Months",
+      courseFeeCents: 9_700,
+      upfrontCents: 1_000,
+      financedCents: 8_700,
+      frequency: "Weekly",
+      regularInstalmentCents: 2_000,
+      instalmentCount: 5,
+      residualCents: 700,
+      payInFullEnabled: false,
+    },
+  ];
+  const drafts = courses.map((course) =>
+    composeProviderTermsSkeleton({ ...base, course }),
+  );
+  assert.equal(new Set(drafts.map((draft) => draft.contentHash)).size, 1);
+  assert.equal(new Set(drafts.map((draft) => draft.enrolmentSnapshotHash)).size, 4);
+  for (const draft of drafts) {
+    assert.equal(draft.kitPolicy, "KIT_NOT_INCLUDED");
+    assert.equal(draft.activationPermitted, false);
+    assert.doesNotMatch(draft.enrolmentSnapshotHtml, /\$60\.00|\$5\.00/);
+    assert.match(draft.enrolmentSnapshotHtml, /Kit not included/);
+  }
+  assert.match(drafts[1].enrolmentSnapshotHtml, /\$9600\.00/);
+  assert.match(drafts[1].enrolmentSnapshotHtml, /\$25\.00/);
+  assert.match(drafts[1].enrolmentSnapshotHtml, /Final instalment: \$15\.00/);
+  assert.match(drafts[2].enrolmentSnapshotHtml, /\$14\.00/);
+  assert.match(drafts[3].enrolmentSnapshotHtml, /\$97\.00/);
+  assert.match(drafts[3].enrolmentSnapshotHtml, /\$7\.00/);
+  assert.equal(drafts[0].html.includes("$2800.00"), false);
+  assert.equal(drafts[0].enrolmentSnapshotHtml.includes("$2800.00"), true);
+});
+
+test("a future kit value does not change course finance", () => {
+  const input = belaNzSkeletonInput();
+  const future = composeProviderTermsSkeleton({
+    ...input,
+    enrolment: { ...input.enrolment, kit: "KIT_UPFRONT_PAYMENT" },
+  });
+  assert.ok(future.unresolved.includes("FUTURE_KIT_TREATMENT_NOT_IMPLEMENTED"));
+  assert.equal(future.enrolmentSnapshotHtml.includes("$2800.00"), true);
+  assert.doesNotMatch(future.html, /kit price/i);
+  assert.equal(input.course.courseFeeCents, 280_000);
+  assert.equal(input.course.regularInstalmentCents, 1_500);
 });

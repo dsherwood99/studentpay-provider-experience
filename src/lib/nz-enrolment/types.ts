@@ -128,6 +128,11 @@ export type NzTenant = {
   privacyUrl: string;
   termsUrl: string;
   websiteUrl?: string;
+  /**
+   * Provider-agreement kit treatment. Absent means no kit disclosure and no
+   * kit charge. KIT_NOT_INCLUDED does not change course fees.
+   */
+  kitPolicy?: "KIT_NOT_INCLUDED" | "KIT_INCLUDED" | "KIT_UPFRONT_PAYMENT";
   branding: NzTenantBranding;
   presentation: NzTenantPresentation;
   checkout: NzTenantCheckoutConfig;
@@ -262,6 +267,7 @@ export type NzPublicTenant = {
   privacyUrl: string;
   termsUrl: string;
   websiteUrl?: string;
+  kitPolicy?: "KIT_NOT_INCLUDED" | "KIT_INCLUDED" | "KIT_UPFRONT_PAYMENT";
   branding: NzTenantBranding;
   presentation: NzTenantPresentation;
   checkout: {

@@ -9,7 +9,21 @@ import { createHash } from "node:crypto";
  */
 
 export const AGREEMENT_ACTIVATION_PERMITTED = false as const;
-export const CLAUSE_TEMPLATE_VERSION = "nz-skeleton-2026-09-23-v2" as const;
+export const CLAUSE_TEMPLATE_VERSION = "nz-provider-student-2026-09-30-v1" as const;
+
+/**
+ * Provider-agreement kit treatment. Only KIT_NOT_INCLUDED has wording.
+ * The other values exist so a later option can be added without redefining
+ * course tuition. They do not add a kit price or a kit schedule.
+ */
+export type KitPolicy =
+  | "unresolved"
+  | "KIT_NOT_INCLUDED"
+  | "KIT_INCLUDED"
+  | "KIT_UPFRONT_PAYMENT";
+
+export const KIT_NOT_INCLUDED_COPY =
+  "Kit not included. The StudentPay payment plan covers the course tuition fee from the selected price version only. It does not include any physical kit, equipment, materials, or other separately supplied goods. A course name that mentions a kit does not add that kit to this payment plan.";
 
 export type JurisdictionCode = "AU" | "NZ";
 
@@ -44,7 +58,7 @@ export type EnrolmentPolicy = {
     | "unset"
     | "remaining_fee_payable_subject_to_provider_terms_and_law";
   courseAccess: "unset" | "two_years";
-  kit: "unresolved";
+  kit: KitPolicy;
 };
 
 export type ProviderCommercialSchedule = {
@@ -86,13 +100,19 @@ export type ProviderTermsInput = {
   commercial: ProviderCommercialSchedule;
   /** This repository does not enforce payer treatment. */
   runtimeWired: false;
+  /**
+   * Authorises a Salesforce Draft row only. Never authorises Active.
+   * Omitted or false keeps the skeleton as a local document.
+   */
+  persistDraftRecord?: boolean;
 };
 
 export type DraftAgreement = {
   status: "DRAFT_NOT_ACTIVE";
   activationPermitted: false;
   availableForStudentAcceptance: false;
-  salesforceStatus: "DoNotCreate";
+  /** Draft may be stored. DoNotCreate stays local. Neither value is Active. */
+  salesforceStatus: "DoNotCreate" | "Draft";
   jurisdiction: JurisdictionCode;
   providerCode: string;
   version: typeof CLAUSE_TEMPLATE_VERSION;
@@ -100,7 +120,12 @@ export type DraftAgreement = {
   agreementKey: string;
   title: string;
   html: string;
+  /** Provider-template hash. Course economics are not part of this hash. */
   contentHash: string;
+  /** Accepted-agreement layer. Includes the selected course schedule. */
+  enrolmentSnapshotHtml: string;
+  enrolmentSnapshotHash: string;
+  kitPolicy: KitPolicy;
   unresolved: string[];
   payerFeeClauses: readonly string[];
   auStatutoryWordingIncluded: false;
@@ -163,13 +188,17 @@ export function payerFeeClauses(
 }
 
 export function planMathsHold(course: CoursePriceAuthority): boolean {
-  const residual = course.residualCents ?? 0;
+  const residual = course.residualCents;
+  const regular = course.regularInstalmentCents;
+  const recurring =
+    residual === null || residual === regular
+      ? course.instalmentCount * regular
+      : (course.instalmentCount - 1) * regular + residual;
   return (
-    course.upfrontCents +
-      course.instalmentCount * course.regularInstalmentCents +
-      residual ===
-      course.courseFeeCents &&
-    course.financedCents === course.courseFeeCents - course.upfrontCents
+    course.upfrontCents + recurring === course.courseFeeCents &&
+    course.financedCents === course.courseFeeCents - course.upfrontCents &&
+    course.instalmentCount > 0 &&
+    regular > 0
   );
 }
 
@@ -257,6 +286,12 @@ function unresolvedFor(input: ProviderTermsInput): string[] {
   if (!input.legalName) items.push("LEGAL_NAME");
   if (!input.effectiveDate) items.push("EFFECTIVE_DATE");
   if (input.enrolment.kit === "unresolved") items.push("KIT");
+  if (
+    input.enrolment.kit === "KIT_INCLUDED" ||
+    input.enrolment.kit === "KIT_UPFRONT_PAYMENT"
+  ) {
+    items.push("FUTURE_KIT_TREATMENT_NOT_IMPLEMENTED");
+  }
   if (input.enrolment.coolingOffDays === null) items.push("COOLING_OFF");
   if (input.enrolment.afterCoolingOff === "unset") items.push("AFTER_COOLING_OFF");
   if (input.enrolment.courseAccess === "unset") items.push("COURSE_ACCESS");
@@ -282,6 +317,12 @@ function unresolvedFor(input: ProviderTermsInput): string[] {
   return items;
 }
 
+function kitLine(kit: KitPolicy): string {
+  if (kit === "KIT_NOT_INCLUDED") return KIT_NOT_INCLUDED_COPY;
+  if (kit === "unresolved") return "{{UNRESOLVED:KIT}}";
+  return "FUTURE_KIT_TREATMENT_NOT_IMPLEMENTED. No kit amount is added to the course fee, upfront payment, instalments, or residual.";
+}
+
 function enrolmentLines(enrolment: EnrolmentPolicy): string {
   const cooling =
     enrolment.coolingOffDays === null
@@ -296,8 +337,24 @@ function enrolmentLines(enrolment: EnrolmentPolicy): string {
     `<li><strong>Cooling-off:</strong> ${escapeHtml(cooling)}</li>`,
     `<li><strong>After cooling-off:</strong> ${escapeHtml(after)}</li>`,
     `<li><strong>Course access:</strong> ${escapeHtml(access)}</li>`,
-    `<li><strong>Kit:</strong> {{UNRESOLVED:KIT}}</li>`,
+    `<li><strong>Kit:</strong> ${escapeHtml(kitLine(enrolment.kit))}</li>`,
   ].join("\n");
+}
+
+const COURSE_SCHEDULE_PLACEHOLDER = `<p data-course-schedule="provider-template">Selected course schedule: filled from the Active Salesforce price version when the student accepts, then sealed on that acceptance. This provider template does not fix a course fee.</p>`;
+
+function courseScheduleHtml(course: CoursePriceAuthority): string {
+  return `<ul data-course-schedule="enrolment-snapshot">
+<li>Course: ${escapeHtml(course.courseName)} (${escapeHtml(course.courseCode)})</li>
+<li>Course fee: ${money(course.courseFeeCents)}</li>
+<li>Payment-plan upfront: ${money(course.upfrontCents)}</li>
+<li>Amount financed: ${money(course.financedCents)}</li>
+<li>Frequency: ${escapeHtml(course.frequency)}</li>
+<li>Regular instalment: ${money(course.regularInstalmentCents)}</li>
+<li>Recurring instalments: ${course.instalmentCount}</li>
+<li>Final instalment: ${course.residualCents === null ? "None" : money(course.residualCents)}</li>
+<li>Pay in Full enabled: ${course.payInFullEnabled ? "Yes" : "No"}</li>
+</ul>`;
 }
 
 function payerLines(payer: PayerTreatmentSettings): string {
@@ -351,7 +408,7 @@ export function composeProviderTermsSkeleton(
 <html lang="en">
 <head><meta charset="utf-8"><title>${escapeHtml(title)}</title></head>
 <body>
-<article data-agreement-status="DRAFT_NOT_ACTIVE" data-student-acceptance="false" data-clause-template="${CLAUSE_TEMPLATE_VERSION}">
+<article data-agreement-status="DRAFT_NOT_ACTIVE" data-student-acceptance="false" data-clause-template="${CLAUSE_TEMPLATE_VERSION}" data-kit-policy="${escapeHtml(input.enrolment.kit)}">
 <h1>${escapeHtml(title)}</h1>
 <p><strong>DRAFT. NOT ACTIVE. REQUIRES PROVIDER / LEGAL APPROVAL.</strong></p>
 <p>NZ LEGAL / PROVIDER APPROVAL REQUIRED. This document fills version ${CLAUSE_TEMPLATE_VERSION}. It is a structured decision record, not approved legal wording, not legal advice, and not available for student acceptance. Australian statutory wording is not included.</p>
@@ -367,23 +424,23 @@ ${enrolmentLines(input.enrolment)}
 </ul>
 <h2>Part B — Payment-plan policy pending legal wording and runtime wiring</h2>
 <h3>Course price authority</h3>
-<ul>
-<li>Course: ${escapeHtml(course.courseName)} (${escapeHtml(course.courseCode)})</li>
-<li>Course fee: ${money(course.courseFeeCents)}</li>
-<li>Payment-plan upfront: ${money(course.upfrontCents)}</li>
-<li>Amount financed: ${money(course.financedCents)}</li>
-<li>Frequency: ${escapeHtml(course.frequency)}</li>
-<li>Regular instalment: ${money(course.regularInstalmentCents)}</li>
-<li>Recurring instalments: ${course.instalmentCount}</li>
-<li>Residual: ${course.residualCents === null ? "None" : money(course.residualCents)}</li>
-<li>Pay in Full enabled: ${course.payInFullEnabled ? "Yes" : "No"}</li>
-</ul>
-<p>These figures are course-price data. They are not an activated legal clause.</p>
+${COURSE_SCHEDULE_PLACEHOLDER}
+<p>These figures are course-price data from Salesforce. They are not an activated legal clause, and they are not copied into this provider template.</p>
 <h3>Payer treatment — draft, not activated</h3>
 <ul>
 ${payerLines(input.payer)}
 </ul>
 <p>Provider-to-StudentPay commercial fees are omitted from this student-facing skeleton. They are not payer charges. Establishment fees and monthly account fees are not shown here.</p>
+<h2>Roles</h2>
+<p>NZ LEGAL / PROVIDER APPROVAL REQUIRED.</p>
+<ul>
+<li>The education provider is ${escapeHtml(partyLine(input))}. StudentPay does not provide the course, set the provider's course fee, purchase the provider's debt, or prepay the provider.</li>
+<li>StudentPay administers the payment plan and collections on the provider's behalf. That covers payment processing, payment methods, payment status, and authorised arrears administration.</li>
+<li>The provider decides course delivery, enrolment, withdrawal, cancellation, refund or credit, whether the course fee remains payable, and course access, including any suspension. StudentPay does not automatically suspend course access because a payment fails.</li>
+<li>The payer keeps a valid payment method for the schedule taken from the selected price version.</li>
+<li>A payment the provider receives directly is notified to StudentPay so the payment plan can be updated.</li>
+<li>Where the provider's course or cancellation terms and this payment-plan document differ on whether a course fee remains payable, the provider's approved terms govern, subject to applicable law.</li>
+</ul>
 <p>Unresolved: ${escapeHtml(unresolved.join(", "))}.</p>
 <h2>Separate StudentPay documents</h2>
 <p>Payment Plan Agreement, Direct Debit Service Agreement, and StudentPay privacy terms are separate documents. They are not generated by this skeleton.</p>
@@ -392,11 +449,18 @@ ${payerLines(input.payer)}
 </html>
 `;
   const contentHash = createHash("sha256").update(html).digest("hex");
+  const enrolmentSnapshotHtml = html.replace(
+    COURSE_SCHEDULE_PLACEHOLDER,
+    courseScheduleHtml(course),
+  );
+  const enrolmentSnapshotHash = createHash("sha256")
+    .update(enrolmentSnapshotHtml)
+    .digest("hex");
   return {
     status: "DRAFT_NOT_ACTIVE",
     activationPermitted: AGREEMENT_ACTIVATION_PERMITTED,
     availableForStudentAcceptance: false,
-    salesforceStatus: "DoNotCreate",
+    salesforceStatus: input.persistDraftRecord === true ? "Draft" : "DoNotCreate",
     jurisdiction: input.jurisdiction,
     providerCode: input.providerCode,
     version: CLAUSE_TEMPLATE_VERSION,
@@ -405,6 +469,9 @@ ${payerLines(input.payer)}
     title,
     html,
     contentHash,
+    enrolmentSnapshotHtml,
+    enrolmentSnapshotHash,
+    kitPolicy: input.enrolment.kit,
     unresolved,
     payerFeeClauses: fees,
     auStatutoryWordingIncluded: false,

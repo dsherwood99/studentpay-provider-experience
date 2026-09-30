@@ -8,7 +8,7 @@ This date is catalogue authority only. It does not activate the provider agreeme
 
 Salesforce is the payment-plan authority for the courses below. The website JSON keeps presentation order, names, and published selling prices. It does not store a second copy of upfront, weekly amount, instalment count, or residual for the Salesforce courses.
 
-Production API read-back on 30 September 2026 did not certify this table. `GET /v1/providers/BELA_NZ/courses` returned 403 `INVALID_API_KEY`. See API verification below.
+The authoritative Production certification is the post-promotion read in “Final Production certification”: HTTP 200, request id `req_00f6962c18b7ed0e3a7156c2`, 26 courses, Salesforce reconciliation pass.
 
 ## Plan rule
 
@@ -90,36 +90,11 @@ The current Salesforce template object stores static HTML and has no course-amou
 
 ## API verification
 
-`GET https://api.studentpay.co.nz/v1/providers/BELA_NZ/courses` is served. With no Authorization header the API returns 401 `MISSING_API_KEY`. `X-Api-Key` is ignored and returns the same 401. `Authorization: Bearer` is the header the route reads. Authentication is an exact string match against the provider keys configured on that deployment. A missing bearer token is 401. A bearer token that matches none of those keys is 403 `INVALID_API_KEY`.
+The certified Production result is in “Final Production certification” below. Earlier credential troubleshooting is not that result and is not repeated here.
 
-### Production API certification — 30 September 2026
+`GET https://api.studentpay.co.nz/v1/providers/BELA_NZ/courses` requires `Authorization: Bearer`. A missing bearer is 401. The certified call returned HTTP 200.
 
-Read-only. No write endpoint was called. The existing BELA_NZ key was not rotated, revoked, or replaced. No enrolment, DDA, Billing Request, mandate, Payment Attempt, or payment was created.
-
-| Check | Result |
-| --- | --- |
-| `PROVIDER_API_KEY_BELA_NZ` present in this agent environment | Yes |
-| Still the previous 8-character placeholder | No |
-| Leading or trailing whitespace, wrapping quotes, or newline | No |
-| Production `GET /v1/providers/BELA_NZ/courses` | **403** `INVALID_API_KEY` |
-| Production request id | `req_68383dfe9d52727179daf27f` |
-| Sandbox `GET /v1/providers/BELA_NZ/courses` with the same bearer token | **403** `INVALID_API_KEY` |
-| Sandbox request id | `req_ea5fb47162cb91cc29af0de7` |
-| Production `GET /v1/environment` | **200**. `environment=production`. `ready_for_api_calls=true`. Configured provider key names: `BELA_NZ`, `OLI_NZ`, `STUDENTPAY_INTERNAL_E13_CANARY`. |
-| Course count returned | None |
-| Plan reconciliation | Not run. There was no course payload. |
-
-The value now stored for `PROVIDER_API_KEY_BELA_NZ` is not the old placeholder, and it is not empty. It still does not match a key configured on Production or sandbox. It contains semicolon characters and a closing parenthesis. The catalogue route does not strip those characters; they are part of the string it compares. That is a property of the secret in this environment, not a Bela catalogue defect.
-
-The same environment’s `PROVIDER_API_KEY_OLI_NZ` is also rejected by `GET /v1/providers/OLI_NZ/courses` with 403 `INVALID_API_KEY` (`req_3c449d371582fb454c04b3a2`). Production reports an OLI_NZ key as configured. The agent copies of these provider keys are not the keys the Production API is comparing against. No Production auth code was changed. A generic auth defect was not shown: the public environment endpoint is healthy, and 403 is the expected result when the bearer string is not one of the configured keys.
-
-Vercel project env values were not compared. The Vercel token in this environment is not authorised for the `student-pay` team.
-
-Salesforce was not re-queried. The JWT material available here is not a usable RS256 private key, so no Production Salesforce read or write was attempted. PCT-00001 was not changed. The authority table above remains the Salesforce catalogue recorded on 29 September 2026. It is not a 30 September API read-back.
-
-Hosted code still takes plan amounts from the catalogue response. There is no Full Beauty pricing branch and no Lash plan-arithmetic branch. Until this GET returns 200, the hosted Production catalogue cannot be shown consuming the live API. Enrolment stays fail-closed while no Active BELA_NZ Provider Student Agreement exists. Agreement templates were not created or activated.
-
-Local regression on this branch, without calling Production: 265 hosted tests passed, typecheck passed, lint passed, production build passed. OLI’s 64 production courses remain the local OLI catalogue. No provider commercial fee was added to payer pricing.
+Hosted code takes plan amounts from the catalogue response. There is no Full Beauty pricing branch and no Lash plan-arithmetic branch. Enrolment stays fail-closed while no Active BELA_NZ Provider Student Agreement exists.
 
 ## Catalogue authority and enrolment eligibility
 

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { formatNzdFromCents, describeDerivedWeeklyPlan } from "@/lib/nz-enrolment/plan-math";
+import { kitDisclosureForPolicy } from "@/lib/nz-enrolment/kit-policy";
 import { coursePath } from "@/lib/nz-enrolment/presentation";
 import type { NzPublicCourse, NzPublicTenant } from "@/lib/nz-enrolment/types";
 import { ProviderNativeHeader } from "@/components/nz-enrolment/ProviderNativeHeader";
@@ -44,6 +45,9 @@ export function NzCourseCatalogue({ tenant, courses }: Props) {
           Payment plan amounts come from the provider catalogue. Enrolment stays closed
           until the provider agreement is active.
         </p>
+      ) : null}
+      {kitDisclosureForPolicy(tenant.kitPolicy) ? (
+        <p className={styles.catalogueLead}>{kitDisclosureForPolicy(tenant.kitPolicy)}</p>
       ) : null}
       {courses.some((course) => course.catalogueOnly) ? (
         <p className={styles.catalogueLead}>

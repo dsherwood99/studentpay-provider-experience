@@ -2,11 +2,11 @@
 <html lang="en">
 <head><meta charset="utf-8"><title>Bela Beauty College — Provider Student Payment Plan Terms (skeleton)</title></head>
 <body>
-<article data-agreement-status="DRAFT_NOT_ACTIVE" data-student-acceptance="false" data-clause-template="nz-skeleton-2026-09-23-v2">
+<article data-agreement-status="DRAFT_NOT_ACTIVE" data-student-acceptance="false" data-clause-template="nz-provider-student-2026-09-30-v1" data-kit-policy="KIT_NOT_INCLUDED">
 <h1>Bela Beauty College — Provider Student Payment Plan Terms (skeleton)</h1>
 <p><strong>DRAFT. NOT ACTIVE. REQUIRES PROVIDER / LEGAL APPROVAL.</strong></p>
-<p>NZ LEGAL / PROVIDER APPROVAL REQUIRED. This document fills version nz-skeleton-2026-09-23-v2. It is a structured decision record, not approved legal wording, not legal advice, and not available for student acceptance. Australian statutory wording is not included.</p>
-<p>Agreement key BELA_NZ|NZ|Provider_Student_Agreement|nz-skeleton-2026-09-23-v2. Provider code BELA_NZ. Jurisdiction NZ.</p>
+<p>NZ LEGAL / PROVIDER APPROVAL REQUIRED. This document fills version nz-provider-student-2026-09-30-v1. It is a structured decision record, not approved legal wording, not legal advice, and not available for student acceptance. Australian statutory wording is not included.</p>
+<p>Agreement key BELA_NZ|NZ|Provider_Student_Agreement|nz-provider-student-2026-09-30-v1. Provider code BELA_NZ. Jurisdiction NZ.</p>
 <p>Parties: Jessica Buff trading as Bela Beauty College.</p>
 <p>Effective date: {{UNRESOLVED:EFFECTIVE_DATE}}.</p>
 <p>Support: support@belabeautycollege.com / +64 9 888 6459.</p>
@@ -17,22 +17,12 @@
 <li><strong>Cooling-off:</strong> 3 days</li>
 <li><strong>After cooling-off:</strong> Remaining course fee continues to be payable, subject to the provider's approved cancellation and refund terms and applicable law</li>
 <li><strong>Course access:</strong> 2 years</li>
-<li><strong>Kit:</strong> {{UNRESOLVED:KIT}}</li>
+<li><strong>Kit:</strong> Kit not included. The StudentPay payment plan covers the course tuition fee from the selected price version only. It does not include any physical kit, equipment, materials, or other separately supplied goods. A course name that mentions a kit does not add that kit to this payment plan.</li>
 </ul>
 <h2>Part B — Payment-plan policy pending legal wording and runtime wiring</h2>
 <h3>Course price authority</h3>
-<ul>
-<li>Course: Lash Business Bundle (BELA_LASH_BUSINESS_BUNDLE)</li>
-<li>Course fee: $2800.00</li>
-<li>Payment-plan upfront: $10.00</li>
-<li>Amount financed: $2790.00</li>
-<li>Frequency: Weekly</li>
-<li>Regular instalment: $15.00</li>
-<li>Recurring instalments: 186</li>
-<li>Residual: None</li>
-<li>Pay in Full enabled: No</li>
-</ul>
-<p>These figures are course-price data. They are not an activated legal clause.</p>
+<p data-course-schedule="provider-template">Selected course schedule: filled from the Active Salesforce price version when the student accepts, then sealed on that acceptance. This provider template does not fix a course fee.</p>
+<p>These figures are course-price data from Salesforce. They are not an activated legal clause, and they are not copied into this provider template.</p>
 <h3>Payer treatment — draft, not activated</h3>
 <ul>
 <li><strong>Retry:</strong> Yes. Re-attempt an eligible failed payment after 4 days — AGREEMENT_ONLY_CONFIGURATION_NOT_SAFE</li>
@@ -43,7 +33,17 @@
 <li><strong>Course-access suspension:</strong> Provider-controlled. StudentPay does not automatically suspend course access — AGREEMENT_ONLY_CONFIGURATION_NOT_SAFE</li>
 </ul>
 <p>Provider-to-StudentPay commercial fees are omitted from this student-facing skeleton. They are not payer charges. Establishment fees and monthly account fees are not shown here.</p>
-<p>Unresolved: NZ_LEGAL_REVIEW, PROVIDER_APPROVAL, PART_A_LEGAL_WORDING, EFFECTIVE_DATE, KIT, CATCH_UP_VALUE_NOT_IN_SALESFORCE_PICKLIST, RUNTIME_NOT_WIRED, AU_DRAFT_NOT_APPROVED_FOR_NZ.</p>
+<h2>Roles</h2>
+<p>NZ LEGAL / PROVIDER APPROVAL REQUIRED.</p>
+<ul>
+<li>The education provider is Jessica Buff trading as Bela Beauty College. StudentPay does not provide the course, set the provider's course fee, purchase the provider's debt, or prepay the provider.</li>
+<li>StudentPay administers the payment plan and collections on the provider's behalf. That covers payment processing, payment methods, payment status, and authorised arrears administration.</li>
+<li>The provider decides course delivery, enrolment, withdrawal, cancellation, refund or credit, whether the course fee remains payable, and course access, including any suspension. StudentPay does not automatically suspend course access because a payment fails.</li>
+<li>The payer keeps a valid payment method for the schedule taken from the selected price version.</li>
+<li>A payment the provider receives directly is notified to StudentPay so the payment plan can be updated.</li>
+<li>Where the provider's course or cancellation terms and this payment-plan document differ on whether a course fee remains payable, the provider's approved terms govern, subject to applicable law.</li>
+</ul>
+<p>Unresolved: NZ_LEGAL_REVIEW, PROVIDER_APPROVAL, PART_A_LEGAL_WORDING, EFFECTIVE_DATE, CATCH_UP_VALUE_NOT_IN_SALESFORCE_PICKLIST, RUNTIME_NOT_WIRED, AU_DRAFT_NOT_APPROVED_FOR_NZ.</p>
 <h2>Separate StudentPay documents</h2>
 <p>Payment Plan Agreement, Direct Debit Service Agreement, and StudentPay privacy terms are separate documents. They are not generated by this skeleton.</p>
 </article>

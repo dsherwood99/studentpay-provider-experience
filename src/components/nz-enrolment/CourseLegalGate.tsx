@@ -1,5 +1,6 @@
 import { ProviderNativeHeader } from "@/components/nz-enrolment/ProviderNativeHeader";
 import { describeDerivedWeeklyPlan, formatNzdFromCents } from "@/lib/nz-enrolment/plan-math";
+import { kitDisclosureForPolicy } from "@/lib/nz-enrolment/kit-policy";
 import { cataloguePath } from "@/lib/nz-enrolment/presentation";
 import type { NzPublicCourse, NzPublicTenant } from "@/lib/nz-enrolment/types";
 import styles from "./provider-chrome.module.css";
@@ -29,6 +30,9 @@ export function NzCourseLegalGate({ tenant, course }: Props) {
           Course fee <strong>{formatNzdFromCents(course.paymentPlanCourseFeeCents)}</strong>
           {described ? `. ${described.summary}.` : "."}
         </p>
+        {kitDisclosureForPolicy(tenant.kitPolicy) ? (
+          <p className={styles.note}>{kitDisclosureForPolicy(tenant.kitPolicy)}</p>
+        ) : null}
         <p className={styles.note}>
           Enrolment is not open until the provider agreement is active.
         </p>

@@ -203,12 +203,13 @@ export const NZ_TENANTS: readonly NzTenant[] = [
     slug: "bela-nz",
     providerCode: "BELA_NZ",
     displayName: "Bela Beauty College",
-    legalName: "Bela Beauty College",
+    legalName: "Jessica Buff trading as Bela Beauty College",
     supportEmail: "support@belabeautycollege.com",
     supportPhone: "+64 9 888 6459",
     privacyUrl: "https://belabeautycollege.com/policies/privacy-policy",
     termsUrl: "https://belabeautycollege.com/policies/terms-of-service",
     websiteUrl: "https://belabeautycollege.com",
+    kitPolicy: "KIT_NOT_INCLUDED",
     branding: {
       logoPath: "",
       primaryColour: "#5A332B",
@@ -361,6 +362,7 @@ export function toPublicTenant(tenant: NzTenant): NzPublicTenant {
     privacyUrl: tenant.privacyUrl,
     termsUrl: tenant.termsUrl,
     websiteUrl: tenant.websiteUrl,
+    kitPolicy: tenant.kitPolicy,
     branding: tenant.branding,
     presentation: tenant.presentation,
     checkout: {

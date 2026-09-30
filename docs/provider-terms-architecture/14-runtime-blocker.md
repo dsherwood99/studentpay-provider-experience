@@ -24,7 +24,9 @@ Read-only class names, not modified:
 
 No Apex class name contains `LateFee`, `Retry`, or `PayerFee`. `Charge_Schedule__c.Retry_Eligible__c` remains a per-schedule flag, not the new 4-day provider policy.
 
-## Late-fee calendar gap
+## Recheck 30 September 2026
+
+Production was queried again. `ProviderNzBusinessDays` is present and its comment still says New Zealand public holidays are not skipped. `Holiday` has 0 rows. The Bela payer-treatment amounts remain in the Draft agreement text only. They are not a runtime record. PCT-00001 was read and left In Force / SHADOW / SHADOW.
 
 `ProviderNzBusinessDays` skips weekends. Its own comment states that New Zealand public holidays are not skipped. `Holiday` exists and contains 0 rows. A last-business-day-of-month assessment therefore cannot yet exclude public holidays. The monthly late-fee job must not be activated until that calendar is authoritative. The specification in this repo treats 60 days as not eligible and 61 days as eligible, and it is not a scheduler.
 
@@ -32,7 +34,7 @@ No Apex class name contains `LateFee`, `Retry`, or `PayerFee`. `Charge_Schedule_
 
 `BELA_PAYER_TREATMENT_RECORD = NOT_CREATED`
 
-There is no object to store a Draft row. The decided values live in the inactive hosted fixture and the draft skeleton only. They are not operational.
+There is still no `Provider_Payer_Treatment__c` row. The decided payer-treatment values are in the Draft provider student agreement PSAT-000002 and the hosted composer. They are not read by retry, fee, or late-fee jobs. The agreement Status is Draft, not Active.
 
 ## Commercial terms
 

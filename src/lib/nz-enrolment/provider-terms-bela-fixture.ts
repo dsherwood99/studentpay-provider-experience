@@ -3,7 +3,7 @@ import type { ProviderTermsInput } from "./provider-terms.ts";
 /**
  * Decided Bela NZ policy for the inactive skeleton only.
  * Not checkout configuration and not an Active Salesforce policy.
- * Kit and effective date stay unresolved. Provider commercial amounts are
+ * Kit treatment is KIT_NOT_INCLUDED. Effective date stays unresolved. Provider commercial amounts are
  * recorded here so tests can prove they are omitted from the student document.
  * The $0.40 + 2.9% shadow canary is not copied into this model.
  */
@@ -34,8 +34,8 @@ export function belaNzSkeletonInput(): ProviderTermsInput {
       coolingOffDays: 3,
       afterCoolingOff: "remaining_fee_payable_subject_to_provider_terms_and_law",
       courseAccess: "two_years",
-      kit: "unresolved",
-    },
+    kit: "KIT_NOT_INCLUDED",
+  },
     payer: {
       retryEnabled: true,
       retryDelayDays: 4,
@@ -57,8 +57,9 @@ export function belaNzSkeletonInput(): ProviderTermsInput {
       monthlyAccountBasis: "per_activated_account_month",
       transactionFixedCents: null,
       transactionPercent: null,
-      chargingAuthorised: false,
-    },
-    runtimeWired: false,
-  };
+    chargingAuthorised: false,
+  },
+  runtimeWired: false,
+  persistDraftRecord: true,
+};
 }

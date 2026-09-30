@@ -9,7 +9,7 @@ Updated 23 September 2026 with David’s decisions. The draft skeleton records d
 | 3 | Cooling-off | DECIDED | 3 days. |
 | 4 | After cooling-off | DECIDED | The remaining course fee continues to be payable, subject to Bela’s approved cancellation and refund terms and applicable law. |
 | 5 | Course access | DECIDED | 2 years. “Lifetime access” is not used. |
-| 6 | Kit | UNRESOLVED | Not decided. The skeleton keeps `{{UNRESOLVED:KIT}}`. |
+| 6 | Kit | DECIDED | `KIT_NOT_INCLUDED`. The StudentPay payment plan covers course tuition only. A course name that mentions a kit does not add a kit price. No kit upfront payment is implemented. |
 | 7 | Retry | DECIDED, runtime not activated | Yes. 4 days after an eligible failed payment. |
 | 8 | Catch-up | DECIDED, runtime not activated | No automatic catch-up. Add unresolved arrears to the end of the plan. Principal must stay exact. |
 | 9 | Failed-payment fee | DECIDED, runtime not activated | Yes. $2.50 per failed payment, payer charge, collected at the end of the plan. |
