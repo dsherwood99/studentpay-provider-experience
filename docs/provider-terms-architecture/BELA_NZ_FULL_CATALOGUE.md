@@ -121,6 +121,18 @@ Hosted code still takes plan amounts from the catalogue response. There is no Fu
 
 Local regression on this branch, without calling Production: 265 hosted tests passed, typecheck passed, lint passed, production build passed. OLI’s 64 production courses remain the local OLI catalogue. No provider commercial fee was added to payer pricing.
 
+## Catalogue authority and enrolment eligibility
+
+These are separate questions.
+
+Course catalogue authority answers which courses and payment plans the provider offers. It is `Provider_Integration_Config__c`, an Active `Provider_Course__c`, and one active effective price version. It does not require an Active Provider Student Agreement.
+
+Enrolment eligibility answers whether a student may start or confirm that plan. It requires the catalogue authority plus one in-force Active Provider Student Agreement. Checkout creation and confirmation fail closed without that agreement. The hosted page also keeps enrolment closed when the catalogue response has no agreement.
+
+On 30 September 2026 the live Production API still coupled those questions. With `NZ_CATALOGUE_AUTHORITY_BELA_NZ=salesforce` and zero Active BELA_NZ agreements, `GET /v1/providers/BELA_NZ/courses` returned **400** `VALIDATION_ERROR` / "Course catalogue could not be resolved" (`req_fbb32c1a801612e8c6f67b44`). `listAuthoritativeCourses` called `resolveProviderStudentAgreement`, received `zero_active_agreement`, and failed the whole list.
+
+The generic separation is in API PR #101 (`cursor/catalogue-agreement-separation-f200`). It is not yet the deployment serving `api.studentpay.co.nz`, so the 26-course Production read-back has not been certified. No Bela agreement was created or activated. No Production enrolment was created.
+
 ## Commercial terms
 
 PCT-00001 remains In_Force, calculation SHADOW, execution SHADOW, student fee NONE, fixed $0.40, percent 2.9%. This run did not read or write that record. The $60 establishment fee and $5 monthly account fee were not added to course prices. No opportunity was created on the Bela account on 29 September 2026, and none was created on 30 September 2026.
