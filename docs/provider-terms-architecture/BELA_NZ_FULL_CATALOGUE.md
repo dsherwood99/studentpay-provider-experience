@@ -131,9 +131,11 @@ Enrolment eligibility answers whether a student may start or confirm that plan. 
 
 On 30 September 2026 the live Production API still coupled those questions. With `NZ_CATALOGUE_AUTHORITY_BELA_NZ=salesforce` and zero Active BELA_NZ agreements, `GET /v1/providers/BELA_NZ/courses` returned **400** `VALIDATION_ERROR` / "Course catalogue could not be resolved" (`req_fbb32c1a801612e8c6f67b44`). `listAuthoritativeCourses` called `resolveProviderStudentAgreement`, received `zero_active_agreement`, and failed the whole list.
 
-The generic separation is in API PR #101 (`cursor/catalogue-agreement-separation-f200`), merged as `72b776c783b0806ae658cdd889462f7e66de7362`. The custom domain is still not serving that commit. The read-back below is the evidence. No Bela agreement was created or activated. No Production enrolment was created.
+The generic separation is in API PR #101 (`cursor/catalogue-agreement-separation-f200`), merged as `72b776c783b0806ae658cdd889462f7e66de7362`. After that deployment was promoted, the custom domain returned the 26-course catalogue. The pre-promote 400 and the final 200 are both recorded below. No Bela agreement was created or activated. No Production enrolment was created.
 
-## Production read-back after API PR #101
+## Production read-back before the Promote
+
+This section is the state before the manual Promote. The certified result is in “Final Production certification” below.
 
 API PR #101 merged at 2026-09-30T02:33:45Z. GitHub recorded a completed Vercel deployment of that commit on project `studentpay-nz-api` at 2026-09-30T02:37:13Z: https://vercel.com/student-pay/studentpay-nz-api/5zfrEWCjcCY14rr1uoPJeJxHQ8jU. This agent cannot read the `student-pay` Vercel team, so a completed build does not prove the custom-domain alias.
 
@@ -159,13 +161,41 @@ The merged `listAuthoritativeCourses` was then run read-only against Production 
 | Full Beauty Bundle + Kits | $9,600 / $10 upfront / $25 weekly / 384 / $15 final |
 | Other 24 | $10 upfront / $20 weekly / residual in the authority table |
 
-That is the HTTP 200 body the merged code produces for this Salesforce state. The live host still returns the pre-separation 400, which is what `listAuthoritativeCourses` did before PR #101 when the agreement resolver returned `zero_active_agreement`. `api.studentpay.co.nz` is not serving `72b776c783b0806ae658cdd889462f7e66de7362`.
+That is the HTTP 200 body the merged code produces for this Salesforce state. At the time of this read, the live host still returned the pre-separation 400, which is what `listAuthoritativeCourses` did before PR #101 when the agreement resolver returned `zero_active_agreement`. `api.studentpay.co.nz` was not yet serving `72b776c783b0806ae658cdd889462f7e66de7362`.
 
 Enrolment was not posted to Production. On the merged code, `applyAuthoritativeCatalogue` returns 400 `agreements.provider_student` / `zero_active_agreement` before checkout reaches Salesforce, and both payment-plan confirm and pay-in-full confirm call `snapshotProviderStudentAgreementAcceptance`, which fail-closes when Salesforce authority requires an agreement and none is in force. Local tests on the merged implementation `784bc628fd0435a3392cc0024a8c797a2f4bc9e1`: `tests/salesforce-catalogue-authority.test.mjs` 30 pass, `tests/oli-production-migration.test.mjs` plus `tests/provider-student-agreement.test.mjs` 24 pass, 0 fail. Production OLI JSON remains 64 courses. The OLI canary stays off that catalogue.
 
 No Bela agreement was activated. PR #28 was not merged. `studentpay-nz-bela-enrolment` was not deployed from this update.
 
-The next gate is blocked until the blue Production badge on `studentpay-nz-api` is the deployment of `72b776c783b0806ae658cdd889462f7e66de7362`, and a fresh read-only GET returns 200 with these 26 courses. Do not activate an agreement to clear the 400.
+That read was before the manual Promote. It is kept as the pre-promote record.
+
+## Final Production certification
+
+The staged `studentpay-nz-api` deployment of `72b776c783b0806ae658cdd889462f7e66de7362` was then manually Promoted. The proof that `api.studentpay.co.nz` is serving that code is the live response, not the earlier “Deployment has completed” status. At 2026-09-30T02:46:32Z this host still returned the pre-separation 400. The parent of `72b776c` cannot return a catalogue when the only agreement result is `zero_active_agreement`. `origin/main` is still exactly `72b776c`. Response headers do not carry a git SHA, and the Vercel team API is not available from this agent.
+
+At 2026-09-30T03:35:26Z `GET https://api.studentpay.co.nz/v1/providers/BELA_NZ/courses` returned **200**. Request id `req_00f6962c18b7ed0e3a7156c2`. `authority_mode=salesforce`, `source=salesforce`, `provider_code=BELA_NZ`, `count=26`. `provider_student_agreement` is absent. `provider_config.pay_in_full_enabled` is false. `GET /v1/environment` at 2026-09-30T03:35:03Z was **200**, `environment=production`, request id `req_c454dbba3089447ad6f6e0ad`.
+
+The same 26 public courses were compared, field by field, to a fresh read-only `listAuthoritativeCourses` against Production Salesforce. Mismatches: 0. The Salesforce list also matches the authority table above, including Salesforce course and price-version ids. Nothing was written to Salesforce.
+
+| Check | Result |
+| --- | --- |
+| Course count | 26 |
+| Payment plan | Enabled on all 26. `enrolment_payment_options` is `payment_plan` only |
+| Pay in Full | Disabled on all 26 |
+| Frequency | Weekly on all 26 |
+| Plan identity | `upfront + recurring = fee` in integer cents for all 26 |
+| Lash Business Bundle | 280000 / 1000 upfront / 1500 weekly / 186. Final cents equal the weekly amount, so there is no residual. `1000 + 186 × 1500 = 280000` |
+| Full Beauty Bundle + Kits | 960000 / 1000 upfront / 2500 weekly / 384. Final instalment 1500. `1000 + 383 × 2500 + 1500 = 960000` |
+| Other 24 | 1000 upfront, 2000 weekly, residual from the authority table |
+| Active agreements | 0. Resolver reason `zero_active_agreement` |
+| Catalogue without an agreement | Yes |
+| Enrolment | Not created. Create and confirm stay fail-closed in code and tests |
+
+Enrolment gating was not probed with a Production POST. `applyAuthoritativeCatalogue` returns 400 `agreements.provider_student` / `zero_active_agreement` before checkout reaches Salesforce. Payment-plan confirm and pay-in-full confirm call `snapshotProviderStudentAgreementAcceptance`, which fail-closes when Salesforce authority requires an agreement and none is in force. Re-run on the merged implementation: 54 tests passed, 0 failed, covering `tests/oli-production-migration.test.mjs`, `tests/provider-student-agreement.test.mjs`, and `tests/salesforce-catalogue-authority.test.mjs`. Production OLI JSON remains 64 courses.
+
+PR #28 was not merged. `studentpay-nz-bela-enrolment` was not deployed. No DDA, Billing Request, mandate, Payment Attempt, or payment was created. No Bela agreement was activated. PCT-00001 was not changed.
+
+The next gate is approval of a BELA_NZ Provider Student Agreement. Catalogue discovery is already available without one.
 
 ## Commercial terms
 
