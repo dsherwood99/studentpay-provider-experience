@@ -91,6 +91,7 @@ These settings live on `Provider_Integration_Config__c`. The Enabled checkbox is
 | `Late_Fee_Assessment__c` | `LAST_DAY_OF_MONTH` |
 | `External_Collections_Authorised__c` | true. Existing field. Authority only |
 | `Payer_Fee_Execution_Mode__c` | `SHADOW` |
+| `Payer_Fee_Effective_From__c` | blank. Blank is not effective |
 | `Kit_Policy__c` | `KIT_NOT_INCLUDED` |
 
 Removed from this launch and from the Bela draft: 4-day retry, no automatic catch-up, add arrears to the end of the plan, and an NZ public-holiday calendar. Existing generic retry and catch-up code was left as it was. `ProviderNzBusinessDays` was not changed.
@@ -99,32 +100,54 @@ The draft says a failed amount remains owing, states the $2.50 and $15 amounts f
 
 ## I. Runtime
 
-`ProviderPayerTreatment` evaluates the PIC policy and refuses to create a payer fee, a late fee, or an external referral. Calling the create method throws. Execution mode `LIVE` is reserved and is also refused. Bela is `SHADOW`.
+`ProviderPayerTreatment` reads the PIC policy. `createPayerFee` still throws and does not insert. `ProviderPayerFeeService` is the only writer. It posts only when the fee is enabled, execution is `LIVE`, and `Payer_Fee_Effective_From__c` is set and on or before the event. Bela is `SHADOW` with a blank effective date, so a production call would insert nothing. The webhook and the daily charge processor do not call the service. That invocation is an activation step, not part of this deploy.
 
-Failed-payment fee: one amount per qualifying failure id. A duplicate or replayed id does not add a second fee. A technical failure does not qualify. The fee is separate from provider commercial charges.
+Qualifying payer failure, from the existing GoCardless payment mapping: Outcome `Failed` and Status `Failed`, `charged_back`, or `customer_approval_denied`. The labels `Charged Back` and `Customer Approval Denied` are accepted if stored. Status `Cancelled` is not qualifying, including when Outcome is `Failed`. Internal, integration, webhook, and duplicate technical failures are not those statuses.
 
-Late fee: disabled, day 60, a closed plan, a non-month-end date, and a repeat of the same plan plus assessment month do not qualify. Day 61 on the last calendar day of February, a 30-day month, and a 31-day month does qualify in the calculation. No holiday calendar is used. The idempotency key is provider plan plus fee type plus assessment month.
+Failed-payment fee ledger: one `Charge_Schedule__c` of category `Dishonour Fee`, dated on the last non-cancelled Course Fee date, plus one statement `Account_Transaction__c` of type `Dishonour Fee` dated on the failure. `Auto_Collect__c` and `Retry_Eligible__c` are false, so the existing daily processor does not debit it. The course schedule amount is unchanged. `Opportunity.Amount` and Remaining Balance are unchanged. Not Yet Due includes the fee residual until that end date. Idempotency key: `FAILED_PAYMENT_FEE|{Payment Attempt Id}` on the schedule, and `Payment Attempt|{id}|Dishonour Fee` on the statement line.
 
-External collections: true means the provider authority is readable. It does not send an account anywhere. No collector integration was built.
+Late fee ledger: one `Charge_Schedule__c` and one statement line of type `Late Fee`, dated on the assessment date, same auto-collect stop. Idempotency key: `LATE_FEE|{plan Id}|YYYY-MM`. Day 60 does not qualify. Day 61 does, only on the last calendar day, only when Overdue Balance is greater than zero, and only while the plan is not Complete, Cancelled, or Paid in Full. A replay in the same month returns the existing row.
 
-Effective-date rule: a failed-payment fee applies only to a qualifying failure on or after an approved policy effective date. A late fee is assessed only while the PIC policy is effective and execution is live. This deployment did not charge historical failures.
+Reversal cancels the schedule, sets its balance to zero, marks the original statement line `Reversed`, and inserts a statement-visible `Reversal` credit. Rows are not deleted. A second reversal returns the existing credit.
+
+External collections: `External_Collections_Authorised__c` is readable. `automaticExternalReferral` returns false. No collector integration was built.
+
+`Payer_Fee_Effective_From__c` is the payer-fee authority. It is not the agreement Effective From. Blank means not effective, including if execution were set to `LIVE` by mistake. The historical Bela failure on 2026-09-07 is before any future approved date and is not charged.
 
 ## Shadow results
 
-Read on 30 September 2026. Nothing was inserted.
+Read again on 30 September 2026 after the fee-service deploy. Nothing was inserted.
 
 | Check | Result |
 | --- | --- |
-| Bela plans | 2 |
+| Bela plans | 2. One Payment Plan Signed, one Cancelled |
 | Open Bela plans | 1 |
-| Qualifying failed attempts | 1 attempt on 1 plan. Status Failed, outcome Failed |
+| Qualifying failed attempts | 1. Status Failed, outcome Failed, date 2026-09-07, amount $30 |
+| Open plan oldest overdue days | 47. Threshold is greater than 60 |
 | Hypothetical failed-payment fees | $2.50 |
-| Open plans more than 60 days overdue | 0 |
 | Hypothetical late fees | $0.00 |
-| Plans already in stage External Collections | 0 |
-| Fees or referrals created | 0 |
+| Dishonour Fee or Late Fee schedules on Bela or OLI plans | 0 |
+| Dishonour Fee or Late Fee statement lines on those plans | 0 |
+| Bela execution mode | SHADOW |
+| Bela payer-fee effective date | blank |
+| Plans in stage External Collections | 0 |
 
-The one failed attempt is historical relative to an unapproved effective date. It is not charged.
+The 2026-09-07 failure is before any approved `Payer_Fee_Effective_From__c`. A blank date blocks charging even if execution were later set to `LIVE` without a date. Do not charge that $2.50.
+
+## Agreement and runtime matrix
+
+| Agreement term | PIC authority | Runtime | Execution | Aligned |
+| --- | --- | --- | --- | --- |
+| $2.50 per qualifying failed payment | Enabled, $2.50 | Service posts one Dishonour Fee when LIVE and effective | SHADOW | Yes |
+| Qualifying failure only | Same classifier as the payment webhook | Cancelled and non-Failed outcomes post nothing | SHADOW | Yes |
+| Historical failure is not charged | Effective date blank | Event date must be on or after the PIC date | SHADOW | Yes |
+| Fee added to the account and collected at the end of the plan | No separate collection field. The amount is the authority | Statement debit on the failure date. Schedule dated to the last course fee. Auto-collect off | SHADOW | Partial. The debit is not originated. The v2 sentence does not itself say "end of the plan" |
+| $15 when more than 60 days in arrears | Enabled, $15, threshold 60 | Day 60 posts nothing. Day 61 can post | SHADOW | Yes |
+| Assessed on the last calendar day of each month | `LAST_DAY_OF_MONTH` | 28/29 February, day 30, and day 31 | SHADOW | Yes |
+| External collections authority, no automatic referral | `External_Collections_Authorised__c` true | Readable. Referral method returns false | SHADOW | Yes |
+| Kit not included | `KIT_NOT_INCLUDED` | Kit charge returns 0. No kit payment | n/a | Yes |
+| No 4-day retry, catch-up, or add-to-end | Not configured | Not built for this launch | n/a | Yes |
+| Draft does not open enrolment | Agreement Status Draft, Effective From blank | Active count 0. API resolver ignores Draft | n/a | Yes |
 
 ## J. NZ legal review
 
@@ -144,10 +167,13 @@ Jessica Buff / Bela Beauty College has not approved this draft for student accep
 
 1. NZ legal review.
 2. Provider approval.
-3. An approved effective date, then a later decision to move `Payer_Fee_Execution_Mode__c` from `SHADOW` to a release that is allowed to create fees.
-4. Hosted PR #28 is not merged. The Bela hosted Production frontend is not deployed.
+3. A chosen launch path: fees live with the agreement, or fees deferred to a later agreement version.
+4. After that choice, an approved `Payer_Fee_Effective_From__c`, then a separate change of `Payer_Fee_Execution_Mode__c` from `SHADOW` to `LIVE`.
+5. Production invocation is not connected. The webhook does not call `considerFailedPayment`. No scheduled job calls `assessLateFees`.
+6. End-of-plan debit origination is not turned on. Fee schedules are `Auto_Collect__c = false`.
+7. Hosted PR #28 is not merged. The Bela hosted Production frontend is not deployed.
 
-Retry, catch-up, add-to-end, and the NZ holiday calendar are not activation blockers.
+Retry, catch-up, add-to-end, the NZ holiday calendar, kit upfront payment, and automatic external referral are not activation blockers.
 
 ## M. Late-fee assessment
 
@@ -170,24 +196,56 @@ PSAT-000002 was revised in place from v1 to v2. It stayed Draft. No second agree
 | $60 or $5 in HTML | No |
 | PCT-00001 | In Force, calculation SHADOW, execution SHADOW. Not modified |
 
-## O. Activation procedure — do not run now
+## O. Controlled launch runbook — do not run now
 
-1. Review the shadow counts above. Do not turn execution to live in this state.
-2. Complete NZ legal review.
-3. Complete Bela provider approval.
-4. Freeze this version or cut a new version if the wording changes. Do not edit PSAT-000002 after it has been accepted by a student. A wording change is a new version.
-5. Set Effective From to the approved go-live date. Draft is blank today. Do not use `2099-01-01`.
-6. Set Status to Active. Do not do this in the current run.
-7. Confirm `GET /v1/providers/BELA_NZ/courses` still returns 26.
-8. Confirm enrolment resolution now returns the Active agreement.
-9. Confirm Vercel Production configuration for the API and the hosted project.
-10. Merge hosted PR #28.
-11. Deploy `studentpay-nz-bela-enrolment` Production.
-12. Update PIC success and cancel URLs if required.
-13. Run one controlled Production certification enrolment.
-14. Verify the Opportunity, agreement snapshot and hash, DDA, payment-plan agreement, schedules, and course maths, and that no unintended payment was collected.
-15. Neutralise the certification records.
-16. Hand over to the provider.
+### A. Before legal and provider approval
+
+Leave PSAT-000002 Draft. Leave Effective From blank. Leave `Payer_Fee_Execution_Mode__c` as `SHADOW`. Leave `Payer_Fee_Effective_From__c` blank. Do not merge hosted PR #28. Do not create an enrolment, a fee, a referral, a DDA, or a payment. Re-read the shadow table if PIC or plan data changes.
+
+### B. After legal and provider approval
+
+Choose Path A or Path B below. If the approved wording differs from v2, create a new agreement version. Do not edit PSAT-000002 after a student has accepted it. Do not use `2099-01-01`.
+
+### C. Agreement activation
+
+Set the agreement Effective From to the approved go-live date, then set Status to Active. Confirm Active count for BELA_NZ is 1 and `GET /v1/providers/BELA_NZ/courses` returns 26 with the agreement attached. This date does not by itself turn payer fees on.
+
+### D. PIC execution activation
+
+Only for Path A, and only after the agreement that contains the fee clauses is Active.
+
+1. Set `Payer_Fee_Effective_From__c` to the approved fee date. It can match the agreement date. It is a separate field.
+2. Confirm the 2026-09-07 failure is before that date.
+3. Connect `considerFailedPayment` to the payment-failure path, still behind the LIVE and effective-date guards.
+4. Schedule a daily call to `assessLateFees`. It already returns nothing unless today is the last calendar day and a provider is LIVE and effective.
+5. Then set `Payer_Fee_Execution_Mode__c` to `LIVE`.
+6. Leave fee `Auto_Collect__c` false until a separate decision turns on end-of-plan debit origination.
+
+Path B skips this section. Execution stays `SHADOW` and the effective date stays blank.
+
+### E. Hosted deployment
+
+Merge hosted PR #28 only when the agreement decision is made. Set `NZ_HOSTED_TENANT_SLUG=bela-nz` on `studentpay-nz-bela-enrolment`. Deploy that project. Do not point it at OLI. Confirm Pay in Full stays disabled. The API does not need a Production promotion for this fee work.
+
+### F. Controlled Production canary
+
+One certification enrolment on the Bela host. Confirm the course price, the snapshot hash, the DDA, the schedule, and that no payer fee was created unless Path A is live and a new qualifying failure has occurred on or after the effective date. Do not use the historical 2026-09-07 event.
+
+### G. Canary neutralisation
+
+Cancel or otherwise close the certification plan through the existing operational process. Reverse any certification fee with `reverseFee` if one was created. Do not delete ledger rows.
+
+### H. Provider handover
+
+Hand the Active agreement version, the PIC mode, the effective date, and the support contacts to the provider. PCT-00001 stays calculation SHADOW and execution SHADOW. OLI PIC-00002 stays fee-disabled.
+
+## Launch paths
+
+Do not choose here.
+
+Path A — fees live at launch. The Active agreement contains the $2.50 and $15 clauses. PIC fees stay enabled. `Payer_Fee_Effective_From__c` is the approved date. Execution becomes `LIVE` only after the webhook and month-end call are connected. New qualifying failures on or after that date can create one fee. The historical failure cannot. End-of-plan bank debit stays off until auto-collect is explicitly enabled.
+
+Path B — fees not live at the initial launch. The first Active agreement omits or disables the fee clauses. PIC execution stays `SHADOW` or the fee checkboxes are turned off before activation. Hosted can launch. No payer fee is created. A later agreement version and a later PIC effective date turn fees on. The historical failure remains outside that later date.
 
 ## P. Rollback
 
@@ -195,7 +253,7 @@ While the row is Draft, enrolment stays closed. To withdraw the draft, set Statu
 
 ## Q. Post-activation certification
 
-After a future activation, repeat the read-only catalogue check (26 courses, Salesforce authority), then one certification enrolment, then confirm the accepted snapshot hash matches the sanitised template plus that course’s price version. Confirm OLI’s 64-course catalogue and OLI agreement behaviour are unchanged. Confirm PCT-00001 is still SHADOW.
+After a future activation, repeat the read-only catalogue check (26 Bela courses, Salesforce authority), then one certification enrolment, then confirm the accepted snapshot hash matches the sanitised template plus that course’s price version. Confirm OLI PIC-00002 still has fees disabled and no new Dishonour Fee or Late Fee rows. Confirm PCT-00001 execution is still SHADOW. Production Salesforce currently has 65 Active OLI courses, including `Test101` / Test of Payment Options, created 2026-09-20. The hosted OLI fixture remains 64. This fee deploy did not add that course.
 
 ## Future kit upfront — note only
 
@@ -215,6 +273,14 @@ After PSAT-000002 was created, `GET https://api.studentpay.co.nz/v1/providers/BE
 
 The API resolver counts only Status Active. Draft is `zero_active_agreement`. Create fails in `applyAuthoritativeCatalogue` before Salesforce writes. Confirm fails in `snapshotProviderStudentAgreementAcceptance`. No Production enrolment was created.
 
-## OLI
+## Evidence
 
-API tests: 237 pass, 0 fail, including the 64-course Production OLI catalogue and the payer-treatment policy tests. OLI PIC-00002 was not given a fee, a kit policy, or collections authority. OLI agreements were not edited. Hosted tests: 271 pass, 0 fail. Salesforce check-only `0AfRE000001R90D0AS` and deploy `0AfRE000001R96f0AC` each ran 24 Apex tests with 0 failures. The API branch is not merged and `api.studentpay.co.nz` was not promoted.
+Salesforce check-only `0AfRE000001RBOb0AO` and Production deploy `0AfRE000001RBRp0AO` each deployed 4 classes and ran 11 Apex tests with 0 failures: `ProviderPayerTreatment_Test` and `ProviderPayerFeeService_Test`. `Payer_Fee_Effective_From__c` is `00NRE000007rYsL2AU`. Bela’s value is blank.
+
+The tests proved: shadow inserts nothing; a failure before the effective date inserts nothing; a qualifying failure on the effective date inserts one $2.50 Dishonour Fee; replay stays at one; a Cancelled failure inserts nothing; a disabled provider inserts nothing; day 60 inserts nothing; day 61 off month-end inserts nothing; day 61 on month-end inserts one $15 Late Fee; month-end replay stays at one; reversal returns Not Yet Due to the course amount and the statement closing balance to zero; a shadow batch returns no rows.
+
+API unit tests: 239 pass, 0 fail. The API policy module mirrors the rules and does not insert fees. It is not on the catalogue request path. API PR #103 stays unmerged. `api.studentpay.co.nz` does not need a promotion for this launch.
+
+Hosted tests: 271 pass, 0 fail. Typecheck, lint, and the production build succeeded. Hosted PR #28 stays open and unmerged.
+
+OLI PIC-00002 and canary PIC-00003 remain fee-disabled, with no kit policy and no collections authority. No OLI fee schedule or fee statement line was created. The webhook class was not modified.
