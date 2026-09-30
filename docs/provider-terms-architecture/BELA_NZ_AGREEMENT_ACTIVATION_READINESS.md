@@ -21,15 +21,16 @@ The Salesforce account name was not renamed. Bela is not described as a company 
 | Item | Value |
 | --- | --- |
 | Salesforce record | PSAT-000002 / `a0URE00000WY6wb2AD` |
-| Agreement key | `BELA_NZ\|NZ\|Provider_Student_Agreement\|nz-provider-student-2026-09-30-v1` |
-| Version | `nz-provider-student-2026-09-30-v1` |
-| Clause template | `nz-provider-student-2026-09-30-v1` |
+| Agreement key | `BELA_NZ\|NZ\|Provider_Student_Agreement\|nz-provider-student-2026-09-30-v2` |
+| Version | `nz-provider-student-2026-09-30-v2` |
+| Clause template | `nz-provider-student-2026-09-30-v2` |
 | Status | Draft |
 | Active | No |
-| Effective From | `2099-01-01` |
+| Effective From | blank |
 | Jurisdiction | NZ |
+| Prior draft | `nz-provider-student-2026-09-30-v1`, kept at `docs/provider-terms-architecture/artefacts/BELA_NZ_agreement_skeleton-v1.html` |
 
-`Effective_From__c` is required by the object even for Draft. `2099-01-01` is a schema placeholder, not an approved go-live date. The resolver only treats Status Active as in force, and a future effective date would still fail closed if the row were activated by mistake.
+Draft may leave Effective From blank. Active requires a real date. `2099-01-01` is still rejected if someone tries to activate it. No go-live date has been assigned. The resolver only treats Status Active as in force.
 
 ## C. Activation-candidate agreement
 
@@ -41,7 +42,7 @@ The document states: Draft, not active, NZ legal review required, provider appro
 
 ## D. Clause template version
 
-`nz-provider-student-2026-09-30-v1`, replacing the unresolved-kit skeleton `nz-skeleton-2026-09-23-v2`.
+`nz-provider-student-2026-09-30-v2`. The prior draft `nz-provider-student-2026-09-30-v1` replaced the unresolved-kit skeleton `nz-skeleton-2026-09-23-v2`. v2 removes the 4-day retry, catch-up, and add-to-end promises and changes late-fee assessment to the last calendar day of the month. No student accepted v1.
 
 ## E. Hashes
 
@@ -49,21 +50,19 @@ Two layers:
 
 | Layer | What it covers | Hash |
 | --- | --- | --- |
-| Provider template | Parties, kit policy, cooling-off, access, payer-treatment wording. No course amounts. | `244ea69046f96826220a9a306350ae2b5c3e0db91127d384945ad3841254241b` |
-| Salesforce stored content | The same template after the API HTML sanitiser. This is `Content_Hash__c` on PSAT-000002. | `37a6decdf3dcda849fecb90309a9b21ae195dab0447fe3b1e056e522b5be446b` |
+| Provider template v2 | Parties, kit policy, cooling-off, access, PIC payer-treatment wording. No course amounts. Stored as `Content_Hash__c`. | `ddb6aa7a3f9c4a4fe9becb72db9ab688503b8236ebdbd6de189575de50ccef78` |
+| Prior provider template v1 | Archived. Not the current Draft. | `244ea69046f96826220a9a306350ae2b5c3e0db91127d384945ad3841254241b` |
 | Enrolment snapshot | Template plus the selected course schedule. Not stored in Production. Tested locally. | Changes when the course changes. The provider template hash does not. |
 
 A later edit to retry or fees changes a newly composed draft hash and does not rewrite a sealed snapshot. That is covered by `viewHistoricalAgreement`.
 
 ## F. Kit policy
 
-`KIT_NOT_INCLUDED`.
+`KIT_NOT_INCLUDED` on PIC-00001 and on PSAT-000002.
 
 The StudentPay payment plan covers course tuition from the selected price version only. It does not include a physical kit, equipment, materials, or other separately supplied goods. Course names that contain “+ Kits” were not renamed and were not reduced by an invented kit price.
 
-`Kit_Policy__c` is prepared on `Provider_Student_Agreement_Template__c` in the API metadata and is not deployed in Production yet. The Draft row records the policy in the HTML and in `Notes__c`. Blank on existing providers, including OLI, means no kit charge.
-
-`KIT_INCLUDED` and `KIT_UPFRONT_PAYMENT` are reserved enum values. They do not add money.
+`Kit_Policy__c` is deployed on `Provider_Integration_Config__c` and on `Provider_Student_Agreement_Template__c`. Blank on OLI and the internal canary. The kit method returns a zero charge for every value, including the reserved `KIT_INCLUDED` and `KIT_UPFRONT_PAYMENT` values.
 
 ## G. Course economics
 
@@ -78,34 +77,54 @@ One template. Twenty-six courses. Amounts come from the certified Salesforce pri
 
 Local composer tests: one template hash, four different snapshot hashes, kit not included on each, no $60 or $5 in the student document.
 
-## H. Payer treatment
+## H. PIC payer treatment
 
-| Setting | Value |
+These settings live on `Provider_Integration_Config__c`. The Enabled checkbox is authoritative. An amount alone does not turn a fee on. New checkboxes default to false. OLI (PIC-00002) and the internal canary (PIC-00003) remain disabled, with no kit policy.
+
+| PIC field | BELA_NZ PIC-00001 |
 | --- | --- |
-| Retry | Yes, 4 days |
-| Catch-up | No automatic catch-up |
-| Arrears | Added to the end of the plan |
-| Failed-payment fee | $2.50, payer charge, end of plan |
-| Late fee | $15 when more than 60 days in arrears |
-| Late-fee assessment | Last business day of the month |
-| External collections | Authorised to facilitate where provider terms and law permit. The flag does not refer an account by itself |
-| Course-access suspension | Provider controlled. StudentPay does not suspend access because a payment fails |
+| `Failed_Payment_Fee_Enabled__c` | true |
+| `Failed_Payment_Fee_Amount__c` | 2.50 |
+| `Late_Fee_Enabled__c` | true |
+| `Late_Fee_Amount__c` | 15.00 |
+| `Late_Fee_Threshold_Days__c` | 60, strictly greater than 60 |
+| `Late_Fee_Assessment__c` | `LAST_DAY_OF_MONTH` |
+| `External_Collections_Authorised__c` | true. Existing field. Authority only |
+| `Payer_Fee_Execution_Mode__c` | `SHADOW` |
+| `Kit_Policy__c` | `KIT_NOT_INCLUDED` |
 
-## I. Runtime alignment
+Removed from this launch and from the Bela draft: 4-day retry, no automatic catch-up, add arrears to the end of the plan, and an NZ public-holiday calendar. Existing generic retry and catch-up code was left as it was. `ProviderNzBusinessDays` was not changed.
 
-| Agreement term | Salesforce authority | Runtime | Activation safe |
-| --- | --- | --- | --- |
-| Retry after 4 days | Not a payer-treatment record. Text and notes only | No job reads a 4-day provider policy. `Retry_Eligible__c` is per schedule | NO |
-| No automatic catch-up | Not a picklist value the jobs read | Catch-up classes exist and are not bound to this agreement | NO |
-| Arrears added to the end | Not implemented as an attempt type | Not wired | NO |
-| $2.50 failed-payment fee | Not a payer-fee object. Not `Provider_Commercial_Terms__c` | No payer-fee job | NO |
-| $15 when more than 60 days | Specification only. Exactly 60 does not qualify in the hosted check | No late-fee job | NO |
-| Last business day of the month | `Holiday` has 0 rows | `ProviderNzBusinessDays` skips weekends only. Its comment states New Zealand public holidays are not skipped | NO |
-| External collections | Text says the flag does not refer by itself | No automatic referral from this agreement | NO for a promised referral workflow. The “do not refer from the flag alone” sentence matches current behaviour |
-| Course-access suspension | Text says the provider decides | No StudentPay job suspends Bela course access from arrears | YES for the negative promise |
-| Kit not included | HTML and notes. Picklist field not deployed | No kit amount is added to fees or instalments | YES |
+The draft says a failed amount remains owing, states the $2.50 and $15 amounts from these settings, assesses the late fee on the last day of each month, and says external collections authority does not refer an account by itself.
 
-`RUNTIME_ALIGNMENT_READY = PARTIAL`. Do not activate while the fee, retry, catch-up, add-to-end, or business-day promises are not enforced by the jobs.
+## I. Runtime
+
+`ProviderPayerTreatment` evaluates the PIC policy and refuses to create a payer fee, a late fee, or an external referral. Calling the create method throws. Execution mode `LIVE` is reserved and is also refused. Bela is `SHADOW`.
+
+Failed-payment fee: one amount per qualifying failure id. A duplicate or replayed id does not add a second fee. A technical failure does not qualify. The fee is separate from provider commercial charges.
+
+Late fee: disabled, day 60, a closed plan, a non-month-end date, and a repeat of the same plan plus assessment month do not qualify. Day 61 on the last calendar day of February, a 30-day month, and a 31-day month does qualify in the calculation. No holiday calendar is used. The idempotency key is provider plan plus fee type plus assessment month.
+
+External collections: true means the provider authority is readable. It does not send an account anywhere. No collector integration was built.
+
+Effective-date rule: a failed-payment fee applies only to a qualifying failure on or after an approved policy effective date. A late fee is assessed only while the PIC policy is effective and execution is live. This deployment did not charge historical failures.
+
+## Shadow results
+
+Read on 30 September 2026. Nothing was inserted.
+
+| Check | Result |
+| --- | --- |
+| Bela plans | 2 |
+| Open Bela plans | 1 |
+| Qualifying failed attempts | 1 attempt on 1 plan. Status Failed, outcome Failed |
+| Hypothetical failed-payment fees | $2.50 |
+| Open plans more than 60 days overdue | 0 |
+| Hypothetical late fees | $0.00 |
+| Plans already in stage External Collections | 0 |
+| Fees or referrals created | 0 |
+
+The one failed attempt is historical relative to an unapproved effective date. It is not charged.
 
 ## J. NZ legal review
 
@@ -113,7 +132,7 @@ Local composer tests: one template hash, four different snapshot hashes, kit not
 
 The clause model is a structured decision record, not approved legal wording. It avoids Australian Consumer Law, Australian Privacy Principles, and ABN-only party wording. It does not declare legal compliance.
 
-Review before activation: cooling-off as 3 calendar days, post-cooling-off fee remaining payable subject to provider terms and law, $2.50 and $15 payer fees, collections facilitation, and the priority clause.
+Review before activation: cooling-off as 3 calendar days, post-cooling-off fee remaining payable subject to provider terms and law, the $2.50 failed-payment fee, the $15 late fee after more than 60 days on the last calendar day of the month, and collections authority that does not refer by itself.
 
 ## K. Provider approval
 
@@ -121,24 +140,22 @@ Review before activation: cooling-off as 3 calendar days, post-cooling-off fee r
 
 Jessica Buff / Bela Beauty College has not approved this draft for student acceptance. No effective go-live date has been approved.
 
-## L. Technical blockers
+## L. Remaining blockers
 
-1. Payer-treatment runtime is not wired to this agreement.
-2. `ProviderNzBusinessDays` does not observe New Zealand public holidays, and `Holiday` has 0 rows. Do not invent the holiday list here.
-3. `Kit_Policy__c` is not in the Production org yet.
-4. `Effective_From__c` cannot be blank. The stored date is a placeholder.
+1. NZ legal review.
+2. Provider approval.
+3. An approved effective date, then a later decision to move `Payer_Fee_Execution_Mode__c` from `SHADOW` to a release that is allowed to create fees.
+4. Hosted PR #28 is not merged. The Bela hosted Production frontend is not deployed.
 
-## M. Late-fee business day
+Retry, catch-up, add-to-end, and the NZ holiday calendar are not activation blockers.
 
-Rechecked in Production on 30 September 2026.
+## M. Late-fee assessment
 
-`ProviderNzBusinessDays` is present. It skips Saturday and Sunday. The class comment says New Zealand public holidays are not skipped. `Holiday` count is 0.
-
-The $15 rule must not be activated until a last-business-day assessment can use an authoritative NZ holiday calendar, and until overdue days are strictly greater than 60.
+`LAST_DAY_OF_MONTH` means the last calendar day of the month. 28 or 29 February, day 30, and day 31 are handled by the calendar date. No public-holiday list is required for this launch.
 
 ## N. Salesforce record
 
-Created, not updated from an older row.
+PSAT-000002 was revised in place from v1 to v2. It stayed Draft. No second agreement was created. Active count for BELA_NZ is 0.
 
 | Field | Value |
 | --- | --- |
@@ -146,18 +163,20 @@ Created, not updated from an older row.
 | Name | PSAT-000002 |
 | PIC | BELA_NZ Production |
 | Status | Draft |
-| Active count for BELA_NZ after insert | 0 |
-| Kit in HTML | Yes |
+| Version | `nz-provider-student-2026-09-30-v2` |
+| Effective From | blank |
+| Kit policy | `KIT_NOT_INCLUDED` |
+| Active count for BELA_NZ | 0 |
 | $60 or $5 in HTML | No |
 | PCT-00001 | In Force, calculation SHADOW, execution SHADOW. Not modified |
 
 ## O. Activation procedure — do not run now
 
-1. Resolve the runtime-alignment blockers, including the NZ business-day calendar.
+1. Review the shadow counts above. Do not turn execution to live in this state.
 2. Complete NZ legal review.
 3. Complete Bela provider approval.
 4. Freeze this version or cut a new version if the wording changes. Do not edit PSAT-000002 after it has been accepted by a student. A wording change is a new version.
-5. Replace `2099-01-01` with the approved effective date.
+5. Set Effective From to the approved go-live date. Draft is blank today. Do not use `2099-01-01`.
 6. Set Status to Active. Do not do this in the current run.
 7. Confirm `GET /v1/providers/BELA_NZ/courses` still returns 26.
 8. Confirm enrolment resolution now returns the Active agreement.
@@ -198,4 +217,4 @@ The API resolver counts only Status Active. Draft is `zero_active_agreement`. Cr
 
 ## OLI
 
-API tests: 232 pass, 0 fail, including the 64-course Production OLI catalogue. OLI agreements were not edited. OLI has no kit policy in the hosted tenant list.
+API tests: 237 pass, 0 fail, including the 64-course Production OLI catalogue and the payer-treatment policy tests. OLI PIC-00002 was not given a fee, a kit policy, or collections authority. OLI agreements were not edited. Hosted tests: 271 pass, 0 fail. Salesforce check-only `0AfRE000001R90D0AS` and deploy `0AfRE000001R96f0AC` each ran 24 Apex tests with 0 failures. The API branch is not merged and `api.studentpay.co.nz` was not promoted.
