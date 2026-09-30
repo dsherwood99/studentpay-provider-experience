@@ -9,7 +9,7 @@ import { createHash } from "node:crypto";
  */
 
 export const AGREEMENT_ACTIVATION_PERMITTED = false as const;
-export const CLAUSE_TEMPLATE_VERSION = "nz-provider-student-2026-09-30-v1" as const;
+export const CLAUSE_TEMPLATE_VERSION = "nz-provider-student-2026-09-30-v2" as const;
 
 /**
  * Provider-agreement kit treatment. Only KIT_NOT_INCLUDED has wording.
@@ -34,7 +34,10 @@ export type CatchUpChoice =
   | "arrears_added_to_end";
 
 export type FailedPaymentFeeCollection = "unset" | "end_of_plan";
-export type LateFeeAssessment = "unset" | "last_business_day_of_month";
+export type LateFeeAssessment =
+  | "unset"
+  | "last_business_day_of_month"
+  | "last_day_of_month";
 
 export type PayerTreatmentSettings = {
   retryEnabled: boolean | null;
@@ -219,16 +222,45 @@ export function specifiedRetryDate(input: {
   return date.toISOString().slice(0, 10);
 }
 
-/** One ledger key per qualifying failure id. Replays collapse. */
+/** One ledger key per qualifying failure id. Replays collapse. Technical failures are not qualifying. */
+export function specifiedFailedPaymentFeeApplies(input: {
+  enabled: boolean;
+  amountCents: number | null;
+  qualifyingFailure: boolean;
+  technicalFailure: boolean;
+}): boolean {
+  if (!input.enabled || input.technicalFailure || !input.qualifyingFailure) return false;
+  return input.amountCents !== null && input.amountCents > 0;
+}
+
 export function specifiedFailedPaymentFeeKeys(
-  events: readonly { failureId: string; qualifyingFailure: boolean }[],
+  events: readonly {
+    failureId: string;
+    qualifyingFailure: boolean;
+    technicalFailure?: boolean;
+  }[],
 ): string[] {
   const keys = new Set<string>();
   for (const event of events) {
-    if (!event.qualifyingFailure || !event.failureId) continue;
+    if (event.technicalFailure || !event.qualifyingFailure || !event.failureId) continue;
     keys.add(`failed-payment-fee:${event.failureId}`);
   }
   return [...keys];
+}
+
+export function isLastCalendarDayOfMonth(isoDate: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return false;
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return false;
+  }
+  const next = new Date(Date.UTC(year, month - 1, day + 1));
+  return next.getUTCMonth() !== date.getUTCMonth();
 }
 
 /**
@@ -242,11 +274,29 @@ export function specifiedLateFeeApplies(input: {
   overdueBalanceCents: number;
   alreadyAssessedThisPeriod: boolean;
   planOpen: boolean;
+  assessment?: LateFeeAssessment;
+  assessmentDate?: string | null;
 }): boolean {
   if (!input.enabled || !input.planOpen) return false;
   if (input.alreadyAssessedThisPeriod) return false;
   if (input.overdueBalanceCents <= 0) return false;
-  return input.overdueDays > input.triggerDays;
+  if (input.overdueDays <= input.triggerDays) return false;
+  if (input.assessment === "last_day_of_month") {
+    if (!input.assessmentDate || !isLastCalendarDayOfMonth(input.assessmentDate)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export function externalCollectionsAuthorityAvailable(
+  authority: PayerTreatmentSettings["collectionsAuthority"],
+): boolean {
+  return authority === "authorised";
+}
+
+export function automaticExternalReferral(): false {
+  return false;
 }
 
 export function specifiedCatchUpCreatesAutomaticCollection(
@@ -295,8 +345,6 @@ function unresolvedFor(input: ProviderTermsInput): string[] {
   if (input.enrolment.coolingOffDays === null) items.push("COOLING_OFF");
   if (input.enrolment.afterCoolingOff === "unset") items.push("AFTER_COOLING_OFF");
   if (input.enrolment.courseAccess === "unset") items.push("COURSE_ACCESS");
-  if (input.payer.retryEnabled === null) items.push("RETRY_TREATMENT");
-  if (input.payer.catchUpTreatment === "unset") items.push("CATCH_UP_TREATMENT");
   if (input.payer.catchUpTreatment === "arrears_added_to_end") {
     items.push("CATCH_UP_VALUE_NOT_IN_SALESFORCE_PICKLIST");
   }
@@ -357,43 +405,59 @@ function courseScheduleHtml(course: CoursePriceAuthority): string {
 </ul>`;
 }
 
+function lateFeeCadence(assessment: LateFeeAssessment): string {
+  if (assessment === "last_day_of_month") return "assessed on the last day of each month";
+  if (assessment === "last_business_day_of_month") {
+    return "assessed on the last business day of the month";
+  }
+  return "assessment cadence UNSET";
+}
+
 function payerLines(payer: PayerTreatmentSettings): string {
-  const retry =
-    payer.retryEnabled === null
-      ? "UNSET"
-      : payer.retryEnabled
-        ? `Yes. Re-attempt an eligible failed payment after ${payer.retryDelayDays ?? "UNSET"} days`
-        : "No";
-  const catchUp =
-    payer.catchUpTreatment === "arrears_added_to_end"
-      ? "No automatic catch-up. Add unresolved arrears to the end of the payment plan. Principal stays payable and auditable"
-      : payer.catchUpTreatment === "catch_up_collection"
-        ? "Catch-up collection"
-        : "UNSET";
-  const failed = payer.failedPaymentFeeEnabled
-    ? `${payer.failedPaymentFeeAmountCents === null ? "UNSET" : money(payer.failedPaymentFeeAmountCents)} per failed payment, collected at the end of the payment plan`
-    : "Off";
-  const late = payer.lateFeeEnabled
-    ? `${payer.lateFeeAmountCents === null ? "UNSET" : money(payer.lateFeeAmountCents)} when the account is more than ${payer.lateFeeTriggerDays ?? "UNSET"} days in arrears, assessed on the last business day of the month`
-    : "Off";
-  const collections =
-    payer.collectionsAuthority === "authorised"
-      ? "StudentPay may facilitate external collection where the provider's enrolment terms and applicable law permit it. This does not transfer the debt and does not refer an account by itself"
-      : payer.collectionsAuthority === "not_authorised"
-        ? "Not authorised"
-        : "UNSET";
-  const suspension =
-    payer.courseAccessSuspension === "provider_controlled"
-      ? "Provider-controlled. StudentPay does not automatically suspend course access"
-      : "UNSET";
-  return [
-    `<li><strong>Retry:</strong> ${escapeHtml(retry)} — AGREEMENT_ONLY_CONFIGURATION_NOT_SAFE</li>`,
-    `<li><strong>Catch-up:</strong> ${escapeHtml(catchUp)} — AGREEMENT_ONLY_CONFIGURATION_NOT_SAFE</li>`,
-    `<li><strong>Failed-payment fee:</strong> ${escapeHtml(failed)} — AGREEMENT_ONLY_CONFIGURATION_NOT_SAFE</li>`,
-    `<li><strong>Late fee:</strong> ${escapeHtml(late)} — AGREEMENT_ONLY_CONFIGURATION_NOT_SAFE</li>`,
-    `<li><strong>External collections:</strong> ${escapeHtml(collections)} — AGREEMENT_ONLY_CONFIGURATION_NOT_SAFE</li>`,
-    `<li><strong>Course-access suspension:</strong> ${escapeHtml(suspension)} — AGREEMENT_ONLY_CONFIGURATION_NOT_SAFE</li>`,
-  ].join("\n");
+  const lines: string[] = [];
+  if (payer.retryEnabled !== null) {
+    const retry = payer.retryEnabled
+      ? `Yes. Re-attempt an eligible failed payment after ${payer.retryDelayDays ?? "UNSET"} days`
+      : "No";
+    lines.push(`<li><strong>Retry:</strong> ${escapeHtml(retry)}</li>`);
+  }
+  if (payer.catchUpTreatment === "arrears_added_to_end") {
+    lines.push(
+      `<li><strong>Catch-up:</strong> ${escapeHtml("No automatic catch-up. Add unresolved arrears to the end of the payment plan. Principal stays payable and auditable")}</li>`,
+    );
+  } else if (payer.catchUpTreatment === "catch_up_collection") {
+    lines.push("<li><strong>Catch-up:</strong> Catch-up collection</li>");
+  }
+  if (payer.failedPaymentFeeEnabled) {
+    const amount =
+      payer.failedPaymentFeeAmountCents === null
+        ? "UNSET"
+        : money(payer.failedPaymentFeeAmountCents);
+    lines.push(
+      `<li><strong>Failed-payment fee:</strong> ${escapeHtml(`${amount} per qualifying failed payment`)}</li>`,
+    );
+  }
+  if (payer.lateFeeEnabled) {
+    const amount =
+      payer.lateFeeAmountCents === null ? "UNSET" : money(payer.lateFeeAmountCents);
+    const days = payer.lateFeeTriggerDays ?? "UNSET";
+    lines.push(
+      `<li><strong>Late fee:</strong> ${escapeHtml(`${amount} when the account is more than ${days} days in arrears, ${lateFeeCadence(payer.lateFeeAssessment)}`)}</li>`,
+    );
+  }
+  if (payer.collectionsAuthority === "authorised") {
+    lines.push(
+      `<li><strong>External collections:</strong> ${escapeHtml("StudentPay may facilitate external collection where the provider's enrolment terms and applicable law permit it. This does not transfer the debt and does not refer an account by itself")}</li>`,
+    );
+  } else if (payer.collectionsAuthority === "not_authorised") {
+    lines.push("<li><strong>External collections:</strong> Not authorised</li>");
+  }
+  if (payer.courseAccessSuspension === "provider_controlled") {
+    lines.push(
+      `<li><strong>Course-access suspension:</strong> ${escapeHtml("Provider-controlled. StudentPay does not automatically suspend course access")}</li>`,
+    );
+  }
+  return lines.join("\n");
 }
 
 export function composeProviderTermsSkeleton(
@@ -430,6 +494,7 @@ ${COURSE_SCHEDULE_PLACEHOLDER}
 <ul>
 ${payerLines(input.payer)}
 </ul>
+<p>A failed amount remains owing. StudentPay may administer payment processing and arrears according to the applicable payment terms and the provider's authority.</p>
 <p>Provider-to-StudentPay commercial fees are omitted from this student-facing skeleton. They are not payer charges. Establishment fees and monthly account fees are not shown here.</p>
 <h2>Roles</h2>
 <p>NZ LEGAL / PROVIDER APPROVAL REQUIRED.</p>

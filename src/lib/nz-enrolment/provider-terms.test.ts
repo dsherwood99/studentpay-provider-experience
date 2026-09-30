@@ -10,7 +10,11 @@ import {
   payerFeeClauses,
   planMathsHold,
   sealDraftSnapshot,
+  automaticExternalReferral,
+  externalCollectionsAuthorityAvailable,
+  isLastCalendarDayOfMonth,
   specifiedCatchUpCreatesAutomaticCollection,
+  specifiedFailedPaymentFeeApplies,
   specifiedFailedPaymentFeeKeys,
   specifiedLateFeeApplies,
   specifiedRetryDate,
@@ -52,17 +56,20 @@ test("Bela skeleton records decided policy and stays inactive", () => {
   assert.equal(draft.availableForStudentAcceptance, false);
   assert.equal(draft.salesforceStatus, "Draft");
   assert.equal(draft.auStatutoryWordingIncluded, false);
-  assert.equal(draft.version, "nz-provider-student-2026-09-30-v1");
+  assert.equal(draft.version, "nz-provider-student-2026-09-30-v2");
   assert.equal(draft.kitPolicy, "KIT_NOT_INCLUDED");
   assert.equal(planMathsHold(input.course), true);
   assert.match(draft.html, /Jessica Buff trading as Bela Beauty College/);
   assert.match(draft.html, /Cooling-off:<\/strong> 3 days/);
   assert.match(draft.html, /Course access:<\/strong> 2 years/);
-  assert.match(draft.html, /after 4 days/);
-  assert.match(draft.html, /Add unresolved arrears to the end/);
-  assert.match(draft.html, /\$2\.50 per failed payment, collected at the end/);
+  assert.doesNotMatch(draft.html, /after 4 days/);
+  assert.doesNotMatch(draft.html, /Add unresolved arrears/);
+  assert.doesNotMatch(draft.html, /automatic catch-up/i);
+  assert.doesNotMatch(draft.html, /last [Bb]usiness [Dd]ay/);
+  assert.match(draft.html, /A failed amount remains owing/);
+  assert.match(draft.html, /\$2\.50 per qualifying failed payment/);
   assert.match(draft.html, /\$15\.00 when the account is more than 60 days/);
-  assert.match(draft.html, /last business day of the month/);
+  assert.match(draft.html, /last day of each month/);
   assert.match(draft.html, /does not refer an account by itself/);
   assert.match(draft.html, /StudentPay does not automatically suspend course access/);
   assert.match(draft.html, /Kit not included/);
@@ -155,6 +162,33 @@ test("provider commercial amounts do not become payer clauses", () => {
   assert.doesNotMatch(draft.html, /\$60\.00|\$5\.00|2\.9%|\$0\.40/);
   assert.match(draft.html, /omitted from this student-facing skeleton/);
   assert.equal(input.commercial.chargingAuthorised, false);
+  assert.doesNotMatch(draft.html, /per qualifying failed payment/);
+  assert.doesNotMatch(draft.html, /last day of each month/);
+  assert.doesNotMatch(draft.html, /External collections/);
+});
+
+test("fee clauses use the supplied amounts and omit a disabled fee", () => {
+  const input = belaNzSkeletonInput();
+  const changed = composeProviderTermsSkeleton({
+    ...input,
+    payer: {
+      ...input.payer,
+      failedPaymentFeeAmountCents: 251,
+      failedPaymentFeeEnabled: false,
+      lateFeeAmountCents: 1_700,
+      lateFeeTriggerDays: 45,
+    },
+  });
+  assert.deepEqual(changed.payerFeeClauses, ["LATE_FEE"]);
+  assert.doesNotMatch(changed.html, /\$2\.50|\$2\.51/);
+  assert.match(changed.html, /\$17\.00 when the account is more than 45 days/);
+  assert.match(changed.html, /last day of each month/);
+  assert.equal(externalCollectionsAuthorityAvailable(input.payer.collectionsAuthority), true);
+  assert.equal(automaticExternalReferral(), false);
+  assert.equal(
+    externalCollectionsAuthorityAvailable(inactivePayerTreatment().collectionsAuthority),
+    false,
+  );
 });
 
 test("retry specification is four days only when enabled", () => {
@@ -175,6 +209,27 @@ test("retry specification is four days only when enabled", () => {
   }), null);
 });
 
+test("technical failure does not create a payer fee", () => {
+  assert.equal(specifiedFailedPaymentFeeApplies({
+    enabled: true,
+    amountCents: 250,
+    qualifyingFailure: true,
+    technicalFailure: false,
+  }), true);
+  assert.equal(specifiedFailedPaymentFeeApplies({
+    enabled: false,
+    amountCents: 250,
+    qualifyingFailure: true,
+    technicalFailure: false,
+  }), false);
+  assert.equal(specifiedFailedPaymentFeeApplies({
+    enabled: true,
+    amountCents: 250,
+    qualifyingFailure: true,
+    technicalFailure: true,
+  }), false);
+});
+
 test("failed-payment fee specification is one key per qualifying failure", () => {
   const keys = specifiedFailedPaymentFeeKeys([
     { failureId: "fail-1", qualifyingFailure: true },
@@ -189,16 +244,25 @@ test("failed-payment fee specification is one key per qualifying failure", () =>
   assert.deepEqual(specifiedFailedPaymentFeeKeys([]), []);
 });
 
-test("late-fee specification uses more than 60 days and is idempotent", () => {
+test("late-fee specification uses more than 60 days and the last calendar day", () => {
   const base = {
     enabled: true,
     triggerDays: 60,
     overdueBalanceCents: 1500,
     alreadyAssessedThisPeriod: false,
     planOpen: true,
+    assessment: "last_day_of_month" as const,
   };
-  assert.equal(specifiedLateFeeApplies({ ...base, overdueDays: 60 }), false);
-  assert.equal(specifiedLateFeeApplies({ ...base, overdueDays: 61 }), true);
+  assert.equal(isLastCalendarDayOfMonth("2026-02-28"), true);
+  assert.equal(isLastCalendarDayOfMonth("2024-02-29"), true);
+  assert.equal(isLastCalendarDayOfMonth("2026-04-30"), true);
+  assert.equal(isLastCalendarDayOfMonth("2026-01-31"), true);
+  assert.equal(isLastCalendarDayOfMonth("2026-01-30"), false);
+  assert.equal(specifiedLateFeeApplies({ ...base, overdueDays: 60, assessmentDate: "2026-01-31" }), false);
+  assert.equal(specifiedLateFeeApplies({ ...base, overdueDays: 61, assessmentDate: "2026-01-31" }), true);
+  assert.equal(specifiedLateFeeApplies({ ...base, overdueDays: 61, assessmentDate: "2026-01-30" }), false);
+  assert.equal(specifiedLateFeeApplies({ ...base, overdueDays: 61, assessmentDate: "2026-02-28" }), true);
+  assert.equal(specifiedLateFeeApplies({ ...base, overdueDays: 61, assessmentDate: "2026-04-30" }), true);
   assert.equal(specifiedLateFeeApplies({
     ...base,
     overdueDays: 90,
