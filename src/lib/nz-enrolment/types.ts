@@ -104,6 +104,15 @@ export type NzPlanPolicy =
   | NzDerivedRegularPlanPolicy
   | NzStudentSelectedEqualPlanPolicy;
 
+export type NzTaxPresentationMode = "gst_inclusive_breakdown";
+
+/** Safe, non-authoritative display rules. Gross cents remain API/Salesforce-owned. */
+export type NzTaxPresentation = {
+  mode: NzTaxPresentationMode;
+  label: string;
+  rateBasisPoints: number;
+};
+
 export type NzTenantCheckoutConfig = {
   paymentOptions: NzPaymentOptions;
   availableFrequencies: readonly NzPaymentFrequency[];
@@ -114,6 +123,8 @@ export type NzTenantCheckoutConfig = {
     ddaLead?: string;
     supportNote?: string;
   };
+  /** Opt-in display only. Undefined tenants keep a single GST-inclusive fee. */
+  taxPresentation?: NzTaxPresentation;
 };
 
 export type NzTenant = {
@@ -280,6 +291,7 @@ export type NzPublicTenant = {
     maxInstalments?: number;
     defaultFrequency: NzPaymentFrequency;
     wording?: NzTenantCheckoutConfig["wording"];
+    taxPresentation?: NzTaxPresentation;
   };
 };
 

@@ -4,8 +4,10 @@ import { useMemo, useState } from "react";
 import { formatNzdFromCents, describeDerivedWeeklyPlan } from "@/lib/nz-enrolment/plan-math";
 import { kitDisclosureForPolicy } from "@/lib/nz-enrolment/kit-policy";
 import { coursePath } from "@/lib/nz-enrolment/presentation";
+import { isGstInclusiveBreakdown } from "@/lib/nz-enrolment/tax-presentation";
 import type { NzPublicCourse, NzPublicTenant } from "@/lib/nz-enrolment/types";
 import { ProviderNativeHeader } from "@/components/nz-enrolment/ProviderNativeHeader";
+import { TaxBreakdown } from "@/components/nz-enrolment/TaxBreakdown";
 import styles from "./provider-chrome.module.css";
 
 type Props = {
@@ -104,24 +106,21 @@ export function NzCourseCatalogue({ tenant, courses, reviewMode = false }: Props
                 <h2>
                   <a href={coursePath(tenant, course)}>{course.name}</a>
                 </h2>
-                {described ? (
+                {isGstInclusiveBreakdown(tenant.checkout.taxPresentation) ? (
+                  <div className={styles.taxPrice} data-testid="nz-catalogue-gst">
+                    <TaxBreakdown
+                      grossCents={course.paymentPlanCourseFeeCents}
+                      tax={tenant.checkout.taxPresentation}
+                    />
+                    <p className={styles.price}>Payment plan available</p>
+                  </div>
+                ) : described ? (
                   <>
                     <p className={styles.price}>
                       Course fee{" "}
                       <strong>{formatNzdFromCents(course.paymentPlanCourseFeeCents)}</strong>
                     </p>
                     <p className={styles.note}>{described.summary}</p>
-                    {canStartPlan ? (
-                      <a className={styles.enrol} href={coursePath(tenant, course)}>
-                        {reviewMode ? "Review checkout" : "Start payment plan"}
-                      </a>
-                    ) : (
-                      <p className={styles.note}>
-                        {course.legalGateClosed
-                          ? "Enrolment is not open until the provider agreement is active."
-                          : "StudentPay payment plan is not open yet."}
-                      </p>
-                    )}
                   </>
                 ) : (
                   <>
@@ -135,6 +134,17 @@ export function NzCourseCatalogue({ tenant, courses, reviewMode = false }: Props
                     ) : null}
                   </>
                 )}
+                {canStartPlan ? (
+                  <a className={styles.enrol} href={coursePath(tenant, course)}>
+                    {reviewMode ? "Review checkout" : "Start payment plan"}
+                  </a>
+                ) : described && !isGstInclusiveBreakdown(tenant.checkout.taxPresentation) ? (
+                  <p className={styles.note}>
+                    {course.legalGateClosed
+                      ? "Enrolment is not open until the provider agreement is active."
+                      : "StudentPay payment plan is not open yet."}
+                  </p>
+                ) : null}
               </article>
             </li>
             );
