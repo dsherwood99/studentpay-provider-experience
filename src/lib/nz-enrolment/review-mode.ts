@@ -22,6 +22,11 @@ export function isNzHostedReviewMode(): boolean {
   if (process.env.HOSTED_PRODUCT_MODE?.trim().toLowerCase() !== "nz_enrolment") {
     return false;
   }
+  // Production customer deployments always use the real enrolment path.
+  // A review flag on that target cannot turn the simulation on.
+  if (process.env.VERCEL_ENV === "production") {
+    return false;
+  }
   const flag = reviewModeFlag();
   if (flag === "on") {
     return true;

@@ -261,7 +261,7 @@ Dedicated NZ Enrolment Checkout (intended Production host `enrol.studentpay.co.n
 | `NZ_ENROLMENT_SESSION_SECRET` | HttpOnly session HMAC | Production missing/short → 503; no dev fallback |
 | `PROVIDER_API_KEY_OLI_NZ` | Server-side provider key | Create/confirm 503 |
 | `NZ_HOSTED_TENANT_SLUG` | Optional dedicated tenant slug. Unset keeps the current shared default. When set, only that slug resolves and `/` redirects there | Unknown slug on an NZ host → home 404, no other provider |
-| `NZ_HOSTED_REVIEW_MODE` | Review checkout. Renders the real checkout, including a Draft agreement, and refuses create, Direct Debit, and confirm. A Bela preview (`VERCEL_ENV=preview` and `NZ_HOSTED_TENANT_SLUG=bela-nz`) is in review mode when this is unset. Set `false` to turn that off | Unset on a Production customer deployment. Mutations return 403 `REVIEW_MODE` while review mode is on |
+| `NZ_HOSTED_REVIEW_MODE` | Review checkout. Renders the real checkout, including a Draft agreement, and refuses create, Direct Debit, and confirm. A Bela preview (`VERCEL_ENV=preview` and `NZ_HOSTED_TENANT_SLUG=bela-nz`) is in review mode when this is unset. Set `false` to turn that off. `VERCEL_ENV=production` forces review mode off even if this flag is true | Production customer deployments stay on the real enrolment path |
 
 Bela Production (`STUDENTPAY_PROVIDER_CODE=BELA`) and Academy (`ACADEMYAU`) are not NZ hosted product deployments. NZ routes must not render there.
 

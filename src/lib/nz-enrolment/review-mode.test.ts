@@ -92,6 +92,11 @@ describe("hosted review mode", () => {
     assert.equal(isNzHostedReviewMode(), true);
     process.env.VERCEL_ENV = "production";
     assert.equal(isNzHostedReviewMode(), false);
+    process.env.NZ_HOSTED_REVIEW_MODE = "true";
+    process.env.HOSTED_PRODUCT_MODE = "nz_enrolment";
+    process.env.NZ_HOSTED_TENANT_SLUG = "bela-nz";
+    assert.equal(isNzHostedReviewMode(), false);
+    delete process.env.NZ_HOSTED_REVIEW_MODE;
     process.env.VERCEL_ENV = "preview";
     process.env.NZ_HOSTED_TENANT_SLUG = "oli";
     assert.equal(isNzHostedReviewMode(), false);
