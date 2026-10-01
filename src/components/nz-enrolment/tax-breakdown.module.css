@@ -1,0 +1,32 @@
+.breakdown {
+  display: grid;
+  gap: 6px 16px;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.breakdown dt {
+  margin: 0;
+  color: var(--nz-muted, #515151);
+  font-size: 0.88rem;
+}
+
+.breakdown dd {
+  margin: 0;
+  font-weight: 700;
+  color: var(--nz-heading, var(--nz-text));
+  text-align: right;
+}
+
+.breakdown .row:last-child dt,
+.breakdown .row:last-child dd {
+  font-weight: 750;
+  color: var(--nz-heading, var(--nz-text));
+}

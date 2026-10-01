@@ -1,6 +1,12 @@
 import { formatNzdFromCents } from "./plan-math.ts";
 import { formatEnrolmentDisplayDate } from "./presentation.ts";
-import type { NzPaymentFrequency, NzPlanPreview, NzStudentDetails } from "./types.ts";
+import { isGstInclusiveBreakdown } from "./tax-presentation.ts";
+import type {
+  NzPaymentFrequency,
+  NzPlanPreview,
+  NzStudentDetails,
+  NzTaxPresentation,
+} from "./types.ts";
 import { validateStudentDetails } from "./validation.ts";
 
 export const NZ_CHECKOUT_SECTIONS = [
@@ -345,10 +351,14 @@ export function payNowSavingFromCatalogue(input: {
 export function payNowChoiceBody(input: {
   paymentInFullCourseFeeCents: number;
   paymentPlanCourseFeeCents: number;
+  taxPresentation?: NzTaxPresentation | null;
 }): string {
   const saving = payNowSavingFromCatalogue(input);
   if (!saving) {
     return "Pay your course fee today.";
+  }
+  if (isGstInclusiveBreakdown(input.taxPresentation)) {
+    return `Pay your course fee today and save ${formatNzdFromCents(saving.savingCents)} incl. ${input.taxPresentation.label}.`;
   }
   return `Pay your course fee today and save ${saving.percent}% (${formatNzdFromCents(saving.savingCents)}) under our current Pay Now promotion.`;
 }
@@ -418,6 +428,7 @@ export function decorateConfirmationRows(
 export function paymentPlanConfirmationRows(input: {
   courseName: string;
   courseFeeLabel: string;
+  courseFeeRows?: ConfirmationSummaryRow[];
   paymentPlanLabel?: string | null;
   firstPaymentDate?: string | null;
   agreementNumber?: string | null;
@@ -425,7 +436,9 @@ export function paymentPlanConfirmationRows(input: {
 }): ConfirmationSummaryRow[] {
   const rows: ConfirmationSummaryRow[] = [
     { label: "Course", value: input.courseName, group: "course" },
-    { label: "Course fee", value: input.courseFeeLabel, group: "payments" },
+    ...(input.courseFeeRows && input.courseFeeRows.length > 0
+      ? input.courseFeeRows
+      : [{ label: "Course fee", value: input.courseFeeLabel, group: "payments" as const }]),
   ];
   if (input.paymentPlanLabel) {
     rows.push({

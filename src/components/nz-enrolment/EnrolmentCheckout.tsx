@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties, ReactNode, RefObject } from "react";
-import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { Fragment, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   NZ_CONFIRM_CTA,
   NZ_CONFIRMATION_COPY,
@@ -33,6 +33,11 @@ import {
   studentDetailsStarted,
   type ConfirmationSummaryRow,
 } from "@/lib/nz-enrolment/checkout-ui";
+import {
+  gstInclusiveDisplayRows,
+  isGstInclusiveBreakdown,
+} from "@/lib/nz-enrolment/tax-presentation";
+import { TaxBreakdown } from "@/components/nz-enrolment/TaxBreakdown";
 import {
   clearedStateForPaymentSwitch,
   hostedCheckoutConfirmDeclarations,
@@ -343,9 +348,18 @@ export function NzEnrolmentCheckout({
 
   const display = preview ? planDisplay(preview) : null;
   const planChoice = preview ? paymentPlanChoiceCopy(preview) : null;
+  const taxPresentation = tenant.checkout.taxPresentation;
+  const showGstBreakdown = isGstInclusiveBreakdown(taxPresentation);
+  const payNowGstRows = showGstBreakdown
+    ? gstInclusiveDisplayRows(course.paymentInFullCourseFeeCents, taxPresentation)
+    : null;
+  const planGstRows = showGstBreakdown
+    ? gstInclusiveDisplayRows(course.paymentPlanCourseFeeCents, taxPresentation)
+    : null;
   const payNowBody = payNowChoiceBody({
     paymentInFullCourseFeeCents: course.paymentInFullCourseFeeCents,
     paymentPlanCourseFeeCents: course.paymentPlanCourseFeeCents,
+    taxPresentation,
   });
   const studentValid = studentDetailsAreValid(resolvedStudent);
   const studentStarted = studentDetailsStarted(resolvedStudent);
@@ -370,6 +384,9 @@ export function NzEnrolmentCheckout({
   const displayedCoursePriceCents = isPayInFull
     ? authoritativePriceCents
     : course.paymentPlanCourseFeeCents;
+  const selectedGstRows = showGstBreakdown
+    ? gstInclusiveDisplayRows(displayedCoursePriceCents, taxPresentation)
+    : null;
   const copy = hostedCheckoutCopy({
     mode: paymentMode,
     selectedOption: resolvedPaymentOption,
@@ -1173,10 +1190,18 @@ export function NzEnrolmentCheckout({
               <ConfirmationSummary
                 rows={
                   pifSuccess
-                    ? decorateConfirmationRows(pifSuccess.rows)
+                    ? decorateConfirmationRows([
+                        ...pifSuccess.rows.slice(0, 2),
+                        ...(payNowGstRows || []),
+                        ...pifSuccess.rows.slice(2),
+                      ])
                     : paymentPlanConfirmationRows({
                         courseName: course.name,
                         courseFeeLabel: formatNzdFromCents(course.paymentPlanCourseFeeCents),
+                        courseFeeRows: planGstRows?.map((row) => ({
+                          ...row,
+                          group: "payments" as const,
+                        })),
                         paymentPlanLabel: display
                           ? `${display.regularLabel}${
                               display.finalPaymentLabel ? ` · ${display.finalPaymentLabel}` : ""
@@ -1245,7 +1270,9 @@ export function NzEnrolmentCheckout({
                 isPayInFull ? displayedCoursePriceCents : course.paymentPlanCourseFeeCents,
               )}
             </p>
-            <p className={styles.feeLabel}>Course fee</p>
+            <p className={styles.feeLabel}>
+              {showGstBreakdown ? "Total incl. GST" : "Course fee"}
+            </p>
             <p className={styles.planAmount}>
               {isPayInFull
                 ? "Pay now"
@@ -1279,12 +1306,25 @@ export function NzEnrolmentCheckout({
             <dl className={styles.review}>
               <dt>Course</dt>
               <dd>{course.name}</dd>
-              <dt>{isPayInFull ? "Course price" : "Course fee"}</dt>
-              <dd data-testid="nz-authoritative-price">
-                {formatNzdFromCents(
-                  isPayInFull ? displayedCoursePriceCents : course.paymentPlanCourseFeeCents,
-                )}
-              </dd>
+              {selectedGstRows ? (
+                selectedGstRows.map((row) => (
+                  <Fragment key={row.label}>
+                    <dt>{row.label}</dt>
+                    <dd data-testid={row.label === `Total incl. ${taxPresentation?.label}` ? "nz-authoritative-price" : undefined}>
+                      {row.value}
+                    </dd>
+                  </Fragment>
+                ))
+              ) : (
+                <>
+                  <dt>{isPayInFull ? "Course price" : "Course fee"}</dt>
+                  <dd data-testid="nz-authoritative-price">
+                    {formatNzdFromCents(
+                      isPayInFull ? displayedCoursePriceCents : course.paymentPlanCourseFeeCents,
+                    )}
+                  </dd>
+                </>
+              )}
               {renderFlags.showPayInFullSummary ? (
                 <>
                   <dt>Pay now</dt>
@@ -1374,7 +1414,14 @@ export function NzEnrolmentCheckout({
                   />
                   <span>
                     <strong>{NZ_PAY_IN_FULL_COPY.choiceTitle}</strong>
-                    <em data-testid="nz-pay-now-amount">
+                    {showGstBreakdown && taxPresentation ? (
+                      <TaxBreakdown
+                        grossCents={course.paymentInFullCourseFeeCents}
+                        tax={taxPresentation}
+                        testId="nz-pay-now-gst"
+                      />
+                    ) : null}
+                    <em data-testid="nz-pay-now-amount" className={showGstBreakdown ? styles.srOnly : undefined}>
                       <span data-testid="nz-authoritative-price">
                         {formatNzdFromCents(course.paymentInFullCourseFeeCents)}
                       </span>
@@ -1405,6 +1452,13 @@ export function NzEnrolmentCheckout({
                   />
                   <span>
                     <strong>{NZ_PAYMENT_PLAN_CHOICE_COPY.title}</strong>
+                    {showGstBreakdown && taxPresentation ? (
+                      <TaxBreakdown
+                        grossCents={course.paymentPlanCourseFeeCents}
+                        tax={taxPresentation}
+                        testId="nz-payment-plan-gst"
+                      />
+                    ) : null}
                     <em data-testid="nz-payment-plan-amount">
                       {planChoice?.weeklyAmountLabel ||
                         display?.regularLabel ||
@@ -1414,9 +1468,18 @@ export function NzEnrolmentCheckout({
                       ) : null}
                     </em>
                     <span className={styles.choiceCardBody} data-testid="nz-payment-plan-body">
-                      {planChoice?.body || NZ_PAYMENT_PLAN_CHOICE_COPY.lead}
+                      {showGstBreakdown
+                        ? [
+                            display?.regularCountLabel,
+                            display?.finalPaymentLabel
+                              ? display.finalPaymentLabel.replace(/^Final payment of /, "Final payment ")
+                              : null,
+                          ]
+                            .filter(Boolean)
+                            .join(". ")
+                        : planChoice?.body || NZ_PAYMENT_PLAN_CHOICE_COPY.lead}
                     </span>
-                    {planChoice ? (
+                    {planChoice && !showGstBreakdown ? (
                       <small data-testid="nz-payment-plan-total">{planChoice.totalLine}</small>
                     ) : null}
                   </span>
@@ -1708,11 +1771,16 @@ export function NzEnrolmentCheckout({
             <dl className={styles.review}>
               <dt>Course</dt>
               <dd>{course.name}</dd>
-              {renderFlags.showPayInFullSummary ? (
+              {selectedGstRows ? (
+                selectedGstRows.map((row) => (
+                  <Fragment key={row.label}>
+                    <dt>{row.label}</dt>
+                    <dd>{row.value}</dd>
+                  </Fragment>
+                ))
+              ) : renderFlags.showPayInFullSummary ? (
                 <>
                   <dt>Pay now</dt>
-                  <dd>{formatNzdFromCents(displayedCoursePriceCents)}</dd>
-                  <dt>Payment today</dt>
                   <dd>{formatNzdFromCents(displayedCoursePriceCents)}</dd>
                 </>
               ) : (
@@ -1721,7 +1789,37 @@ export function NzEnrolmentCheckout({
                   <dd>{formatNzdFromCents(course.paymentPlanCourseFeeCents)}</dd>
                 </>
               )}
+              {renderFlags.showPayInFullSummary ? (
+                <>
+                  <dt>Payment today</dt>
+                  <dd>{formatNzdFromCents(displayedCoursePriceCents)}</dd>
+                </>
+              ) : null}
               {renderFlags.showPayInFullSummary ? null : renderFlags.showPlanSchedule ? (
+                showGstBreakdown ? (
+                  <>
+                    <dt>Payment plan</dt>
+                    <dd>{display?.regularLabel}</dd>
+                    <dt>Schedule</dt>
+                    <dd>
+                      {preview?.hasResidualFinal
+                        ? `${preview.fullRegularInstalmentCount} × ${formatNzdFromCents(preview.regularInstalmentAmountCents)}`
+                        : display?.regularCountLabel}
+                      {display?.finalPaymentLabel ? (
+                        <>
+                          <br />
+                          {display.finalPaymentLabel.replace(/^Final payment of /, "Final payment ")}
+                        </>
+                      ) : null}
+                    </dd>
+                    {renderFlags.showFirstPaymentDate ? (
+                      <>
+                        <dt>First payment date</dt>
+                        <dd>{resolvedFirstPaymentDate}</dd>
+                      </>
+                    ) : null}
+                  </>
+                ) : (
                 <>
                   <dt>Payment plan</dt>
                   <dd>
@@ -1747,6 +1845,7 @@ export function NzEnrolmentCheckout({
                     </>
                   ) : null}
                 </>
+                )
               ) : null}
               <dt>Student</dt>
               <dd>
