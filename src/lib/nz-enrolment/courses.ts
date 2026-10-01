@@ -72,7 +72,7 @@ const SANDBOX_FIXTURE_COURSES: readonly NzCourse[] = [
     providerSlug: "bela-nz",
     name: "Lash Business Bundle",
     description:
-      "StudentPay NZ sandbox course for Bela Beauty College hosted Pay in Full and payment-plan enrolment. Matches E3 catalogue BELA_LASH_BUSINESS_BUNDLE.",
+      "StudentPay NZ sandbox course for Bela Beauty College hosted payment-plan enrolment. Matches E3 catalogue BELA_LASH_BUSINESS_BUNDLE. Hosted Pay Now stays unavailable until separately certified.",
     paymentPlanCourseFeeCents: 280_000,
     paymentInFullCourseFeeCents: 280_000,
     enrolmentPaymentOptions: ["payment_plan", "pay_in_full"],

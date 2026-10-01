@@ -67,6 +67,31 @@ describe("single-page checkout presentation helpers", () => {
     );
   });
 
+  it("hides a $0.00 upfront line and shows a non-zero upfront generically", () => {
+    process.env.STUDENTPAY_ENV = "sandbox";
+    const oli = getNzCourse("oli", "certification-course")!;
+    const bela = getNzCourse("bela-nz", "lash-business-bundle")!;
+    const oliDisplay = planDisplay(
+      previewCoursePlan(oli, { firstPaymentDate: "2026-10-01" }),
+    );
+    const belaDisplay = planDisplay(
+      previewCoursePlan(bela, { firstPaymentDate: "2026-10-01" }),
+    );
+    assert.equal(oliDisplay.upfrontLabel, "");
+    assert.equal(
+      oliDisplay.rows.some((row) => row.label === "Upfront"),
+      false,
+    );
+    assert.equal(belaDisplay.upfrontLabel, "$10.00 upfront");
+    assert.equal(
+      belaDisplay.rows.find((row) => row.label === "Upfront")?.value,
+      "$10.00",
+    );
+    assert.match(belaDisplay.regularLabel, /\$15\.00 per week/);
+    assert.match(belaDisplay.regularCountLabel, /186 weekly payments of \$15\.00/);
+    assert.match(belaDisplay.totalLabel, /\$2,800\.00/);
+  });
+
   it("does not create a checkout on render or while typing", () => {
     assert.equal(
       shouldCreateCheckout({
@@ -281,6 +306,12 @@ describe("single-page checkout presentation helpers", () => {
       isPayInFullChoiceVisible(oli.checkout.paymentOptions.pay_in_full),
       true,
     );
+    process.env.STUDENTPAY_ENV = "sandbox";
+    const bela = toPublicTenant(getNzTenantBySlug("bela-nz")!);
+    assert.equal(
+      isPayInFullChoiceVisible(bela.checkout.paymentOptions.pay_in_full),
+      false,
+    );
   });
 });
 
@@ -294,7 +325,11 @@ describe("plan section maths display", () => {
     assert.equal(preview.finalInstalmentAmountCents, 925);
     assert.equal(preview.numberOfInstalments, 74);
     assert.match(display.regularLabel, /\$25\.00 per week/);
-    assert.match(display.upfrontLabel, /\$0\.00 upfront/);
+    assert.equal(display.upfrontLabel, "");
+    assert.equal(
+      display.rows.some((row) => row.label === "Upfront"),
+      false,
+    );
     assert.match(display.regularCountLabel, /73 weekly payments of \$25\.00/);
     assert.equal(display.finalPaymentLabel, "Final payment of $9.25");
     assert.match(display.totalLabel, /\$1,834\.25/);

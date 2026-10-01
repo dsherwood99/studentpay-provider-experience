@@ -336,6 +336,45 @@ describe("PLAN-ONLY OLI regression", () => {
   });
 });
 
+describe("PLAN-ONLY BELA_NZ Hosted", () => {
+  it("reuses the generic plan_only Hosted checkout without Pay Now", () => {
+    process.env.STUDENTPAY_ENV = "sandbox";
+    process.env.NZ_STUDENTPAY_API_BASE_URL = "https://sandbox-api.studentpay.co.nz";
+    const tenant = getNzTenantBySlug("bela-nz")!;
+    const course = getNzCourse("bela-nz", "lash-business-bundle")!;
+    const eligibility = resolveHostedPayInFullEligibility({ tenant, course });
+    const view = hostedCheckoutViewModel({
+      paymentPlanAvailable: eligibility.paymentPlanAvailable,
+      payInFullAvailable: eligibility.payInFullAvailable,
+      amountCents: course.paymentPlanCourseFeeCents,
+      tenantAttribution: tenant.presentation.attributionLabel,
+      declarations: pifDeclarations,
+      plan: {
+        upfrontAmountCents: 1000,
+        frequency: "Weekly",
+        numberOfInstalments: 186,
+        firstPaymentDate: "2026-10-01",
+      },
+    });
+    assert.equal(eligibility.payInFullAvailable, false);
+    assert.equal(eligibility.paymentPlanAvailable, true);
+    assert.equal(view.mode, "plan_only");
+    assert.equal(view.selectedOption, "interest_free_payment_plan");
+    assert.equal(view.flags.showPayInFullChoice, false);
+    assert.equal(view.flags.showPaymentMethodRadios, false);
+    assert.equal(view.flags.showDdaSection, true);
+    assert.equal(view.flags.showPpaLink, true);
+    assert.equal(view.createPlan?.paymentOption, "interest_free_payment_plan");
+    assert.equal(
+      view.createPlan && "upfrontAmountCents" in view.createPlan
+        ? view.createPlan.upfrontAmountCents
+        : null,
+      1000,
+    );
+    assert.ok(view.absentTestIds.includes("nz-payment-plan-choice"));
+  });
+});
+
 describe("EnrolmentCheckout consumes the payment-mode view model", () => {
   it("derives the initial option from eligibility instead of hardcoding payment_plan", () => {
     assert.match(checkoutSource, /from "@\/lib\/nz-enrolment\/checkout-payment-mode"/);

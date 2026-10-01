@@ -86,9 +86,11 @@ export function resolveHostedPayInFullEligibility(input: {
   courseAllows: boolean;
 } {
   const environmentAllowed = isHostedPayInFullEnvironmentAllowed();
+  const payInFullOption = input.tenant.checkout.paymentOptions.pay_in_full;
+  const sandboxPreviewEnabled =
+    isSandboxPayInFullHostedPreviewEnabled() && payInFullOption.enabled !== false;
   const providerEnabled =
-    providerAllowsPayInFull(input.tenant) ||
-    isSandboxPayInFullHostedPreviewEnabled();
+    providerAllowsPayInFull(input.tenant) || sandboxPreviewEnabled;
   const courseAllows = courseAllowsPayInFull(input.course);
   const paymentPlanAvailable =
     courseEnrolmentPaymentOptions(input.course).includes("payment_plan") &&
