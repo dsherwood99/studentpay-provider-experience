@@ -35,6 +35,8 @@ const SAFE_MESSAGES: Record<string, string> = {
     "We’re unable to load the current enrolment options for this course. Please try again shortly.",
   COURSE_NOT_OPEN:
     "A StudentPay payment plan is not open for this course yet.",
+  REVIEW_MODE:
+    "Review mode does not create enrolments, Direct Debit authorities, or payments.",
 };
 
 export function hostedErrorMessage(

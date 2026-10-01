@@ -11,9 +11,10 @@ import styles from "./provider-chrome.module.css";
 type Props = {
   tenant: NzPublicTenant;
   courses: NzPublicCourse[];
+  reviewMode?: boolean;
 };
 
-export function NzCourseCatalogue({ tenant, courses }: Props) {
+export function NzCourseCatalogue({ tenant, courses, reviewMode = false }: Props) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const categories = useMemo(() => {
@@ -40,7 +41,7 @@ export function NzCourseCatalogue({ tenant, courses }: Props) {
         If you arrived from a {tenant.displayName} course page, use that course’s enrolment
         link instead. This list is the fallback if you need to find a course here.
       </p>
-      {courses.some((course) => course.legalGateClosed) ? (
+      {!reviewMode && courses.some((course) => course.legalGateClosed) ? (
         <p className={styles.catalogueLead}>
           Payment plan amounts come from the provider catalogue. Enrolment stays closed
           until the provider agreement is active.
@@ -88,10 +89,14 @@ export function NzCourseCatalogue({ tenant, courses }: Props) {
                     regularInstalmentCents: course.planPolicy.regularInstalmentCents,
                   })
                 : null;
-            const canStartPlan =
-              !course.catalogueOnly &&
-              !course.legalGateClosed &&
-              course.enrolmentPaymentOptions.includes("payment_plan");
+            const describedPlanOpen =
+              course.planPolicy.mode === "derived_regular" &&
+              course.planPolicy.regularInstalmentCents > 0;
+            const canStartPlan = reviewMode
+              ? !course.catalogueOnly && describedPlanOpen
+              : !course.catalogueOnly &&
+                !course.legalGateClosed &&
+                course.enrolmentPaymentOptions.includes("payment_plan");
             return (
             <li key={course.slug}>
               <article className={styles.card}>
@@ -108,7 +113,7 @@ export function NzCourseCatalogue({ tenant, courses }: Props) {
                     <p className={styles.note}>{described.summary}</p>
                     {canStartPlan ? (
                       <a className={styles.enrol} href={coursePath(tenant, course)}>
-                        Start payment plan
+                        {reviewMode ? "Review checkout" : "Start payment plan"}
                       </a>
                     ) : (
                       <p className={styles.note}>

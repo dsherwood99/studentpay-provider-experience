@@ -161,6 +161,9 @@ export type NzProviderStudentAgreement = {
   content_hash: string;
   html: string;
   effective_from?: string | null;
+  /** Review deployments only. Never an in-force acceptance document. */
+  reviewOnly?: boolean;
+  acceptancePermitted?: boolean;
 };
 
 export type NzCourse = {

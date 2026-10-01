@@ -30,6 +30,8 @@ import {
   writeNzSession,
 } from "@/lib/nz-enrolment/request-context";
 import { toPublicCourse } from "@/lib/nz-enrolment/courses";
+import { presentHostedCourseForReview } from "@/lib/nz-enrolment/review-draft-agreement";
+import { reviewModeMutationResponse } from "@/lib/nz-enrolment/review-mode";
 import { listAuthoritativeHostedCourses, resolveAuthoritativeHostedCourseBySlug } from "@/lib/nz-enrolment/api-catalogue-overlay";
 import { toPublicTenant } from "@/lib/nz-enrolment/tenants";
 import { NzSessionConfigError, publicSessionView } from "@/lib/nz-enrolment/session";
@@ -110,7 +112,10 @@ export async function GET(request: Request) {
       return mismatch;
     }
 
-    const course = authoritative.course;
+    const course = presentHostedCourseForReview(
+      authoritative.tenant,
+      authoritative.course,
+    );
     const overlayTenant = authoritative.tenant;
     const eligibility = eligibilityForCourse(overlayTenant, course);
 
@@ -176,6 +181,10 @@ type CreateBody = {
 };
 
 export async function POST(request: Request) {
+  const reviewBlocked = reviewModeMutationResponse();
+  if (reviewBlocked) {
+    return reviewBlocked;
+  }
   if (!sameOriginOrConfigured(request)) {
     return jsonError(403, "TENANT_MISMATCH", "Invalid request origin.");
   }
@@ -201,7 +210,11 @@ export async function POST(request: Request) {
 
   const tenant = resolved.tenant;
   const course = resolved.course;
-  if (course.legalGateClosed) {
+  if (
+    course.legalGateClosed ||
+    course.providerStudentAgreement?.reviewOnly === true ||
+    course.providerStudentAgreement?.acceptancePermitted === false
+  ) {
     return jsonError(503, "COURSE_CONFIGURATION_UNAVAILABLE");
   }
   if (course.catalogueOnly) {

@@ -100,6 +100,15 @@ import {
 import {
   providerStudentAgreementAccepted,
 } from "@/lib/nz-enrolment/hosted-agreement";
+import { kitDisclosureForPolicy } from "@/lib/nz-enrolment/kit-policy";
+import {
+  REVIEW_CONFIRMATION_HEADING,
+  REVIEW_CONFIRMATION_LEAD,
+  REVIEW_DIRECT_DEBIT_MESSAGE,
+  REVIEW_DRAFT_AGREEMENT_NOTE,
+  reviewConfirmAdvance,
+  reviewDirectDebitAdvance,
+} from "@/lib/nz-enrolment/review-mode";
 import styles from "./enrolment-checkout.module.css";
 
 type Props = {
@@ -108,6 +117,7 @@ type Props = {
   ddaReturn?: "return" | "cancelled" | null;
   payInFullAvailable?: boolean;
   paymentPlanAvailable?: boolean;
+  reviewMode?: boolean;
 };
 
 const emptyStudent: NzStudentDetails = {
@@ -203,6 +213,7 @@ export function NzEnrolmentCheckout({
   ddaReturn = null,
   payInFullAvailable = false,
   paymentPlanAvailable = true,
+  reviewMode = false,
 }: Props) {
   const [course, setCourse] = useState(initialCourse);
   const [configurationUnavailable, setConfigurationUnavailable] = useState(false);
@@ -623,7 +634,18 @@ export function NzEnrolmentCheckout({
           (item) => item.courseCode === initialCourse.courseCode,
         );
         if (overlaid) {
-          setCourse(overlaid);
+          const keepReviewDraft =
+            reviewMode &&
+            initialCourse.providerStudentAgreement?.reviewOnly === true &&
+            !overlaid.providerStudentAgreement;
+          if (keepReviewDraft) {
+            setCourse({
+              ...overlaid,
+              providerStudentAgreement: initialCourse.providerStudentAgreement,
+            });
+          } else {
+            setCourse(overlaid);
+          }
           setUpfrontAmountCents(overlaid.planPolicy.upfrontAmountCents);
           setFrequency(overlaid.planPolicy.frequency);
         }
@@ -634,6 +656,9 @@ export function NzEnrolmentCheckout({
           setPaymentOption("pay_in_full");
           setPaymentChoiceTouched(true);
         }
+      }
+      if (reviewMode) {
+        return;
       }
       const response = await fetch("/api/enrolment-checkout/status", {
         method: "GET",
@@ -700,6 +725,9 @@ export function NzEnrolmentCheckout({
   }
 
   async function createCheckout(): Promise<string | null> {
+    if (reviewMode) {
+      return null;
+    }
     if (creatingRef.current) {
       return null;
     }
@@ -807,6 +835,25 @@ export function NzEnrolmentCheckout({
   }
 
   async function startDirectDebitSetup() {
+    if (reviewMode) {
+      const nextErrors = validateStudentDetails(resolvedStudent);
+      if (Object.keys(nextErrors).length > 0) {
+        setFieldErrors(nextErrors);
+        setSectionErrors((current) => ({
+          ...current,
+          student: "Complete your details before setting up Direct Debit.",
+        }));
+        studentSectionRef.current?.focus();
+        return;
+      }
+      const advance = reviewDirectDebitAdvance();
+      setSetupUrl(advance.setupUrl);
+      setSetupComplete(advance.setupComplete);
+      setCheckoutId(advance.checkoutId);
+      setSectionErrors((current) => ({ ...current, dda: undefined }));
+      ddaSectionRef.current?.focus();
+      return;
+    }
     if (isPayInFull || setupComplete) {
       return;
     }
@@ -891,6 +938,9 @@ export function NzEnrolmentCheckout({
   }
 
   async function confirmPayInFullFromServer() {
+    if (reviewMode) {
+      return null;
+    }
     const confirmDeclarations = hostedCheckoutConfirmDeclarations({
       selectedOption: resolvedPaymentOption,
       declarations,
@@ -933,6 +983,13 @@ export function NzEnrolmentCheckout({
   }
 
   async function payInFullNow() {
+    if (reviewMode) {
+      setSectionErrors((current) => ({
+        ...current,
+        review: "Review mode does not take a card payment.",
+      }));
+      return;
+    }
     if (payingRef.current || busy || alreadyConfirmed) {
       return;
     }
@@ -1033,6 +1090,30 @@ export function NzEnrolmentCheckout({
   }
 
   async function confirmCheckout() {
+    if (reviewMode) {
+      if (
+        !shouldConfirmCheckout({
+          studentValid,
+          setupComplete,
+          declarationsAccepted: accepted,
+          userClickedConfirm: true,
+          busy,
+          alreadyConfirmed,
+        })
+      ) {
+        setSectionErrors((current) => ({
+          ...current,
+          review: "Accept the required declarations after Direct Debit is authorised.",
+        }));
+        reviewSectionRef.current?.focus();
+        return;
+      }
+      const advance = reviewConfirmAdvance();
+      setAgreementNumber(advance.agreementNumber);
+      setCheckoutStatus(advance.checkoutStatus);
+      setConfirmed(advance.confirmed);
+      return;
+    }
     if (
       !shouldConfirmCheckout({
         studentValid,
@@ -1154,7 +1235,8 @@ export function NzEnrolmentCheckout({
       <ProviderNativeHeader tenant={tenant} course={course} />
       <div
         className={styles.page}
-        data-testid="nz-enrolment-confirmed"
+        data-testid={reviewMode ? "nz-review-confirmation" : "nz-enrolment-confirmed"}
+        data-review-mode={reviewMode ? "true" : "false"}
         data-payment-option={isPayInFull ? "pay_in_full" : "payment_plan"}
         style={tenantCssVars(tenant) as CSSProperties}
       >
@@ -1163,12 +1245,16 @@ export function NzEnrolmentCheckout({
             <div className={styles.section}>
               <p className={styles.kicker}>{tenant.displayName}</p>
               <h1 id="nz-enrolment-confirmed-heading">
-                {pifSuccess?.heading || NZ_CONFIRMATION_COPY.heading}
+                {reviewMode
+                  ? REVIEW_CONFIRMATION_HEADING
+                  : pifSuccess?.heading || NZ_CONFIRMATION_COPY.heading}
               </h1>
               <p className={styles.lead}>
-                {pifSuccess
-                  ? pifSuccess.lead
-                  : `Your ${tenant.displayName} enrolment and StudentPay payment plan are now active.`}
+                {reviewMode
+                  ? REVIEW_CONFIRMATION_LEAD
+                  : pifSuccess
+                    ? pifSuccess.lead
+                    : `Your ${tenant.displayName} enrolment and StudentPay payment plan are now active.`}
               </p>
               <ConfirmationSummary
                 rows={
@@ -1188,11 +1274,13 @@ export function NzEnrolmentCheckout({
                       })
                 }
               />
+              {reviewMode ? null : (
               <p className={styles.lead}>
                 {pifSuccess
                   ? `${tenant.displayName} will confirm your course access separately.`
                   : `Keep an eye on ${resolvedStudent.email || "your email"} for your payment plan agreement. ${tenant.displayName} will confirm your course access separately.`}
               </p>
+              )}
               {returnToProviderUrl ? (
                 <div className={styles.actions}>
                   <a className={`${styles.btn} ${styles.btnPrimary}`} href={returnToProviderUrl}>
@@ -1216,6 +1304,7 @@ export function NzEnrolmentCheckout({
     <div
       className={styles.page}
       data-testid="nz-enrolment-single-page"
+      data-review-mode={reviewMode ? "true" : "false"}
       data-payment-mode={paymentMode}
       data-selected-option={resolvedPaymentOption}
       style={tenantCssVars(tenant) as CSSProperties}
@@ -1275,6 +1364,11 @@ export function NzEnrolmentCheckout({
                 ? NZ_PAYMENT_CHOICE_LEAD
                 : copy.paymentSectionLead}
             </p>
+            {kitDisclosureForPolicy(tenant.kitPolicy) ? (
+              <p className={styles.note} data-testid="nz-kit-disclosure">
+                {kitDisclosureForPolicy(tenant.kitPolicy)}
+              </p>
+            ) : null}
             {renderFlags.showPaymentMethodRadios ? null : (
             <dl className={styles.review}>
               <dt>Course</dt>
@@ -1637,11 +1731,19 @@ export function NzEnrolmentCheckout({
                   <div
                     className={styles.ddaStatusPanel}
                     data-state="complete"
-                    data-testid="nz-dda-complete"
+                    data-testid={reviewMode ? "nz-review-dda" : "nz-dda-complete"}
                     role="status"
                   >
-                    <h3>{NZ_DIRECT_DEBIT_COPY.authorisedTitle}</h3>
-                    <p>{NZ_DIRECT_DEBIT_COPY.authorisedBody}</p>
+                    <h3>
+                      {reviewMode
+                        ? "Direct Debit preview"
+                        : NZ_DIRECT_DEBIT_COPY.authorisedTitle}
+                    </h3>
+                    <p>
+                      {reviewMode
+                        ? REVIEW_DIRECT_DEBIT_MESSAGE
+                        : NZ_DIRECT_DEBIT_COPY.authorisedBody}
+                    </p>
                   </div>
                 ) : (
                   <div
@@ -1760,6 +1862,11 @@ export function NzEnrolmentCheckout({
               <legend>Agreements</legend>
               {providerAgreement ? (
                 <>
+                  {providerAgreement.reviewOnly ? (
+                    <p className={styles.note} data-testid="nz-review-draft-agreement">
+                      {REVIEW_DRAFT_AGREEMENT_NOTE}
+                    </p>
+                  ) : null}
                   <label className={styles.check}>
                     <input
                       type="checkbox"
@@ -1779,7 +1886,10 @@ export function NzEnrolmentCheckout({
                       . This is separate from the StudentPay Payment Plan Agreement.
                     </span>
                   </label>
-                  <details className={styles.agreementPanel}>
+                  <details
+                    className={styles.agreementPanel}
+                    open={providerAgreement.reviewOnly === true}
+                  >
                     <summary>
                       Read {providerAgreement.title} version {providerAgreement.version}
                     </summary>

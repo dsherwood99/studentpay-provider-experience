@@ -15,6 +15,7 @@ import {
   resolveAuthoritativeCourseContext,
   writeNzSession,
 } from "@/lib/nz-enrolment/request-context";
+import { reviewModeMutationResponse } from "@/lib/nz-enrolment/review-mode";
 import { sameOriginOrConfigured } from "@/lib/nz-enrolment/validation";
 
 export const runtime = "nodejs";
@@ -36,6 +37,10 @@ type ConfirmBody = {
 };
 
 export async function POST(request: Request) {
+  const reviewBlocked = reviewModeMutationResponse();
+  if (reviewBlocked) {
+    return reviewBlocked;
+  }
   if (!sameOriginOrConfigured(request)) {
     return jsonError(403, "TENANT_MISMATCH", "Invalid request origin.");
   }
@@ -59,7 +64,12 @@ export async function POST(request: Request) {
     return resolved.error || jsonError(404, "PROVIDER_NOT_FOUND");
   }
 
-  if (resolved.course?.legalGateClosed || resolved.course?.catalogueOnly) {
+  if (
+    resolved.course?.legalGateClosed ||
+    resolved.course?.catalogueOnly ||
+    resolved.course?.providerStudentAgreement?.reviewOnly === true ||
+    resolved.course?.providerStudentAgreement?.acceptancePermitted === false
+  ) {
     return jsonError(503, "COURSE_CONFIGURATION_UNAVAILABLE");
   }
 

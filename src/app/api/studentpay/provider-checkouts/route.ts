@@ -1,3 +1,4 @@
+import { reviewModeMutationResponse } from "@/lib/nz-enrolment/review-mode";
 import {
   academyAustralia,
   criminalPsychology,
@@ -287,6 +288,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const reviewBlocked = reviewModeMutationResponse();
+  if (reviewBlocked) {
+    return reviewBlocked;
+  }
   let body: CreateCheckoutBody;
 
   try {
