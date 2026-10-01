@@ -152,6 +152,11 @@ export const NZ_TENANTS: readonly NzTenant[] = [
         supportNote:
           "Questions about this enrolment can be sent to Online Learning Institute or StudentPay NZ support.",
       },
+      taxPresentation: {
+        mode: "gst_inclusive_breakdown",
+        label: "GST",
+        rateBasisPoints: 1500,
+      },
     },
     apiKeyEnv: "PROVIDER_API_KEY_OLI_NZ",
     active: true,
@@ -352,6 +357,9 @@ export function toPublicTenant(tenant: NzTenant): NzPublicTenant {
       maxInstalments: tenant.checkout.maxInstalments,
       defaultFrequency: tenant.checkout.defaultFrequency,
       wording: tenant.checkout.wording,
+      ...(tenant.checkout.taxPresentation
+        ? { taxPresentation: tenant.checkout.taxPresentation }
+        : {}),
     },
   };
 }

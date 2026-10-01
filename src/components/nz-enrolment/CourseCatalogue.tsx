@@ -3,8 +3,10 @@
 import { useMemo, useState } from "react";
 import { formatNzdFromCents } from "@/lib/nz-enrolment/plan-math";
 import { coursePath } from "@/lib/nz-enrolment/presentation";
+import { isGstInclusiveBreakdown } from "@/lib/nz-enrolment/tax-presentation";
 import type { NzPublicCourse, NzPublicTenant } from "@/lib/nz-enrolment/types";
 import { ProviderNativeHeader } from "@/components/nz-enrolment/ProviderNativeHeader";
+import { TaxBreakdown } from "@/components/nz-enrolment/TaxBreakdown";
 import styles from "./provider-chrome.module.css";
 
 type Props = {
@@ -69,11 +71,23 @@ export function NzCourseCatalogue({ tenant, courses }: Props) {
               <article className={styles.card}>
                 {course.category ? <p className={styles.category}>{course.category}</p> : null}
                 <h2>{course.name}</h2>
-                <p className={styles.price}>
-                  Course fee{" "}
-                  <strong>{formatNzdFromCents(course.paymentPlanCourseFeeCents)}</strong>
-                </p>
-                <p className={styles.price}>Payment plan available</p>
+                {isGstInclusiveBreakdown(tenant.checkout.taxPresentation) ? (
+                  <div className={styles.taxPrice} data-testid="nz-catalogue-gst">
+                    <TaxBreakdown
+                      grossCents={course.paymentPlanCourseFeeCents}
+                      tax={tenant.checkout.taxPresentation}
+                    />
+                    <p className={styles.price}>Payment plan available</p>
+                  </div>
+                ) : (
+                  <>
+                    <p className={styles.price}>
+                      Course fee{" "}
+                      <strong>{formatNzdFromCents(course.paymentPlanCourseFeeCents)}</strong>
+                    </p>
+                    <p className={styles.price}>Payment plan available</p>
+                  </>
+                )}
                 <a className={styles.enrol} href={coursePath(tenant, course)}>
                   Start payment plan
                 </a>

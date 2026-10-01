@@ -55,6 +55,8 @@ describe("generic provider branding and presentation", () => {
       "Payment plan powered by StudentPay NZ",
     );
     assert.equal(pub.branding.primaryColour, "#3a8f8f");
+    assert.equal(pub.checkout.taxPresentation?.mode, "gst_inclusive_breakdown");
+    assert.equal(pub.checkout.taxPresentation?.rateBasisPoints, 1500);
     assert.equal(pub.branding.backgroundColour, "#f9f7f3");
     assert.match(pub.branding.headingFontFamily || "", /Montserrat/);
     assert.match(tenantCssVars(pub)["--nz-heading-font"], /Montserrat/);
@@ -99,6 +101,15 @@ describe("generic provider branding and presentation", () => {
     const fixture = getNzTenantBySlug("fixture-institute")!;
     assert.equal(fixture.presentation.chrome, "provider-native");
     assert.notEqual(fixture.branding.primaryColour, "#3a8f8f");
+    assert.equal(toPublicTenant(fixture).checkout.taxPresentation, undefined);
+  });
+
+  it("leaves BELA_NZ without GST presentation", () => {
+    process.env.STUDENTPAY_ENV = "sandbox";
+    const bela = getNzTenantBySlug("bela-nz")!;
+    const pub = toPublicTenant(bela);
+    assert.equal(bela.checkout.taxPresentation, undefined);
+    assert.equal(pub.checkout.taxPresentation, undefined);
   });
 });
 

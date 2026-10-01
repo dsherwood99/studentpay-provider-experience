@@ -774,6 +774,11 @@
   color: var(--nz-heading, var(--nz-text));
 }
 
+.taxPrice {
+  display: grid;
+  gap: 8px;
+}
+
 .enrol {
   margin-top: auto;
   align-self: flex-start;
