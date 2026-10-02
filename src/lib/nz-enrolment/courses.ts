@@ -1,6 +1,12 @@
-import { allowSandboxFixtures, isInternalE13CanaryHostedEnabled } from "./environment.ts";
+import {
+  allowSandboxFixtures,
+  configuredNzHostedTenantSlug,
+  isInternalE13CanaryHostedEnabled,
+} from "./environment.ts";
+import { getNzTenantBySlug } from "./tenants.ts";
 import { courseEnrolmentPaymentOptions } from "./pay-in-full.ts";
 import oliProduction from "./catalogues/oli-production.json" with { type: "json" };
+import belaWebsiteCatalogue from "./catalogues/bela-website-courses.json" with { type: "json" };
 import type {
   NzCourse,
   NzEnrolmentPaymentOption,
@@ -72,12 +78,14 @@ const SANDBOX_FIXTURE_COURSES: readonly NzCourse[] = [
     providerSlug: "bela-nz",
     name: "Lash Business Bundle",
     description:
-      "StudentPay NZ sandbox course for Bela Beauty College hosted Pay in Full and payment-plan enrolment. Matches E3 catalogue BELA_LASH_BUSINESS_BUNDLE.",
+      "Lash Business Bundle — Bela Beauty College. Payment-plan course fee is the StudentPay financed amount. Hosted Pay in Full is disabled.",
     paymentPlanCourseFeeCents: 280_000,
     paymentInFullCourseFeeCents: 280_000,
-    enrolmentPaymentOptions: ["payment_plan", "pay_in_full"],
+    enrolmentPaymentOptions: ["payment_plan"],
     status: "active",
     sandboxOnly: true,
+    showWhenEnrolmentClosed: true,
+    websiteUrl: "https://belabeautycollege.com/products/the-ultimate-lash-business-bundle",
     duration: "Self-paced",
     planPolicy: {
       mode: "derived_regular",
@@ -119,6 +127,10 @@ function asCourse(row: {
   paymentPlanCourseFeeCents: number;
   enrolmentPaymentOptions?: readonly NzEnrolmentPaymentOption[];
   status: "active" | "inactive";
+  catalogueOnly?: boolean;
+  showWhenEnrolmentClosed?: boolean;
+  websiteUrl?: string;
+  sortOrder?: number;
   sandboxOnly?: boolean;
   internalCanary?: boolean;
   sourceRow?: number;
@@ -137,6 +149,10 @@ function asCourse(row: {
       row.enrolmentPaymentOptions ??
       (row.providerSlug === "oli" ? ["payment_plan", "pay_in_full"] : undefined),
     status: row.status,
+    catalogueOnly: row.catalogueOnly,
+    showWhenEnrolmentClosed: row.showWhenEnrolmentClosed,
+    websiteUrl: row.websiteUrl,
+    sortOrder: row.sortOrder,
     sandboxOnly: row.sandboxOnly,
     internalCanary: row.internalCanary,
     sourceRow: row.sourceRow,
@@ -148,6 +164,67 @@ const OLI_PRODUCTION_COURSES: readonly NzCourse[] = (
   oliProduction as Array<Parameters<typeof asCourse>[0]>
 ).map(asCourse);
 
+type BelaWebsiteRow = {
+  handle: string;
+  name: string;
+  category: string;
+  publishedPriceCents: number;
+  sourceUrl: string;
+  sortOrder: number;
+  studentPaySlug?: string;
+};
+
+function belaCourseCode(handle: string): string {
+  return `BELA_${handle.replace(/[^a-z0-9]+/gi, "_").replace(/^_|_$/g, "").toUpperCase()}`;
+}
+
+const LASH_BUSINESS_BUNDLE = SANDBOX_FIXTURE_COURSES.find(
+  (course) => course.slug === "lash-business-bundle",
+);
+
+function belaWebsiteCourses(): NzCourse[] {
+  const lash = LASH_BUSINESS_BUNDLE;
+  if (!lash) {
+    throw new Error("Lash Business Bundle fixture is missing.");
+  }
+  const rows = belaWebsiteCatalogue.courses as BelaWebsiteRow[];
+  return rows.map((row) => {
+    if (row.studentPaySlug === lash.slug) {
+      return {
+        ...lash,
+        category: row.category,
+        sortOrder: row.sortOrder,
+        websiteUrl: row.sourceUrl,
+      };
+    }
+    return {
+      courseCode: belaCourseCode(row.handle),
+      slug: row.handle,
+      providerSlug: "bela-nz",
+      name: row.name,
+      category: row.category,
+      description:
+        "Listed from the Bela Beauty College website. A StudentPay payment plan is not open for this course.",
+      paymentPlanCourseFeeCents: row.publishedPriceCents,
+      paymentInFullCourseFeeCents: row.publishedPriceCents,
+      enrolmentPaymentOptions: [],
+      status: "active" as const,
+      catalogueOnly: true,
+      sandboxOnly: true,
+      sortOrder: row.sortOrder,
+      websiteUrl: row.sourceUrl,
+      planPolicy: {
+        mode: "derived_regular" as const,
+        frequency: "Weekly" as const,
+        regularInstalmentCents: 0,
+        upfrontAmountCents: 0,
+      },
+    };
+  });
+}
+
+const BELA_WEBSITE_COURSES = belaWebsiteCourses();
+
 function courseVisible(course: NzCourse): boolean {
   if (course.status !== "active") {
     return false;
@@ -155,14 +232,27 @@ function courseVisible(course: NzCourse): boolean {
   if (course.internalCanary) {
     return isInternalE13CanaryHostedEnabled();
   }
+  const boundSlug = configuredNzHostedTenantSlug();
+  if (boundSlug && course.providerSlug !== boundSlug) {
+    return false;
+  }
   if (course.sandboxOnly) {
-    return allowSandboxFixtures();
+    if (allowSandboxFixtures()) {
+      return true;
+    }
+    if (boundSlug && course.providerSlug === boundSlug) {
+      return getNzTenantBySlug(boundSlug)?.sandboxOnly === true;
+    }
+    return false;
   }
   return true;
 }
 
 export function listConfiguredNzCourses(): NzCourse[] {
-  return [...SANDBOX_FIXTURE_COURSES, ...OLI_PRODUCTION_COURSES];
+  const fixtures = SANDBOX_FIXTURE_COURSES.filter(
+    (course) => course.slug !== "lash-business-bundle",
+  );
+  return [...fixtures, ...BELA_WEBSITE_COURSES, ...OLI_PRODUCTION_COURSES];
 }
 
 export function getNzCoursesForProvider(providerSlug: string): NzCourse[] {
@@ -211,6 +301,9 @@ export function toPublicCourse(course: NzCourse): NzPublicCourse {
     planPolicy: course.planPolicy,
     planDefaults,
     enrolmentPaymentOptions: courseEnrolmentPaymentOptions(course),
+    catalogueOnly: course.catalogueOnly,
+    legalGateClosed: course.legalGateClosed,
+    websiteUrl: course.websiteUrl,
     ...(course.providerStudentAgreement
       ? { providerStudentAgreement: course.providerStudentAgreement }
       : {}),

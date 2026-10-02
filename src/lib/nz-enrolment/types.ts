@@ -20,7 +20,7 @@ export type NzHeaderSocialLink = {
   iconSrc?: string;
 };
 
-export type NzHeaderLayout = "site" | "compact";
+export type NzHeaderLayout = "site" | "compact" | "logo";
 
 export type NzHostedPathStyle = "enrol-slug" | "provider-root";
 
@@ -38,6 +38,8 @@ export type NzTenantBranding = {
   fontFamily: string;
   headingFontFamily?: string;
   ctaColour?: string;
+  /** Button label colour. Omitted buttons stay white on the call-to-action fill. */
+  ctaTextColour?: string;
   buttonRadius?: NzButtonRadius;
   headerStyle?: "provider-native" | "minimal";
   footerStyle?: "provider-native" | "minimal";
@@ -139,6 +141,11 @@ export type NzTenant = {
   privacyUrl: string;
   termsUrl: string;
   websiteUrl?: string;
+  /**
+   * Provider-agreement kit treatment. Absent means no kit disclosure and no
+   * kit charge. KIT_NOT_INCLUDED does not change course fees.
+   */
+  kitPolicy?: "KIT_NOT_INCLUDED" | "KIT_INCLUDED" | "KIT_UPFRONT_PAYMENT";
   branding: NzTenantBranding;
   presentation: NzTenantPresentation;
   checkout: NzTenantCheckoutConfig;
@@ -167,6 +174,9 @@ export type NzProviderStudentAgreement = {
   content_hash: string;
   html: string;
   effective_from?: string | null;
+  /** Review deployments only. Never an in-force acceptance document. */
+  reviewOnly?: boolean;
+  acceptancePermitted?: boolean;
 };
 
 export type NzCourse = {
@@ -186,6 +196,21 @@ export type NzCourse = {
    */
   enrolmentPaymentOptions?: readonly NzEnrolmentPaymentOption[];
   status: "active" | "inactive";
+  /** Listed from the provider website. No StudentPay payment plan is open. */
+  catalogueOnly?: boolean;
+  /**
+   * Plan economics are known, but enrolment stays closed until an Active
+   * provider student agreement exists.
+   */
+  legalGateClosed?: boolean;
+  /** Presentation order from the provider catalogue. Not a price authority. */
+  sortOrder?: number;
+  /**
+   * Keep the course on a Salesforce-authority list when that course is not
+   * enrolable yet. The list copy does not open checkout.
+   */
+  showWhenEnrolmentClosed?: boolean;
+  websiteUrl?: string;
   sandboxOnly?: boolean;
   internalCanary?: boolean;
   duration?: string;
@@ -258,6 +283,7 @@ export type NzPublicTenant = {
   privacyUrl: string;
   termsUrl: string;
   websiteUrl?: string;
+  kitPolicy?: "KIT_NOT_INCLUDED" | "KIT_INCLUDED" | "KIT_UPFRONT_PAYMENT";
   branding: NzTenantBranding;
   presentation: NzTenantPresentation;
   checkout: {
@@ -281,6 +307,9 @@ export type NzPublicCourse = {
   paymentPlanCourseFeeCents: number;
   paymentInFullCourseFeeCents: number;
   enrolmentPaymentOptions: readonly NzEnrolmentPaymentOption[];
+  catalogueOnly?: boolean;
+  legalGateClosed?: boolean;
+  websiteUrl?: string;
   duration?: string;
   planPolicy: NzPlanPolicy;
   planDefaults: NzCoursePlanDefaults;

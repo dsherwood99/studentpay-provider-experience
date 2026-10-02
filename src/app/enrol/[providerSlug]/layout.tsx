@@ -1,5 +1,7 @@
 import { ProviderNativeFooter } from "@/components/nz-enrolment/ProviderNativeFooter";
+import { NzReviewBanner } from "@/components/nz-enrolment/ReviewBanner";
 import { isNzEnrolmentProductAvailable } from "@/lib/nz-enrolment/environment";
+import { isNzHostedReviewMode } from "@/lib/nz-enrolment/review-mode";
 import type { CSSProperties, ReactNode } from "react";
 import { tenantCssVars, usesProviderNativeChrome } from "@/lib/nz-enrolment/presentation";
 import { getNzTenantBySlug, toPublicTenant } from "@/lib/nz-enrolment/tenants";
@@ -26,12 +28,19 @@ export default async function NzEnrolProviderLayout({
   }
 
   const publicTenant = toPublicTenant(tenant);
+  const reviewBanner = isNzHostedReviewMode() ? <NzReviewBanner /> : null;
   if (!usesProviderNativeChrome(publicTenant)) {
-    return children;
+    return (
+      <>
+        {reviewBanner}
+        {children}
+      </>
+    );
   }
 
   return (
     <div className={styles.frame} style={tenantCssVars(publicTenant) as CSSProperties}>
+      {reviewBanner}
       <div className={styles.main}>{children}</div>
       <ProviderNativeFooter tenant={publicTenant} />
     </div>

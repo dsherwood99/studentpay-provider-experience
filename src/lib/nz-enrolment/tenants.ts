@@ -1,5 +1,8 @@
 import oliWebsiteSlugs from "./catalogues/oli-website-slugs.json" with { type: "json" };
-import { isInternalE13CanaryHostedEnabled } from "./environment.ts";
+import {
+  configuredNzHostedTenantSlug,
+  isInternalE13CanaryHostedEnabled,
+} from "./environment.ts";
 import { defaultPresentation } from "./presentation.ts";
 import type { NzPublicTenant, NzTenant } from "./types.ts";
 
@@ -205,21 +208,26 @@ export const NZ_TENANTS: readonly NzTenant[] = [
     slug: "bela-nz",
     providerCode: "BELA_NZ",
     displayName: "Bela Beauty College",
-    legalName: "Bela Beauty College",
-    supportEmail: "hello@belabeautycollege.com",
+    legalName: "Jessica Buff trading as Bela Beauty College",
+    supportEmail: "support@belabeautycollege.com",
+    supportPhone: "+64 9 888 6459",
     privacyUrl: "https://belabeautycollege.com/policies/privacy-policy",
     termsUrl: "https://belabeautycollege.com/policies/terms-of-service",
     websiteUrl: "https://belabeautycollege.com",
+    kitPolicy: "KIT_NOT_INCLUDED",
     branding: {
-      logoPath: "",
+      logoPath: "/nz-enrolment/bela/logo.png",
       primaryColour: "#5A332B",
-      accentColour: "#FBD2D3",
-      backgroundColour: "#FAF7F4",
+      accentColour: "#5A332B",
+      backgroundColour: "#ffffff",
       surfaceColour: "#ffffff",
-      headingColour: "#5A332B",
-      mutedTextColour: "#7a5a52",
-      textColour: "#5A332B",
-      fontFamily: "Arial, sans-serif",
+      headingColour: "#503231",
+      mutedTextColour: "#7A564E",
+      textColour: "#503231",
+      fontFamily: 'var(--font-nz-body), "DM Sans", Arial, sans-serif',
+      headingFontFamily: "var(--font-nz-heading), Montserrat, sans-serif",
+      ctaColour: "#FFBA92",
+      ctaTextColour: "#5A332B",
       buttonRadius: "medium",
       headerStyle: "provider-native",
       footerStyle: "provider-native",
@@ -231,14 +239,26 @@ export const NZ_TENANTS: readonly NzTenant[] = [
       courseUrlPattern:
         "https://belabeautycollege.com/products/the-ultimate-lash-business-bundle",
       knownCourseWebsiteSlugs: ["lash-business-bundle"],
+      headerLayout: "logo",
+      headerPhone: "+64 9 888 6459",
+      headerPhoneTel: "+6498886459",
       headerLinks: [
-        { label: "Courses", href: "https://belabeautycollege.com" },
+        {
+          label: "Enrol now",
+          href: "https://belabeautycollege.com/collections/all-courses-bundles",
+        },
+        {
+          label: "Courses",
+          href: "https://belabeautycollege.com/collections/all-courses-bundles",
+        },
+        { label: "About", href: "https://belabeautycollege.com/pages/about-us" },
+        { label: "Contact", href: "https://belabeautycollege.com/pages/contact-us" },
       ],
     }),
     checkout: {
       paymentOptions: {
         interest_free_payment_plan: { enabled: true },
-        pay_in_full: { enabled: true, comingSoon: false },
+        pay_in_full: { enabled: false, comingSoon: true },
       },
       availableFrequencies: ["Weekly"],
       defaultFrequency: "Weekly",
@@ -303,6 +323,16 @@ function tenantVisible(tenant: NzTenant): boolean {
   if (!tenant.active) {
     return false;
   }
+  const boundSlug = configuredNzHostedTenantSlug();
+  if (boundSlug) {
+    if (tenant.slug !== boundSlug) {
+      return false;
+    }
+    if (tenant.internalCanary) {
+      return isInternalE13CanaryHostedEnabled();
+    }
+    return true;
+  }
   if (tenant.internalCanary) {
     return isInternalE13CanaryHostedEnabled();
   }
@@ -333,6 +363,10 @@ export function listActiveNzTenants(): NzTenant[] {
 export function getDefaultProductionNzTenantSlug(
   tenants: readonly NzTenant[] = listActiveNzTenants(),
 ): string | undefined {
+  const boundSlug = configuredNzHostedTenantSlug();
+  if (boundSlug) {
+    return tenants.find((tenant) => tenant.slug === boundSlug)?.slug;
+  }
   return tenants.find(
     (tenant) => tenant.active && !tenant.sandboxOnly && !tenant.internalCanary,
   )?.slug;
@@ -348,6 +382,7 @@ export function toPublicTenant(tenant: NzTenant): NzPublicTenant {
     privacyUrl: tenant.privacyUrl,
     termsUrl: tenant.termsUrl,
     websiteUrl: tenant.websiteUrl,
+    kitPolicy: tenant.kitPolicy,
     branding: tenant.branding,
     presentation: tenant.presentation,
     checkout: {

@@ -9,6 +9,21 @@ This document covers the product boundary, architecture, tenant/course
 configuration, security, sandbox certification, and production enablement.
 It does not authorise Production activation.
 
+Provider commercial terms, payer treatment, and the inactive Bela agreement
+skeleton are documented in `docs/provider-terms-architecture/`. That pack does
+not activate a Provider Student Agreement.
+
+The Bela course list includes the courses and bundles published at
+`https://belabeautycollege.com/collections/all-courses-bundles`, captured
+2026-09-29. Salesforce Production is the payment-plan authority for the courses
+that fit the generic 400-instalment ceiling. Lash Business Bundle keeps
+$2,800, $10 upfront, and $15 weekly for 186 weeks. Full Beauty Bundle + Kits
+uses a Salesforce price of $25 weekly, $10 upfront, and a $15 final payment.
+The other created courses use $10 upfront and $20 weekly, with an exact final
+instalment when the financed amount does not divide evenly. Enrolment stays
+closed while the Bela provider agreement is not Active. The authority table is in
+`docs/provider-terms-architecture/BELA_NZ_FULL_CATALOGUE.md`.
+
 ---
 
 ## Product boundary
@@ -245,6 +260,8 @@ Dedicated NZ Enrolment Checkout (intended Production host `enrol.studentpay.co.n
 | `NZ_STUDENTPAY_API_BASE_URL` | Sandbox: `https://sandbox-api.studentpay.co.nz`. Production: `https://api.studentpay.co.nz` | Production + sandbox URL or missing → 503 |
 | `NZ_ENROLMENT_SESSION_SECRET` | HttpOnly session HMAC | Production missing/short → 503; no dev fallback |
 | `PROVIDER_API_KEY_OLI_NZ` | Server-side provider key | Create/confirm 503 |
+| `NZ_HOSTED_TENANT_SLUG` | Optional dedicated tenant slug. Unset keeps the current shared default. When set, only that slug resolves and `/` redirects there | Unknown slug on an NZ host → home 404, no other provider |
+| `NZ_HOSTED_REVIEW_MODE` | Review checkout. Renders the real checkout, including a Draft agreement, and refuses create, Direct Debit, and confirm. A Bela preview (`VERCEL_ENV=preview` and `NZ_HOSTED_TENANT_SLUG=bela-nz`) is in review mode when this is unset. Set `false` to turn that off. `VERCEL_ENV=production` forces review mode off even if this flag is true | Production customer deployments stay on the real enrolment path |
 
 Bela Production (`STUDENTPAY_PROVIDER_CODE=BELA`) and Academy (`ACADEMYAU`) are not NZ hosted product deployments. NZ routes must not render there.
 

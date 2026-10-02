@@ -59,8 +59,11 @@ export function hostedStripePublishableKeyIsSafe(
 }
 
 export function courseEnrolmentPaymentOptions(
-  course: Pick<NzCourse, "enrolmentPaymentOptions">,
+  course: Pick<NzCourse, "enrolmentPaymentOptions" | "catalogueOnly" | "legalGateClosed">,
 ): readonly NzEnrolmentPaymentOption[] {
+  if (course.catalogueOnly || course.legalGateClosed) {
+    return [];
+  }
   if (course.enrolmentPaymentOptions && course.enrolmentPaymentOptions.length > 0) {
     return course.enrolmentPaymentOptions;
   }
@@ -68,7 +71,7 @@ export function courseEnrolmentPaymentOptions(
 }
 
 export function courseAllowsPayInFull(
-  course: Pick<NzCourse, "enrolmentPaymentOptions">,
+  course: Pick<NzCourse, "enrolmentPaymentOptions" | "catalogueOnly" | "legalGateClosed">,
 ): boolean {
   return courseEnrolmentPaymentOptions(course).includes("pay_in_full");
 }
@@ -80,7 +83,7 @@ export function providerAllowsPayInFull(tenant: NzTenant): boolean {
 
 export function resolveHostedPayInFullEligibility(input: {
   tenant: NzTenant;
-  course: Pick<NzCourse, "enrolmentPaymentOptions">;
+  course: Pick<NzCourse, "enrolmentPaymentOptions" | "catalogueOnly" | "legalGateClosed">;
 }): NzHostedEligibility & {
   providerEnabled: boolean;
   courseAllows: boolean;

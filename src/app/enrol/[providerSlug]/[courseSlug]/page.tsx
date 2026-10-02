@@ -2,6 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { CatalogueUnavailable } from "@/components/courses/CatalogueUnavailable";
 import { EnrolmentWizard } from "@/components/enrolment/EnrolmentWizard";
 import { NzCourseConfigurationUnavailable } from "@/components/nz-enrolment/CourseConfigurationUnavailable";
+import { NzCourseLegalGate } from "@/components/nz-enrolment/CourseLegalGate";
+import { NzCoursePlanNotOpen } from "@/components/nz-enrolment/CoursePlanNotOpen";
 import { NzCourseNotFound } from "@/components/nz-enrolment/CourseNotFound";
 import { NzEnrolmentCheckout } from "@/components/nz-enrolment/EnrolmentCheckout";
 import { getCourseBySlug } from "@/config/courses";
@@ -10,6 +12,12 @@ import { toPublicCourse } from "@/lib/nz-enrolment/courses";
 import { resolveAuthoritativeHostedCourseBySlug } from "@/lib/nz-enrolment/api-catalogue-overlay";
 import { isNzEnrolmentProductAvailable } from "@/lib/nz-enrolment/environment";
 import { resolveHostedPayInFullEligibility } from "@/lib/nz-enrolment/pay-in-full";
+import { presentHostedCourseForReview } from "@/lib/nz-enrolment/review-draft-agreement";
+import {
+  isNzHostedReviewMode,
+  legalGateBlocksHostedCheckout,
+  reviewDisplayEligibility,
+} from "@/lib/nz-enrolment/review-mode";
 import { getNzTenantBySlug, toPublicTenant } from "@/lib/nz-enrolment/tenants";
 import { isCatalogueProvider } from "@/lib/provider-experience/catalogue";
 import { getCatalogueCourse } from "@/lib/provider-experience/catalogue-server";
@@ -94,19 +102,40 @@ export default async function EnrolmentPage({
     }
     const nzCourse = resolved.course;
     const overlayTenant = resolved.tenant;
+    const reviewMode = isNzHostedReviewMode();
+    if (nzCourse.catalogueOnly) {
+      return (
+        <NzCoursePlanNotOpen
+          tenant={toPublicTenant(overlayTenant)}
+          course={toPublicCourse(nzCourse)}
+        />
+      );
+    }
+    if (legalGateBlocksHostedCheckout(nzCourse, reviewMode)) {
+      return (
+        <NzCourseLegalGate
+          tenant={toPublicTenant(overlayTenant)}
+          course={toPublicCourse(nzCourse)}
+        />
+      );
+    }
 
     const ddaReturn = dda === "return" || dda === "cancelled" ? dda : null;
-    const eligibility = resolveHostedPayInFullEligibility({
-      tenant: overlayTenant,
-      course: nzCourse,
-    });
+    const eligibility = reviewMode
+      ? reviewDisplayEligibility(overlayTenant, nzCourse)
+      : resolveHostedPayInFullEligibility({
+          tenant: overlayTenant,
+          course: nzCourse,
+        });
+    const presented = presentHostedCourseForReview(overlayTenant, nzCourse);
     return (
       <NzEnrolmentCheckout
         tenant={toPublicTenant(overlayTenant)}
-        course={toPublicCourse(nzCourse)}
+        course={toPublicCourse(presented)}
         ddaReturn={ddaReturn}
         payInFullAvailable={eligibility.payInFullAvailable}
         paymentPlanAvailable={eligibility.paymentPlanAvailable}
+        reviewMode={reviewMode}
       />
     );
   }

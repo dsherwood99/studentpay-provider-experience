@@ -346,13 +346,81 @@ function hostedCoursesFromCatalogue(
       parseHostedProviderStudentAgreement(apiCourse.provider_student_agreement) ||
       listAgreement;
     const course = hostedCourseFromApi(overlaidTenant, apiCourse, agreement);
-    if (!course || !course.providerStudentAgreement) {
+    if (!course) {
       logUnavailable("malformed", apiCourse.course_code);
+      continue;
+    }
+    if (!course.providerStudentAgreement) {
+      courses.push({
+        ...course,
+        legalGateClosed: true,
+        enrolmentPaymentOptions: [],
+      });
       continue;
     }
     courses.push(course);
   }
   return { courses, tenant: overlaidTenant };
+}
+
+function closedCatalogueListing(tenant: NzTenant, slug: string): NzCourse | null {
+  const local = getNzCourse(tenant.slug, slug);
+  if (!local) {
+    return null;
+  }
+  if (local.catalogueOnly) {
+    return local;
+  }
+  if (local.showWhenEnrolmentClosed) {
+    return { ...local, catalogueOnly: true };
+  }
+  return null;
+}
+
+function applyLocalPresentationOrder(
+  tenant: NzTenant,
+  courses: NzCourse[],
+): NzCourse[] {
+  const localBySlug = new Map(
+    getNzCoursesForProvider(tenant.slug).map((course) => [course.slug, course]),
+  );
+  const ordered = courses.map((course) => {
+    const presentation = localBySlug.get(course.slug);
+    if (!presentation) {
+      return course;
+    }
+    return {
+      ...course,
+      sortOrder: presentation.sortOrder ?? course.sortOrder,
+      websiteUrl: course.websiteUrl || presentation.websiteUrl,
+      category: course.category || presentation.category,
+    };
+  });
+  return ordered.sort((left, right) => {
+    const leftOrder = left.sortOrder ?? Number.MAX_SAFE_INTEGER;
+    const rightOrder = right.sortOrder ?? Number.MAX_SAFE_INTEGER;
+    return leftOrder - rightOrder;
+  });
+}
+
+function withClosedCatalogueListings(
+  tenant: NzTenant,
+  enrolable: NzCourse[],
+): NzCourse[] {
+  const enrolableSlugs = new Set(enrolable.map((course) => course.slug));
+  const extras = getNzCoursesForProvider(tenant.slug).flatMap((course) => {
+    if (enrolableSlugs.has(course.slug)) {
+      return [];
+    }
+    if (course.catalogueOnly) {
+      return [course];
+    }
+    if (course.showWhenEnrolmentClosed) {
+      return [{ ...course, catalogueOnly: true }];
+    }
+    return [];
+  });
+  return [...enrolable, ...extras];
 }
 
 function salesforceAuthorityConfig(tenant: NzTenant):
@@ -408,16 +476,21 @@ export async function listAuthoritativeHostedCourses(
       return { status: "unavailable", reason: remote.reason };
     }
     const mapped = hostedCoursesFromCatalogue(tenant, remote.catalogue);
-    if (
-      !mapped ||
-      (mapped.courses.length === 0 && remote.catalogue.courses.length > 0)
-    ) {
+    if (!mapped) {
+      logUnavailable("malformed");
+      return { status: "unavailable", reason: "malformed" };
+    }
+    const courses = applyLocalPresentationOrder(
+      mapped.tenant,
+      withClosedCatalogueListings(mapped.tenant, mapped.courses),
+    );
+    if (courses.length === 0) {
       logUnavailable("malformed");
       return { status: "unavailable", reason: "malformed" };
     }
     return {
       status: "ok",
-      courses: mapped.courses,
+      courses,
       tenant: mapped.tenant,
       source: "api",
     };
@@ -464,8 +537,17 @@ export async function resolveAuthoritativeHostedCourseBySlug(
       logUnavailable("malformed");
       return { status: "unavailable", reason: "malformed" };
     }
-    const match = mapped.courses.find((course) => course.slug === slug);
+    const match = mapped?.courses.find((course) => course.slug === slug);
     if (!match) {
+      const listing = closedCatalogueListing(tenant, slug);
+      if (listing && mapped) {
+        return {
+          status: "ok",
+          course: listing,
+          tenant: mapped.tenant,
+          source: "local",
+        };
+      }
       const raw = remote.catalogue.courses.find(
         (course) => String(course.slug || "").trim().toLowerCase() === slug,
       );

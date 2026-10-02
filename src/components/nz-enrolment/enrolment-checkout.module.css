@@ -12,6 +12,7 @@
   --nz-form-size: 0.9375rem;
   --nz-form-leading: 1.5;
   min-height: 70vh;
+  overflow-x: clip;
   background: var(--nz-bg, #ffffff);
   color: var(--nz-text);
   font-family: var(--nz-font, Inter, "Segoe UI", sans-serif);
@@ -838,7 +839,7 @@
 
 .btnPrimary {
   background: var(--nz-cta, var(--nz-primary));
-  color: #fff;
+  color: var(--nz-cta-text, #fff);
   box-shadow: 0 6px 18px color-mix(in srgb, var(--nz-cta, var(--nz-primary)) 24%, transparent);
 }
 

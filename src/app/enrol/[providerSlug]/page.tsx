@@ -5,6 +5,7 @@ import { NzCourseConfigurationUnavailable } from "@/components/nz-enrolment/Cour
 import { listAuthoritativeHostedCourses } from "@/lib/nz-enrolment/api-catalogue-overlay";
 import { toPublicCourse } from "@/lib/nz-enrolment/courses";
 import { isNzEnrolmentProductAvailable } from "@/lib/nz-enrolment/environment";
+import { isNzHostedReviewMode } from "@/lib/nz-enrolment/review-mode";
 import { tenantCssVars } from "@/lib/nz-enrolment/presentation";
 import { getNzTenantBySlug, toPublicTenant } from "@/lib/nz-enrolment/tenants";
 
@@ -61,6 +62,7 @@ export default async function NzProviderEnrolPage({ params }: PageProps) {
       <NzCourseCatalogue
         tenant={publicTenant}
         courses={courses.map(toPublicCourse)}
+        reviewMode={isNzHostedReviewMode()}
       />
     </div>
   );

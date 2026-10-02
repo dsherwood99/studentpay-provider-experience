@@ -5,6 +5,7 @@ import {
 } from "@/lib/provider-experience/catalogue-agreements";
 import { getProviderCheckoutBinding } from "@/lib/provider-experience/catalogue-checkout";
 import { getProviderBySlug, isCatalogueProvider } from "@/lib/provider-experience/catalogue";
+import { reviewModeMutationResponse } from "@/lib/nz-enrolment/review-mode";
 
 export const runtime = "nodejs";
 
@@ -22,6 +23,10 @@ type CheckoutVersionsResponse = {
 };
 
 export async function POST(request: Request) {
+  const reviewBlocked = reviewModeMutationResponse();
+  if (reviewBlocked) {
+    return reviewBlocked;
+  }
   let body: AcceptBody;
 
   try {

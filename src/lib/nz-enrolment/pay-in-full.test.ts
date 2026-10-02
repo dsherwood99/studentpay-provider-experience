@@ -47,6 +47,7 @@ const managed = [
   "NZ_STUDENTPAY_API_BASE_URL",
   "NZ_ENROLMENT_SESSION_SECRET",
   "E13_INTERNAL_CANARY_HOSTED_ENABLED",
+  "NZ_HOSTED_TENANT_SLUG",
 ];
 const previous: Record<string, string | undefined> = {};
 
@@ -98,14 +99,15 @@ describe("Hosted E13 eligibility", () => {
     assert.equal(eligibility.paymentPlanAvailable, true);
   });
 
-  it("2. shows Pay in Full only when env, provider, and catalogue all allow it", () => {
+  it("2. keeps Bela Hosted Pay in Full disabled", () => {
     const tenant = getNzTenantBySlug("bela-nz")!;
     const course = getNzCourse("bela-nz", "lash-business-bundle")!;
     const eligibility = resolveHostedPayInFullEligibility({ tenant, course });
     assert.equal(eligibility.environmentAllowed, true);
-    assert.equal(eligibility.providerEnabled, true);
-    assert.equal(eligibility.courseAllows, true);
-    assert.equal(eligibility.payInFullAvailable, true);
+    assert.equal(eligibility.providerEnabled, false);
+    assert.equal(eligibility.courseAllows, false);
+    assert.equal(eligibility.payInFullAvailable, false);
+    assert.equal(tenant.checkout.paymentOptions.pay_in_full.comingSoon, true);
   });
 
   it("3. still shows Payment Plan when Pay in Full is available", () => {
@@ -506,7 +508,10 @@ describe("Hosted E13 success and payment-plan regression", () => {
     const preview = previewCoursePlan(course, { firstPaymentDate: "2026-10-01" });
     assert.equal(preview.coursePriceCents, 280_000);
     assert.equal(preview.upfrontAmountCents, 1000);
+    assert.equal(preview.amountToFinanceCents, 279_000);
     assert.equal(preview.regularInstalmentAmountCents, 1500);
+    assert.equal(preview.numberOfInstalments, 186);
+    assert.equal(preview.hasResidualFinal, false);
     assert.equal(preview.frequency, "Weekly");
     const planPayload = buildCanonicalCreatePayload({
       tenant: getNzTenantBySlug("bela-nz")!,

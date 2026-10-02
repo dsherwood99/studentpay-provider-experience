@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
-import { Caveat, Inter, Montserrat, Plus_Jakarta_Sans, Poppins } from "next/font/google";
+import { Caveat, DM_Sans, Inter, Montserrat, Plus_Jakarta_Sans, Poppins } from "next/font/google";
 import { PlatformFooter } from "@/components/layout/PlatformFooter";
 import { PlatformHeader } from "@/components/layout/PlatformHeader";
 import { isNzEnrolmentProductAvailable } from "@/lib/nz-enrolment/environment";
-import { listActiveNzTenants } from "@/lib/nz-enrolment/tenants";
+import {
+  getDefaultProductionNzTenantSlug,
+  listActiveNzTenants,
+} from "@/lib/nz-enrolment/tenants";
 import { getPlatformBrand } from "@/lib/provider-experience/branding";
 import "./globals.css";
 import "../styles/studentpay-platform.css";
@@ -38,11 +41,19 @@ const montserrat = Montserrat({
   weight: ["400", "500", "600", "700", "800"],
 });
 
+const dmSans = DM_Sans({
+  variable: "--font-nz-body",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
 export function generateMetadata(): Metadata {
   const brand = getPlatformBrand();
 
   if (isNzEnrolmentProductAvailable()) {
-    const tenant = listActiveNzTenants().find((item) => !item.sandboxOnly);
+    const tenants = listActiveNzTenants();
+    const defaultSlug = getDefaultProductionNzTenantSlug(tenants);
+    const tenant = tenants.find((item) => item.slug === defaultSlug);
     if (tenant) {
       return {
         title: {
@@ -99,7 +110,7 @@ export default function RootLayout({
       : brand === "bela-beauty-college"
         ? `${poppins.variable} ${inter.variable} platform--bela-beauty-college`
         : nzEnrolment
-          ? `${montserrat.variable} ${inter.variable} platform--nz-enrolment`
+          ? `${montserrat.variable} ${dmSans.variable} ${inter.variable} platform--nz-enrolment`
           : `${poppins.variable} ${inter.variable} platform--studentpay`;
 
   return (

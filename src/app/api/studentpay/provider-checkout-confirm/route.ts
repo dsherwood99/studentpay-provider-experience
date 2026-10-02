@@ -1,3 +1,4 @@
+import { reviewModeMutationResponse } from "@/lib/nz-enrolment/review-mode";
 import {
   formatApiError,
   getProviderExperienceConfig,
@@ -39,6 +40,10 @@ const ALLOWED_PROVIDER_CODES = new Set([
 ]);
 
 export async function POST(request: Request) {
+  const reviewBlocked = reviewModeMutationResponse();
+  if (reviewBlocked) {
+    return reviewBlocked;
+  }
   try {
     const payload = (await request.json()) as ConfirmationRequest;
     const requestedProviderCode = payload.provider?.provider_code || "";

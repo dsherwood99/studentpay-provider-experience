@@ -293,6 +293,7 @@ export function tenantCssVars(tenant: NzPublicTenant): Record<string, string> {
     "--nz-font": branding.fontFamily,
     "--nz-heading-font": branding.headingFontFamily || branding.fontFamily,
     "--nz-cta": branding.ctaColour || branding.primaryColour,
+    ...(branding.ctaTextColour ? { "--nz-cta-text": branding.ctaTextColour } : {}),
   };
 }
 

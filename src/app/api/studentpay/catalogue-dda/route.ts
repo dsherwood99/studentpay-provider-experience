@@ -10,6 +10,7 @@ import type { CatalogueAgreementAcceptancePayload } from "@/lib/provider-experie
 import { getProviderCheckoutBinding } from "@/lib/provider-experience/catalogue-checkout";
 import { toEmbeddedSetupUrl } from "@/lib/provider-experience/checkout";
 import { getProviderBySlug, isCatalogueProvider } from "@/lib/provider-experience/catalogue";
+import { reviewModeMutationResponse } from "@/lib/nz-enrolment/review-mode";
 
 export const runtime = "nodejs";
 
@@ -95,6 +96,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const reviewBlocked = reviewModeMutationResponse();
+  if (reviewBlocked) {
+    return reviewBlocked;
+  }
   let body: DdaBody;
   try {
     body = (await request.json()) as DdaBody;

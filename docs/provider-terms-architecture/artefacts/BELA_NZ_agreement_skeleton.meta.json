@@ -1,0 +1,29 @@
+{
+  "status": "DRAFT_NOT_ACTIVE",
+  "activationPermitted": false,
+  "availableForStudentAcceptance": false,
+  "salesforceStatus": "Draft",
+  "version": "nz-provider-student-2026-09-30-v2",
+  "clauseTemplateVersion": "nz-provider-student-2026-09-30-v2",
+  "agreementKey": "BELA_NZ|NZ|Provider_Student_Agreement|nz-provider-student-2026-09-30-v2",
+  "contentHash": "ddb6aa7a3f9c4a4fe9becb72db9ab688503b8236ebdbd6de189575de50ccef78",
+  "enrolmentSnapshotHash": "8c8b5e1ac2c19ffb43eda70a24586f1cfdf052205bd4c870c1e67b2efa9e5467",
+  "kitPolicy": "KIT_NOT_INCLUDED",
+  "unresolved": [
+    "NZ_LEGAL_REVIEW",
+    "PROVIDER_APPROVAL",
+    "PART_A_LEGAL_WORDING",
+    "EFFECTIVE_DATE",
+    "RUNTIME_NOT_WIRED",
+    "AU_DRAFT_NOT_APPROVED_FOR_NZ"
+  ],
+  "payerFeeClauses": [
+    "FAILED_PAYMENT_FEE",
+    "LATE_FEE"
+  ],
+  "auStatutoryWordingIncluded": false,
+  "priorDraft": {
+    "version": "nz-provider-student-2026-09-30-v1",
+    "artefact": "docs/provider-terms-architecture/artefacts/BELA_NZ_agreement_skeleton-v1.html"
+  }
+}
