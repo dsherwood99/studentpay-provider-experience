@@ -589,6 +589,61 @@
   align-items: baseline;
 }
 
+.planSummary {
+  display: grid;
+  gap: 14px 0;
+  width: min(100%, 540px);
+  margin: 4px 0 2px;
+}
+
+.planSummaryRow,
+.planSummaryTotal {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  column-gap: 24px;
+  align-items: start;
+}
+
+.planSummary dt {
+  margin: 0;
+  color: var(--nz-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.35;
+}
+
+.planSummary dd {
+  margin: 0;
+  font-weight: 600;
+  color: var(--nz-heading);
+  font-size: var(--nz-form-size);
+  line-height: 1.45;
+  text-align: left;
+  overflow-wrap: break-word;
+}
+
+.planSummaryDetail {
+  display: block;
+  margin-top: 2px;
+}
+
+.planSummaryTotal {
+  border-top: 1px solid var(--nz-border);
+  margin-top: 4px;
+  padding-top: 14px;
+}
+
+.planSummaryTotal dd {
+  font-weight: 750;
+  font-size: 1.05rem;
+}
+
+.planSummaryNote {
+  margin-bottom: 16px;
+}
+
 .review dd {
   text-align: right;
 }
@@ -1042,6 +1097,17 @@
   .review dd {
     text-align: left;
     margin-bottom: 8px;
+  }
+
+  .planSummary {
+    width: 100%;
+    gap: 12px 0;
+  }
+
+  .planSummaryRow,
+  .planSummaryTotal {
+    grid-template-columns: 1fr;
+    row-gap: 2px;
   }
 
   .confirmationRow {

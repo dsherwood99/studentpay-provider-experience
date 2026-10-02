@@ -268,6 +268,7 @@ export const NZ_TENANTS: readonly NzTenant[] = [
         supportNote:
           "Questions about this enrolment can be sent to Bela Beauty College or StudentPay NZ support.",
       },
+      planSummaryLayout: "compact",
     },
     apiKeyEnv: "PROVIDER_API_KEY_BELA_NZ",
     active: true,
@@ -394,6 +395,9 @@ export function toPublicTenant(tenant: NzTenant): NzPublicTenant {
       wording: tenant.checkout.wording,
       ...(tenant.checkout.taxPresentation
         ? { taxPresentation: tenant.checkout.taxPresentation }
+        : {}),
+      ...(tenant.checkout.planSummaryLayout
+        ? { planSummaryLayout: tenant.checkout.planSummaryLayout }
         : {}),
     },
   };

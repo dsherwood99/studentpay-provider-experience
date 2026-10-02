@@ -127,6 +127,11 @@ export type NzTenantCheckoutConfig = {
   };
   /** Opt-in display only. Undefined tenants keep a single GST-inclusive fee. */
   taxPresentation?: NzTaxPresentation;
+  /**
+   * Section 1 payment-plan summary layout. Absent keeps the existing
+   * spread definition list used by OLI. Compact is presentation only.
+   */
+  planSummaryLayout?: "compact";
 };
 
 export type NzTenant = {
@@ -294,6 +299,7 @@ export type NzPublicTenant = {
     defaultFrequency: NzPaymentFrequency;
     wording?: NzTenantCheckoutConfig["wording"];
     taxPresentation?: NzTaxPresentation;
+    planSummaryLayout?: "compact";
   };
 };
 

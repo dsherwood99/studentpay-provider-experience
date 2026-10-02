@@ -15,6 +15,7 @@ import {
   CONFIRMATION_GROUP_LABELS,
   CONFIRMATION_SUMMARY_GROUPS,
   combinedDetailsPrivacyAccepted,
+  compactPaymentPlanSummary,
   confirmEnabled,
   declarationsAccepted,
   decorateConfirmationRows,
@@ -31,6 +32,7 @@ import {
   shouldPollDirectDebitStatus,
   studentDetailsAreValid,
   studentDetailsStarted,
+  usesCompactPlanSummary,
   type ConfirmationSummaryRow,
 } from "@/lib/nz-enrolment/checkout-ui";
 import {
@@ -358,6 +360,17 @@ export function NzEnrolmentCheckout({
   ]);
 
   const display = preview ? planDisplay(preview) : null;
+  const compactPlanSummary =
+    preview &&
+    usesCompactPlanSummary(tenant.checkout) &&
+    !isGstInclusiveBreakdown(tenant.checkout.taxPresentation) &&
+    renderFlags.showPlanSchedule
+      ? compactPaymentPlanSummary({
+          courseName: course.name,
+          courseFeeCents: course.paymentPlanCourseFeeCents,
+          preview,
+        })
+      : null;
   const planChoice = preview ? paymentPlanChoiceCopy(preview) : null;
   const taxPresentation = tenant.checkout.taxPresentation;
   const showGstBreakdown = isGstInclusiveBreakdown(taxPresentation);
@@ -1392,11 +1405,44 @@ export function NzEnrolmentCheckout({
                 : copy.paymentSectionLead}
             </p>
             {kitDisclosureForPolicy(tenant.kitPolicy) ? (
-              <p className={styles.note} data-testid="nz-kit-disclosure">
+              <p
+                className={
+                  compactPlanSummary
+                    ? `${styles.note} ${styles.planSummaryNote}`
+                    : styles.note
+                }
+                data-testid="nz-kit-disclosure"
+              >
                 {kitDisclosureForPolicy(tenant.kitPolicy)}
               </p>
             ) : null}
-            {renderFlags.showPaymentMethodRadios ? null : (
+            {renderFlags.showPaymentMethodRadios ? null : compactPlanSummary ? (
+            <dl className={styles.planSummary} data-testid="nz-plan-summary">
+              {compactPlanSummary.map((row) => (
+                <div
+                  key={row.label}
+                  className={
+                    row.emphasis === "total"
+                      ? styles.planSummaryTotal
+                      : styles.planSummaryRow
+                  }
+                  data-testid={
+                    row.emphasis === "total" ? "nz-plan-summary-total" : undefined
+                  }
+                >
+                  <dt>{row.label}</dt>
+                  <dd>
+                    {row.value}
+                    {row.detail ? (
+                      <span className={styles.planSummaryDetail} data-testid="nz-plan-final-payment">
+                        {row.detail}
+                      </span>
+                    ) : null}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            ) : (
             <dl className={styles.review}>
               <dt>Course</dt>
               <dd>{course.name}</dd>

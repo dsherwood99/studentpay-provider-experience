@@ -11,6 +11,7 @@ import {
   NZ_REMOVED_STEPPER_LABELS,
   NZ_STUDENT_DETAILS_COPY,
   combinedDetailsPrivacyAccepted,
+  compactPaymentPlanSummary,
   confirmEnabled,
   declarationsAccepted,
   decorateConfirmationRows,
@@ -27,10 +28,13 @@ import {
   shouldCreateCheckout,
   shouldPollDirectDebitStatus,
   studentDetailsAreValid,
+  usesCompactPlanSummary,
 } from "./checkout-ui.ts";
 import { getNzCourse } from "./courses.ts";
 import { previewCoursePlan } from "./canonical.ts";
+import { kitDisclosureForPolicy } from "./kit-policy.ts";
 import { getNzTenantBySlug, toPublicTenant } from "./tenants.ts";
+import type { NzCourse } from "./types.ts";
 
 const validStudent = {
   firstName: "Alex",
@@ -425,5 +429,170 @@ describe("confirmation summary presentation", () => {
     assert.match(checkout, /Keep an eye on/);
     assert.match(checkout, /onClick=\{\(\) => void startDirectDebitSetup\(\)\}/);
     assert.doesNotMatch(checkout, /<dd>\{preview\.firstPaymentDate\}<\/dd>/);
+  });
+});
+
+function belaDerivedCourse(input: {
+  name: string;
+  feeCents: number;
+  upfrontCents: number;
+  regularCents: number;
+}): NzCourse {
+  return {
+    courseCode: "BELA_SUMMARY_FIXTURE",
+    slug: "bela-summary-fixture",
+    providerSlug: "bela-nz",
+    name: input.name,
+    description: "Presentation fixture. Amounts are the authoritative course fee inputs.",
+    paymentInFullCourseFeeCents: input.feeCents,
+    paymentPlanCourseFeeCents: input.feeCents,
+    status: "active",
+    planPolicy: {
+      mode: "derived_regular",
+      frequency: "Weekly",
+      regularInstalmentCents: input.regularCents,
+      upfrontAmountCents: input.upfrontCents,
+    },
+  };
+}
+
+function summaryLines(course: NzCourse): string[] {
+  const preview = previewCoursePlan(course, { firstPaymentDate: "2026-10-02" });
+  assert.equal(preview.totalPayableCents, course.paymentPlanCourseFeeCents);
+  const rows = compactPaymentPlanSummary({
+    courseName: course.name,
+    courseFeeCents: course.paymentPlanCourseFeeCents,
+    preview,
+  });
+  return rows.map((row) =>
+    row.detail ? `${row.label}: ${row.value} | ${row.detail}` : `${row.label}: ${row.value}`,
+  );
+}
+
+describe("Bela compact payment-plan summary", () => {
+  it("keeps the compact layout on Bela and off OLI", () => {
+    process.env.STUDENTPAY_ENV = "sandbox";
+    const bela = toPublicTenant(getNzTenantBySlug("bela-nz")!);
+    const oli = toPublicTenant(getNzTenantBySlug("oli")!);
+    assert.equal(usesCompactPlanSummary(bela.checkout), true);
+    assert.equal(bela.checkout.planSummaryLayout, "compact");
+    assert.equal(usesCompactPlanSummary(oli.checkout), false);
+    assert.equal(oli.checkout.planSummaryLayout, undefined);
+    assert.equal(oli.checkout.taxPresentation?.mode, "gst_inclusive_breakdown");
+    assert.equal(
+      kitDisclosureForPolicy(bela.kitPolicy),
+      "Payment plan covers course tuition only. Kit not included in this payment plan.",
+    );
+    assert.equal(kitDisclosureForPolicy(oli.kitPolicy), null);
+  });
+
+  it("presents Nail Bundle residual, Lash equal instalments, Full Beauty residual, and the small residual", () => {
+    const nail = summaryLines(
+      belaDerivedCourse({
+        name: "Nail Bundle + Kits",
+        feeCents: 308_000,
+        upfrontCents: 1_000,
+        regularCents: 2_000,
+      }),
+    );
+    assert.deepEqual(nail, [
+      "Course: Nail Bundle + Kits",
+      "Course fee: $3,080.00",
+      "Upfront payment: $10.00",
+      "Weekly payment: $20.00",
+      "Payment schedule: 153 weekly payments of $20.00 | Final payment of $10.00",
+      "Total course fee: $3,080.00",
+    ]);
+
+    const lash = summaryLines(
+      belaDerivedCourse({
+        name: "Lash Business Bundle",
+        feeCents: 280_000,
+        upfrontCents: 1_000,
+        regularCents: 1_500,
+      }),
+    );
+    assert.deepEqual(lash, [
+      "Course: Lash Business Bundle",
+      "Course fee: $2,800.00",
+      "Upfront payment: $10.00",
+      "Weekly payment: $15.00",
+      "Payment schedule: 186 weekly payments of $15.00",
+      "Total course fee: $2,800.00",
+    ]);
+    assert.equal(lash.some((line) => line.includes("Final payment")), false);
+
+    const fullBeauty = summaryLines(
+      belaDerivedCourse({
+        name: "Full Beauty Bundle + Kits",
+        feeCents: 960_000,
+        upfrontCents: 1_000,
+        regularCents: 2_500,
+      }),
+    );
+    assert.deepEqual(fullBeauty, [
+      "Course: Full Beauty Bundle + Kits",
+      "Course fee: $9,600.00",
+      "Upfront payment: $10.00",
+      "Weekly payment: $25.00",
+      "Payment schedule: 383 weekly payments of $25.00 | Final payment of $15.00",
+      "Total course fee: $9,600.00",
+    ]);
+
+    const mastery = summaryLines(
+      belaDerivedCourse({
+        name: "Beauty Business Mastery",
+        feeCents: 9_700,
+        upfrontCents: 1_000,
+        regularCents: 2_000,
+      }),
+    );
+    assert.deepEqual(mastery, [
+      "Course: Beauty Business Mastery",
+      "Course fee: $97.00",
+      "Upfront payment: $10.00",
+      "Weekly payment: $20.00",
+      "Payment schedule: 4 weekly payments of $20.00 | Final payment of $7.00",
+      "Total course fee: $97.00",
+    ]);
+  });
+
+  it("labels the total from the authoritative course fee, not a summed instalment display", () => {
+    const course = belaDerivedCourse({
+      name: "Nail Bundle + Kits",
+      feeCents: 308_000,
+      upfrontCents: 1_000,
+      regularCents: 2_000,
+    });
+    const preview = previewCoursePlan(course, { firstPaymentDate: "2026-10-02" });
+    const rows = compactPaymentPlanSummary({
+      courseName: course.name,
+      courseFeeCents: 308_000,
+      preview: { ...preview, totalPayableCents: 1 },
+    });
+    assert.equal(rows.find((row) => row.emphasis === "total")?.value, "$3,080.00");
+    assert.equal(rows.filter((row) => row.detail).length, 1);
+  });
+
+  it("keeps OLI Section 1 on the spread review list and stacks the compact summary on mobile", () => {
+    const root = path.join(fileURLToPath(new URL("../../", import.meta.url)));
+    const checkout = fs.readFileSync(
+      path.join(root, "components/nz-enrolment/EnrolmentCheckout.tsx"),
+      "utf8",
+    );
+    const css = fs.readFileSync(
+      path.join(root, "components/nz-enrolment/enrolment-checkout.module.css"),
+      "utf8",
+    );
+    assert.match(checkout, /usesCompactPlanSummary/);
+    assert.match(checkout, /data-testid="nz-plan-summary"/);
+    assert.match(checkout, /<dt>Payment plan<\/dt>/);
+    assert.match(checkout, /<dt>Schedule<\/dt>/);
+    assert.match(checkout, /<dt>Total<\/dt>/);
+    assert.match(checkout, /className=\{styles\.review\}/);
+    assert.match(css, /\.review \{\s*grid-template-columns: 1fr auto;/);
+    assert.match(css, /\.planSummaryRow,\s*\.planSummaryTotal \{\s*display: grid;\s*grid-template-columns: 200px minmax\(0, 1fr\);/);
+    assert.match(css, /@media \(max-width: 720px\) \{[\s\S]*\.planSummaryRow,\s*\.planSummaryTotal \{\s*grid-template-columns: 1fr;/);
+    assert.match(checkout, /nz-kit-disclosure/);
   });
 });
