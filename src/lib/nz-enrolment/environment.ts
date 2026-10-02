@@ -38,9 +38,18 @@ export function getStudentpayEnv(): StudentpayEnv | null {
  * Unset keeps the shared production default (first non-sandbox tenant).
  * When set, only this tenant slug is visible on the deployment.
  */
+const BELA_HOSTED_PROJECT_HOST = "studentpay-nz-bela-enrolment";
+
 export function configuredNzHostedTenantSlug(): string | null {
   const value = process.env.NZ_HOSTED_TENANT_SLUG?.trim().toLowerCase() || "";
-  return value || null;
+  if (value) {
+    return value;
+  }
+  const projectHost = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim().toLowerCase() || "";
+  if (projectHost.includes(BELA_HOSTED_PROJECT_HOST)) {
+    return "bela-nz";
+  }
+  return null;
 }
 
 export function isProductionAppEnv(): boolean {

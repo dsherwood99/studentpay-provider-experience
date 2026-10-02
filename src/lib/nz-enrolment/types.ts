@@ -20,7 +20,7 @@ export type NzHeaderSocialLink = {
   iconSrc?: string;
 };
 
-export type NzHeaderLayout = "site" | "compact";
+export type NzHeaderLayout = "site" | "compact" | "logo";
 
 export type NzHostedPathStyle = "enrol-slug" | "provider-root";
 
@@ -38,6 +38,8 @@ export type NzTenantBranding = {
   fontFamily: string;
   headingFontFamily?: string;
   ctaColour?: string;
+  /** Button label colour. Omitted buttons stay white on the call-to-action fill. */
+  ctaTextColour?: string;
   buttonRadius?: NzButtonRadius;
   headerStyle?: "provider-native" | "minimal";
   footerStyle?: "provider-native" | "minimal";

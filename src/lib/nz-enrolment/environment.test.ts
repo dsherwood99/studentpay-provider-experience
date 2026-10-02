@@ -22,6 +22,7 @@ const managed = [
   "PROVIDER_API_KEY_OLI_NZ",
   "E13_INTERNAL_CANARY_HOSTED_ENABLED",
   "NZ_HOSTED_TENANT_SLUG",
+  "VERCEL_PROJECT_PRODUCTION_URL",
 ];
 
 const previous: Record<string, string | undefined> = {};
@@ -123,6 +124,15 @@ describe("NZ hosted product and environment isolation", () => {
     process.env.STUDENTPAY_ENV = "sandbox";
     assert.ok(getNzTenantBySlug("bela-nz"));
     assert.equal(getNzTenantBySlug("bela-nz")?.providerCode, "BELA_NZ");
+  });
+
+  it("I2a. the dedicated Bela project serves Bela when the slug is unset", () => {
+    process.env.HOSTED_PRODUCT_MODE = "nz_enrolment";
+    process.env.STUDENTPAY_ENV = "production";
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = "studentpay-nz-bela-enrolment.vercel.app";
+    assert.equal(getNzTenantBySlug("bela-nz")?.providerCode, "BELA_NZ");
+    assert.equal(getNzTenantBySlug("oli"), undefined);
+    assert.equal(getNzCourse("bela-nz", "lash-business-bundle")?.slug, "lash-business-bundle");
   });
 
   it("I2b. a dedicated production host serves only the bound tenant", () => {

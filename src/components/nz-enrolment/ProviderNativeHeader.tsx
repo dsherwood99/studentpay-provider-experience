@@ -21,7 +21,44 @@ export function ProviderNativeHeader({ tenant, course }: Props) {
   if (usesSiteHeader(tenant)) {
     return <SiteHeader tenant={tenant} course={course} />;
   }
+  if (tenant.presentation.headerLayout === "logo") {
+    return <LogoBar tenant={tenant} course={course} />;
+  }
   return <CompactHeader tenant={tenant} course={course} />;
+}
+
+function LogoBar({ tenant, course }: Props) {
+  const websiteUrl = safeProviderUrl(tenant.websiteUrl, tenant);
+  const homeHref = websiteUrl || cataloguePath(tenant);
+  const courseUrl = course ? providerCourseWebsiteUrl(tenant, course) : null;
+  const nav = safeHeaderLinks(tenant);
+  const phone = safeHeaderPhone(tenant);
+
+  return (
+    <header className={`${styles.header} ${styles.logoBar}`} data-testid="nz-provider-header">
+      <div className={styles.logoBarInner}>
+        <a className={styles.logoBarBrand} href={homeHref} aria-label={`${tenant.displayName} home`}>
+          {tenant.branding.logoPath ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className={styles.logoBarMark} src={tenant.branding.logoPath} alt={tenant.displayName} />
+          ) : (
+            <span className={styles.brandName}>{tenant.displayName}</span>
+          )}
+        </a>
+        <nav className={styles.logoBarNav} aria-label={`${tenant.displayName}`}>
+          {nav.map((item) => (
+            <a key={`${item.label}-${item.href}`} href={item.href}>
+              {item.label}
+            </a>
+          ))}
+          {courseUrl ? (
+            <a href={courseUrl}>Back to course</a>
+          ) : null}
+          {phone ? <a href={phone.href}>{phone.display}</a> : null}
+        </nav>
+      </div>
+    </header>
+  );
 }
 
 function SiteHeader({ tenant, course }: Props) {

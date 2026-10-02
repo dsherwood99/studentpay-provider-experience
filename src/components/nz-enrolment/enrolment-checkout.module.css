@@ -839,7 +839,7 @@
 
 .btnPrimary {
   background: var(--nz-cta, var(--nz-primary));
-  color: #fff;
+  color: var(--nz-cta-text, #fff);
   box-shadow: 0 6px 18px color-mix(in srgb, var(--nz-cta, var(--nz-primary)) 24%, transparent);
 }
 

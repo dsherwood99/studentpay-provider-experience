@@ -1337,7 +1337,7 @@ export function NzEnrolmentCheckout({
       <div className={styles.shell}>
         <header className={styles.hero}>
           <div className={styles.heroCopy}>
-            <p className={styles.kicker}>{tenant.legalName}</p>
+            <p className={styles.kicker}>{tenant.displayName}</p>
             {course.category ? <p className={styles.category}>{course.category}</p> : null}
             <h1>{course.name}</h1>
             <p className={styles.lead}>

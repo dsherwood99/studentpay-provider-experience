@@ -110,6 +110,16 @@ describe("generic provider branding and presentation", () => {
     const pub = toPublicTenant(bela);
     assert.equal(bela.checkout.taxPresentation, undefined);
     assert.equal(pub.checkout.taxPresentation, undefined);
+    assert.equal(pub.branding.logoPath, "/nz-enrolment/bela/logo.png");
+    assert.equal(pub.branding.backgroundColour, "#FAF7F4");
+    assert.equal(pub.branding.ctaColour, "#FFBA92");
+    assert.equal(pub.branding.ctaTextColour, "#5A332B");
+    assert.equal(pub.presentation.headerLayout, "logo");
+    assert.equal(usesSiteHeader(pub), false);
+    assert.deepEqual(
+      pub.presentation.headerLinks?.map((item) => item.label),
+      ["Enrol now", "Courses", "About", "Contact"],
+    );
   });
 });
 

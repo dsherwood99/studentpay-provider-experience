@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Caveat, Inter, Montserrat, Plus_Jakarta_Sans, Poppins } from "next/font/google";
+import { Caveat, DM_Sans, Inter, Montserrat, Plus_Jakarta_Sans, Poppins } from "next/font/google";
 import { PlatformFooter } from "@/components/layout/PlatformFooter";
 import { PlatformHeader } from "@/components/layout/PlatformHeader";
 import { isNzEnrolmentProductAvailable } from "@/lib/nz-enrolment/environment";
@@ -39,6 +39,12 @@ const montserrat = Montserrat({
   variable: "--font-nz-heading",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
+});
+
+const dmSans = DM_Sans({
+  variable: "--font-nz-body",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export function generateMetadata(): Metadata {
@@ -104,7 +110,7 @@ export default function RootLayout({
       : brand === "bela-beauty-college"
         ? `${poppins.variable} ${inter.variable} platform--bela-beauty-college`
         : nzEnrolment
-          ? `${montserrat.variable} ${inter.variable} platform--nz-enrolment`
+          ? `${montserrat.variable} ${dmSans.variable} ${inter.variable} platform--nz-enrolment`
           : `${poppins.variable} ${inter.variable} platform--studentpay`;
 
   return (
