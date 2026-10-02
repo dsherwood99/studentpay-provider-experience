@@ -219,7 +219,7 @@ export const NZ_TENANTS: readonly NzTenant[] = [
       logoPath: "/nz-enrolment/bela/logo.png",
       primaryColour: "#5A332B",
       accentColour: "#5A332B",
-      backgroundColour: "#FAF7F4",
+      backgroundColour: "#ffffff",
       surfaceColour: "#ffffff",
       headingColour: "#503231",
       mutedTextColour: "#7A564E",

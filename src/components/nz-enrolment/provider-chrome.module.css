@@ -388,7 +388,7 @@
 }
 
 .logoBar {
-  background: var(--nz-bg, #faf7f4);
+  background: #faf7f4;
   border-bottom: 1px solid color-mix(in srgb, var(--nz-text, #503231) 12%, transparent);
 }
 
@@ -1059,6 +1059,18 @@
 }
 
 @media (max-width: 800px) {
+  .logoBarInner {
+    flex-direction: column;
+    align-items: flex-start;
+    min-height: 0;
+    padding: 16px 0 14px;
+    gap: 12px;
+  }
+
+  .logoBarNav {
+    justify-content: flex-start;
+  }
+
   .header:not(.siteHeader) .headerInner {
     min-height: 56px;
     padding: 8px 0;
