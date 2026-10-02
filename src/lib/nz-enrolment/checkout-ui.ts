@@ -328,6 +328,56 @@ export function planDisplayRows(preview: NzPlanPreview): { label: string; value:
   return planDisplay(preview).rows;
 }
 
+export function usesCompactPlanSummary(checkout: {
+  planSummaryLayout?: "compact";
+}): boolean {
+  return checkout.planSummaryLayout === "compact";
+}
+
+export function recurringPaymentLabel(frequency: NzPaymentFrequency): string {
+  if (frequency === "Weekly") return "Weekly payment";
+  if (frequency === "Fortnightly") return "Fortnightly payment";
+  return "Monthly payment";
+}
+
+export type CompactPlanSummaryRow = {
+  label: string;
+  value: string;
+  detail?: string | null;
+  emphasis?: "total";
+};
+
+/**
+ * Section 1 presentation rows. Amounts come from the existing plan preview
+ * and the authoritative course fee. This does not recalculate instalments.
+ */
+export function compactPaymentPlanSummary(input: {
+  courseName: string;
+  courseFeeCents: number;
+  preview: NzPlanPreview;
+}): CompactPlanSummaryRow[] {
+  const display = planDisplay(input.preview);
+  const courseFee = formatNzdFromCents(input.courseFeeCents);
+  return [
+    { label: "Course", value: input.courseName },
+    { label: "Course fee", value: courseFee },
+    {
+      label: "Upfront payment",
+      value: formatNzdFromCents(input.preview.upfrontAmountCents),
+    },
+    {
+      label: recurringPaymentLabel(input.preview.frequency),
+      value: formatNzdFromCents(input.preview.regularInstalmentAmountCents),
+    },
+    {
+      label: "Payment schedule",
+      value: display.regularCountLabel,
+      detail: display.finalPaymentLabel,
+    },
+    { label: "Total course fee", value: courseFee, emphasis: "total" },
+  ];
+}
+
 export function payNowSavingFromCatalogue(input: {
   paymentInFullCourseFeeCents: number;
   paymentPlanCourseFeeCents: number;
