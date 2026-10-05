@@ -16,6 +16,7 @@ import {
   safePublicAssetPath,
   safeReturnToProviderUrl,
   safeSocialUrl,
+  showsCourseCategory,
   tenantCssVars,
   usesSiteHeader,
 } from "./presentation.ts";
@@ -62,6 +63,8 @@ describe("generic provider branding and presentation", () => {
     assert.equal(pub.checkout.coursePageLinkStyle, "view_the_course_page");
     assert.equal(pub.checkout.paymentChoicePresentation, "savings_hierarchy");
     assert.equal(pub.checkout.hidePlanScheduleDetails, true);
+    assert.equal(pub.presentation.showCourseCategory, false);
+    assert.equal(showsCourseCategory(pub), false);
     assert.equal(pub.branding.backgroundColour, "#f9f7f3");
     assert.match(pub.branding.headingFontFamily || "", /Montserrat/);
     assert.match(tenantCssVars(pub)["--nz-heading-font"], /Montserrat/);
@@ -121,6 +124,8 @@ describe("generic provider branding and presentation", () => {
     assert.equal(pub.branding.backgroundColour, "#ffffff");
     assert.equal(pub.branding.ctaColour, "#FFBA92");
     assert.equal(pub.branding.ctaTextColour, "#5A332B");
+    assert.equal(pub.presentation.showCourseCategory, undefined);
+    assert.equal(showsCourseCategory(pub), true);
     assert.equal(pub.presentation.headerLayout, "logo");
     assert.equal(usesSiteHeader(pub), false);
     const chrome = readFileSync(

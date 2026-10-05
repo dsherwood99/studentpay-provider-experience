@@ -141,6 +141,7 @@ export const NZ_TENANTS: readonly NzTenant[] = [
       ],
       preferredHostedOrigin: "https://enrol.onlinelearninginstitute.co.nz",
       preferredPathStyle: "provider-root",
+      showCourseCategory: false,
     }),
     checkout: {
       paymentOptions: {

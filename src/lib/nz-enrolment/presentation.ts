@@ -222,6 +222,12 @@ export function safeFooterPhones(
   });
 }
 
+export function showsCourseCategory(
+  tenant: Pick<NzPublicTenant, "presentation">,
+): boolean {
+  return tenant.presentation.showCourseCategory !== false;
+}
+
 export function courseWebsiteLinkLabel(
   tenant: Pick<NzPublicTenant, "displayName" | "checkout">,
   course: Pick<NzPublicCourse, "name">,

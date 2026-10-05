@@ -86,6 +86,7 @@ import {
   formatEnrolmentDisplayDate,
   providerCourseWebsiteUrl,
   safeReturnToProviderUrl,
+  showsCourseCategory,
   tenantCssVars,
 } from "@/lib/nz-enrolment/presentation";
 import type {
@@ -1360,7 +1361,9 @@ export function NzEnrolmentCheckout({
         <header className={styles.hero}>
           <div className={styles.heroCopy}>
             <p className={styles.kicker}>{tenant.displayName}</p>
-            {course.category ? <p className={styles.category}>{course.category}</p> : null}
+            {showsCourseCategory(tenant) && course.category ? (
+              <p className={styles.category}>{course.category}</p>
+            ) : null}
             <h1>{course.name}</h1>
             <p className={styles.lead}>
               {isPayInFull

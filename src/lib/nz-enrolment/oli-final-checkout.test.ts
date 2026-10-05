@@ -4,8 +4,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import { previewPlan } from "./plan-math.ts";
-import { courseWebsiteLinkLabel, formatEnrolmentDisplayDate, providerCourseWebsiteUrl } from "./presentation.ts";
-import { getNzCourse, toPublicCourse } from "./courses.ts";
+import { courseWebsiteLinkLabel, formatEnrolmentDisplayDate, providerCourseWebsiteUrl, showsCourseCategory } from "./presentation.ts";
+import { getNzCourse, getNzCoursesForProvider, toPublicCourse } from "./courses.ts";
 import { getNzTenantBySlug, toPublicTenant } from "./tenants.ts";
 import { formatSavingBadge, payNowSavingFromCatalogue } from "./checkout-ui.ts";
 import { gstInclusiveDisplayRows } from "./tax-presentation.ts";
@@ -65,6 +65,44 @@ describe("OLI course navigation copy and same-tab links", () => {
     );
     assert.doesNotMatch(courseLink, /target="_blank"/);
     assert.match(checkout, /courseWebsiteLinkLabel\(tenant, course\)/);
+  });
+
+  it("hides course category from the OLI checkout hero only", () => {
+    process.env.STUDENTPAY_ENV = "sandbox";
+    const oli = toPublicTenant(getNzTenantBySlug("oli")!);
+    const bela = toPublicTenant(getNzTenantBySlug("bela-nz")!);
+    const agedCare = toPublicCourse(getNzCourse("oli", "certificate-in-aged-care-counselling")!);
+    assert.equal(oli.presentation.showCourseCategory, false);
+    assert.equal(showsCourseCategory(oli), false);
+    assert.equal(agedCare.category, "Wellbeing and Psychology");
+    assert.equal(agedCare.name, "Certificate in Aged Care & Counselling");
+    assert.equal(showsCourseCategory(bela), true);
+    const checkout = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/EnrolmentCheckout.tsx"),
+      "utf8",
+    );
+    const hero = checkout.slice(checkout.indexOf("styles.hero"), checkout.indexOf("styles.heroCard"));
+    assert.match(hero, /showsCourseCategory\(tenant\) && course\.category/);
+    assert.match(hero, /tenant\.displayName/);
+    assert.match(hero, /course\.name/);
+    assert.match(hero, /courseWebsiteLinkLabel\(tenant, course\)/);
+    assert.doesNotMatch(hero, /providerSlug\s*===\s*['"]oli['"]/);
+    const catalogue = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/CourseCatalogue.tsx"),
+      "utf8",
+    );
+    assert.match(catalogue, /Filter by category/);
+    assert.match(catalogue, /course\.category === category/);
+    const overlay = fs.readFileSync(
+      path.join(srcRoot, "lib/nz-enrolment/api-catalogue-overlay.ts"),
+      "utf8",
+    );
+    assert.match(overlay, /category: api\.category \|\| local\.category/);
+    const oliCourses = getNzCoursesForProvider("oli");
+    assert.equal(
+      oliCourses.some((course) => course.category === "Wellbeing and Psychology"),
+      true,
+    );
   });
 
   it("leaves legal agreement popups on the existing new-window treatment", () => {
