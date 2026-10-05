@@ -76,6 +76,8 @@ export type NzTenantPresentation = {
   currentHostedOrigin: string;
   preferredHostedOrigin?: string;
   preferredPathStyle?: NzHostedPathStyle;
+  /** When false, hide category above the course title on the individual checkout hero. */
+  showCourseCategory?: boolean;
 };
 
 export type NzPaymentOptions = {
