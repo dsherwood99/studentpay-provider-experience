@@ -466,6 +466,42 @@
   background: color-mix(in srgb, var(--nz-cta, var(--nz-primary)) 6%, #fff);
 }
 
+.choiceCard[data-hierarchy="savings_hierarchy"][data-choice="pay-now"] {
+  border-width: 2px;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--nz-cta, var(--nz-primary)) 12%, transparent);
+}
+
+.choiceCard[data-hierarchy="savings_hierarchy"][data-choice="pay-now"] em {
+  font-size: 1.7rem;
+}
+
+.choiceCard[data-hierarchy="savings_hierarchy"][data-choice="payment-plan"] {
+  background: color-mix(in srgb, var(--nz-surface, #fff) 92%, #f3f1ec);
+  opacity: 1;
+}
+
+.choiceCard[data-hierarchy="savings_hierarchy"][data-choice="payment-plan"][data-selected="true"] {
+  background: color-mix(in srgb, var(--nz-cta, var(--nz-primary)) 6%, #fff);
+}
+
+.choiceCard[data-hierarchy="savings_hierarchy"][data-choice="payment-plan"] em {
+  font-size: 1.7rem;
+}
+
+.savingBadge {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--nz-cta, var(--nz-primary)) 14%, #fff);
+  color: var(--nz-cta, var(--nz-primary));
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .choiceCard input {
   width: 1.125rem;
   height: 1.125rem;

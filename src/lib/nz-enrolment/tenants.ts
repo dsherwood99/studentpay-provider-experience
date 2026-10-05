@@ -160,6 +160,10 @@ export const NZ_TENANTS: readonly NzTenant[] = [
         label: "GST",
         rateBasisPoints: 1500,
       },
+      maxFirstPaymentDelayDays: 7,
+      coursePageLinkStyle: "view_the_course_page",
+      paymentChoicePresentation: "savings_hierarchy",
+      hidePlanScheduleDetails: true,
     },
     apiKeyEnv: "PROVIDER_API_KEY_OLI_NZ",
     active: true,
@@ -394,6 +398,18 @@ export function toPublicTenant(tenant: NzTenant): NzPublicTenant {
       wording: tenant.checkout.wording,
       ...(tenant.checkout.taxPresentation
         ? { taxPresentation: tenant.checkout.taxPresentation }
+        : {}),
+      ...(tenant.checkout.maxFirstPaymentDelayDays
+        ? { maxFirstPaymentDelayDays: tenant.checkout.maxFirstPaymentDelayDays }
+        : {}),
+      ...(tenant.checkout.coursePageLinkStyle
+        ? { coursePageLinkStyle: tenant.checkout.coursePageLinkStyle }
+        : {}),
+      ...(tenant.checkout.paymentChoicePresentation
+        ? { paymentChoicePresentation: tenant.checkout.paymentChoicePresentation }
+        : {}),
+      ...(tenant.checkout.hidePlanScheduleDetails
+        ? { hidePlanScheduleDetails: true }
         : {}),
     },
   };

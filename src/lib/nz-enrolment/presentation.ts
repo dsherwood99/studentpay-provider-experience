@@ -222,6 +222,16 @@ export function safeFooterPhones(
   });
 }
 
+export function courseWebsiteLinkLabel(
+  tenant: Pick<NzPublicTenant, "displayName" | "checkout">,
+  course: Pick<NzPublicCourse, "name">,
+): string {
+  if (tenant.checkout.coursePageLinkStyle === "view_the_course_page") {
+    return `View the ${course.name} Course Page`;
+  }
+  return `View this course on the ${tenant.displayName} website`;
+}
+
 export function providerCourseWebsiteUrl(
   tenant: NzPublicTenant,
   course: Pick<NzPublicCourse, "slug">,

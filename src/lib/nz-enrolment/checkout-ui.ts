@@ -348,6 +348,18 @@ export function payNowSavingFromCatalogue(input: {
   return { savingCents, percent };
 }
 
+export function formatCompactNzdFromCents(cents: number): string {
+  const label = formatNzdFromCents(cents);
+  return label.replace(/\.00$/, "");
+}
+
+export function formatSavingBadge(savingCents: number): string | null {
+  if (!Number.isInteger(savingCents) || savingCents <= 0) {
+    return null;
+  }
+  return `Save ${formatCompactNzdFromCents(savingCents)}`;
+}
+
 export function payNowChoiceBody(input: {
   paymentInFullCourseFeeCents: number;
   paymentPlanCourseFeeCents: number;

@@ -52,7 +52,9 @@ function LogoBar({ tenant, course }: Props) {
             </a>
           ))}
           {courseUrl ? (
-            <a href={courseUrl}>Back to course</a>
+            <a href={courseUrl} data-testid="nz-back-to-course">
+              Back to course
+            </a>
           ) : null}
           {phone ? <a href={phone.href}>{phone.display}</a> : null}
         </nav>
@@ -204,7 +206,7 @@ function SiteHeader({ tenant, course }: Props) {
                     </a>
                   ))}
                   {courseUrl ? (
-                    <a href={courseUrl} target="_blank" rel="noreferrer">
+                    <a href={courseUrl} data-testid="nz-back-to-course">
                       Back to course
                     </a>
                   ) : null}
@@ -240,7 +242,7 @@ function SiteHeader({ tenant, course }: Props) {
         <div className={styles.contextRow}>
           <div className={styles.headerInner}>
             <span>{contextLabel}</span>
-            <a href={courseUrl} target="_blank" rel="noreferrer">
+            <a href={courseUrl} data-testid="nz-back-to-course">
               Back to course
             </a>
           </div>
@@ -274,7 +276,7 @@ function CompactHeader({ tenant, course }: Props) {
 
         <nav className={styles.nav} aria-label={`${tenant.displayName} enrolment`}>
           {courseUrl ? (
-            <a className={styles.backLink} href={courseUrl} target="_blank" rel="noreferrer">
+            <a className={styles.backLink} href={courseUrl} data-testid="nz-back-to-course">
               Back to course
             </a>
           ) : null}
