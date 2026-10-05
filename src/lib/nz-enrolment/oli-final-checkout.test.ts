@@ -183,6 +183,36 @@ describe("OLI payment-choice and enrolment-summary presentation", () => {
     assert.equal(fixture.checkout.maxFirstPaymentDelayDays, undefined);
   });
 
+  it("scopes orange Pay Now and blue Payment Plan styles to savings_hierarchy only", () => {
+    const css = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/enrolment-checkout.module.css"),
+      "utf8",
+    );
+    const payNow = css.slice(
+      css.indexOf('[data-hierarchy="savings_hierarchy"][data-choice="pay-now"]'),
+      css.indexOf('[data-hierarchy="savings_hierarchy"][data-choice="payment-plan"]'),
+    );
+    const plan = css.slice(
+      css.indexOf('[data-hierarchy="savings_hierarchy"][data-choice="payment-plan"]'),
+      css.indexOf("\n.savingBadge"),
+    );
+    assert.match(payNow, /--oli-pay-now-bg:\s*#f6ebe2/);
+    assert.match(payNow, /--oli-pay-now-accent:\s*#d87b4e/);
+    assert.match(payNow, /--oli-pay-now-badge:\s*#e8b398/);
+    assert.match(payNow, /\[data-selected="true"\]/);
+    assert.doesNotMatch(payNow, /--nz-cta|--nz-primary/);
+    assert.match(plan, /--oli-plan-bg:\s*#e4e9ee/);
+    assert.match(plan, /--oli-plan-accent:\s*#2c67c9/);
+    assert.match(plan, /\[data-selected="true"\]/);
+    assert.doesNotMatch(plan, /--nz-cta|--nz-primary/);
+    assert.match(css, /\.choiceCard\[data-selected="true"\][\s\S]*var\(--nz-cta/);
+    process.env.STUDENTPAY_ENV = "sandbox";
+    const bela = toPublicTenant(getNzTenantBySlug("bela-nz")!);
+    const fixture = toPublicTenant(getNzTenantBySlug("fixture-institute")!);
+    assert.equal(bela.checkout.paymentChoicePresentation, undefined);
+    assert.equal(fixture.checkout.paymentChoicePresentation, undefined);
+  });
+
   it("does not add GST or ex-GST amounts to money-movement files", () => {
     const files = [
       "lib/nz-enrolment/pay-in-full-flow.ts",
