@@ -58,6 +58,10 @@ describe("generic provider branding and presentation", () => {
     assert.equal(pub.branding.primaryColour, "#3a8f8f");
     assert.equal(pub.checkout.taxPresentation?.mode, "gst_inclusive_breakdown");
     assert.equal(pub.checkout.taxPresentation?.rateBasisPoints, 1500);
+    assert.equal(pub.checkout.maxFirstPaymentDelayDays, 7);
+    assert.equal(pub.checkout.coursePageLinkStyle, "view_the_course_page");
+    assert.equal(pub.checkout.paymentChoicePresentation, "savings_hierarchy");
+    assert.equal(pub.checkout.hidePlanScheduleDetails, true);
     assert.equal(pub.branding.backgroundColour, "#f9f7f3");
     assert.match(pub.branding.headingFontFamily || "", /Montserrat/);
     assert.match(tenantCssVars(pub)["--nz-heading-font"], /Montserrat/);
@@ -111,6 +115,8 @@ describe("generic provider branding and presentation", () => {
     const pub = toPublicTenant(bela);
     assert.equal(bela.checkout.taxPresentation, undefined);
     assert.equal(pub.checkout.taxPresentation, undefined);
+    assert.equal(pub.checkout.maxFirstPaymentDelayDays, undefined);
+    assert.equal(pub.checkout.paymentChoicePresentation, undefined);
     assert.equal(pub.branding.logoPath, "/nz-enrolment/bela/logo.png");
     assert.equal(pub.branding.backgroundColour, "#ffffff");
     assert.equal(pub.branding.ctaColour, "#FFBA92");

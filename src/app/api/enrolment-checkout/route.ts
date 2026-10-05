@@ -17,6 +17,7 @@ import {
   resolveHostedPayInFullEligibility,
 } from "@/lib/nz-enrolment/pay-in-full";
 import { isPayInFullOption, resolveHostedCreateProviderOrderId } from "@/lib/nz-enrolment/pay-in-full-flow";
+import { hostedFirstPaymentDateError } from "@/lib/nz-enrolment/first-payment-window";
 import { defaultFirstPaymentDate } from "@/lib/nz-enrolment/plan-math";
 import {
   assertSessionTenant,
@@ -302,6 +303,14 @@ export async function POST(request: Request) {
         : undefined,
     firstPaymentDate: body.plan?.firstPaymentDate || defaultFirstPaymentDate(),
   };
+
+  const firstPaymentDateError = hostedFirstPaymentDateError({
+    submittedDate: plan.firstPaymentDate,
+    maxDelayDays: tenant.checkout.maxFirstPaymentDelayDays,
+  });
+  if (firstPaymentDateError) {
+    return jsonError(400, "VALIDATION_ERROR", firstPaymentDateError);
+  }
 
   if (course.planPolicy.mode === "student_selected_equal") {
     const count = plan.numberOfInstalments || 0;

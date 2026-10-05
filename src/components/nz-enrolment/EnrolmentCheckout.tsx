@@ -19,8 +19,11 @@ import {
   declarationsAccepted,
   decorateConfirmationRows,
   isConfirmedCheckoutStatus,
+  formatCompactNzdFromCents,
+  formatSavingBadge,
   paymentPlanConfirmationRows,
   payNowChoiceBody,
+  payNowSavingFromCatalogue,
   paymentPlanChoiceCopy,
   planDisplay,
   sectionStatus,
@@ -50,6 +53,10 @@ import {
   resolveHostedPaymentOption,
 } from "@/lib/nz-enrolment/checkout-payment-mode";
 import {
+  firstPaymentDateWindow,
+  resolveHostedFirstPaymentDate,
+} from "@/lib/nz-enrolment/first-payment-window";
+import {
   defaultFirstPaymentDate,
   formatNzdFromCents,
   previewPlan,
@@ -75,6 +82,7 @@ import { ProviderNativeHeader } from "@/components/nz-enrolment/ProviderNativeHe
 import { StudentPayAttribution } from "@/components/nz-enrolment/StudentPayAttribution";
 import type { Stripe, StripeElements } from "@stripe/stripe-js";
 import {
+  courseWebsiteLinkLabel,
   formatEnrolmentDisplayDate,
   providerCourseWebsiteUrl,
   safeReturnToProviderUrl,
@@ -304,10 +312,16 @@ export function NzEnrolmentCheckout({
     storedDraft && !studentDetailsStarted(student)
       ? storedDraft.numberOfInstalments
       : numberOfInstalments;
-  const resolvedFirstPaymentDate =
-    storedDraft && firstPaymentDate === defaultFirstPaymentDate()
-      ? storedDraft.firstPaymentDate
-      : firstPaymentDate;
+  const paymentDateWindow = firstPaymentDateWindow({
+    maxDelayDays: tenant.checkout.maxFirstPaymentDelayDays,
+  });
+  const resolvedFirstPaymentDate = resolveHostedFirstPaymentDate({
+    selectedDate: firstPaymentDate,
+    storedDate: storedDraft?.firstPaymentDate,
+    defaultDate: defaultFirstPaymentDate(),
+    window: paymentDateWindow,
+    checkoutCreated: Boolean(setupUrl || checkoutId),
+  });
 
   const derivedPlan = course.planPolicy.mode === "derived_regular";
   const payInFullEligible = payInFullAvailable;
@@ -367,6 +381,14 @@ export function NzEnrolmentCheckout({
   const planGstRows = showGstBreakdown
     ? gstInclusiveDisplayRows(course.paymentPlanCourseFeeCents, taxPresentation)
     : null;
+  const payNowSaving = payNowSavingFromCatalogue({
+    paymentInFullCourseFeeCents: course.paymentInFullCourseFeeCents,
+    paymentPlanCourseFeeCents: course.paymentPlanCourseFeeCents,
+  });
+  const payNowSavingBadge =
+    tenant.checkout.paymentChoicePresentation === "savings_hierarchy"
+      ? formatSavingBadge(payNowSaving?.savingCents || 0)
+      : null;
   const payNowBody = payNowChoiceBody({
     paymentInFullCourseFeeCents: course.paymentInFullCourseFeeCents,
     paymentPlanCourseFeeCents: course.paymentPlanCourseFeeCents,
@@ -1347,8 +1369,8 @@ export function NzEnrolmentCheckout({
             </p>
             {courseWebsiteUrl ? (
               <p className={styles.courseLink}>
-                <a href={courseWebsiteUrl}>
-                  View this course on the {tenant.displayName} website
+                <a href={courseWebsiteUrl} data-testid="nz-course-page-link">
+                  {courseWebsiteLinkLabel(tenant, course)}
                 </a>
               </p>
             ) : null}
@@ -1496,6 +1518,8 @@ export function NzEnrolmentCheckout({
                 {renderFlags.showPayInFullChoice ? (
                 <label
                   className={styles.choiceCard}
+                  data-choice="pay-now"
+                  data-hierarchy={tenant.checkout.paymentChoicePresentation || undefined}
                   data-selected={isPayInFull ? "true" : undefined}
                   data-testid="nz-pay-in-full-choice"
                 >
@@ -1507,7 +1531,24 @@ export function NzEnrolmentCheckout({
                     onChange={() => selectPaymentOption("pay_in_full")}
                   />
                   <span>
+                    {payNowSavingBadge ? (
+                      <span className={styles.savingBadge} data-testid="nz-pay-now-saving">
+                        {payNowSavingBadge}
+                      </span>
+                    ) : null}
                     <strong>{NZ_PAY_IN_FULL_COPY.choiceTitle}</strong>
+                    <em data-testid="nz-pay-now-amount" className={showGstBreakdown && tenant.checkout.paymentChoicePresentation !== "savings_hierarchy" ? styles.srOnly : undefined}>
+                      <span data-testid="nz-authoritative-price">
+                        {tenant.checkout.paymentChoicePresentation === "savings_hierarchy" && payNowGstRows
+                          ? `${payNowGstRows[0]?.value} + GST`
+                          : formatNzdFromCents(course.paymentInFullCourseFeeCents)}
+                      </span>
+                    </em>
+                    <span className={styles.choiceCardBody} data-testid="nz-pay-now-body">
+                      {tenant.checkout.paymentChoicePresentation === "savings_hierarchy"
+                        ? "One-off payment"
+                        : payNowBody}
+                    </span>
                     {showGstBreakdown && taxPresentation ? (
                       <TaxBreakdown
                         grossCents={course.paymentInFullCourseFeeCents}
@@ -1515,14 +1556,6 @@ export function NzEnrolmentCheckout({
                         testId="nz-pay-now-gst"
                       />
                     ) : null}
-                    <em data-testid="nz-pay-now-amount" className={showGstBreakdown ? styles.srOnly : undefined}>
-                      <span data-testid="nz-authoritative-price">
-                        {formatNzdFromCents(course.paymentInFullCourseFeeCents)}
-                      </span>
-                    </em>
-                    <span className={styles.choiceCardBody} data-testid="nz-pay-now-body">
-                      {payNowBody}
-                    </span>
                     {isPayInFull ? (
                       <span className={styles.srOnly} data-testid="nz-pay-in-full-today">
                         {formatNzdFromCents(displayedCoursePriceCents)} today
@@ -1534,6 +1567,8 @@ export function NzEnrolmentCheckout({
                 {renderFlags.showPaymentPlanChoice ? (
                 <label
                   className={styles.choiceCard}
+                  data-choice="payment-plan"
+                  data-hierarchy={tenant.checkout.paymentChoicePresentation || undefined}
                   data-selected={!isPayInFull ? "true" : undefined}
                   data-testid="nz-payment-plan-choice"
                 >
@@ -1546,6 +1581,16 @@ export function NzEnrolmentCheckout({
                   />
                   <span>
                     <strong>{NZ_PAYMENT_PLAN_CHOICE_COPY.title}</strong>
+                    <em data-testid="nz-payment-plan-amount">
+                      {tenant.checkout.paymentChoicePresentation === "savings_hierarchy" && preview
+                        ? `${formatCompactNzdFromCents(preview.regularInstalmentAmountCents)} / week`
+                        : planChoice?.weeklyAmountLabel ||
+                          display?.regularLabel ||
+                          formatNzdFromCents(course.paymentPlanCourseFeeCents)}
+                      {tenant.checkout.paymentChoicePresentation === "savings_hierarchy" || !planChoice ? null : (
+                        <span className={styles.choiceCardPeriod}> {planChoice.periodSuffix}</span>
+                      )}
+                    </em>
                     {showGstBreakdown && taxPresentation ? (
                       <TaxBreakdown
                         grossCents={course.paymentPlanCourseFeeCents}
@@ -1553,27 +1598,21 @@ export function NzEnrolmentCheckout({
                         testId="nz-payment-plan-gst"
                       />
                     ) : null}
-                    <em data-testid="nz-payment-plan-amount">
-                      {planChoice?.weeklyAmountLabel ||
-                        display?.regularLabel ||
-                        formatNzdFromCents(course.paymentPlanCourseFeeCents)}
-                      {planChoice ? (
-                        <span className={styles.choiceCardPeriod}> {planChoice.periodSuffix}</span>
-                      ) : null}
-                    </em>
                     <span className={styles.choiceCardBody} data-testid="nz-payment-plan-body">
-                      {showGstBreakdown
-                        ? [
-                            display?.regularCountLabel,
-                            display?.finalPaymentLabel
-                              ? display.finalPaymentLabel.replace(/^Final payment of /, "Final payment ")
-                              : null,
-                          ]
-                            .filter(Boolean)
-                            .join(". ")
-                        : planChoice?.body || NZ_PAYMENT_PLAN_CHOICE_COPY.lead}
+                      {tenant.checkout.hidePlanScheduleDetails
+                        ? "Interest-free payment plan"
+                        : showGstBreakdown
+                          ? [
+                              display?.regularCountLabel,
+                              display?.finalPaymentLabel
+                                ? display.finalPaymentLabel.replace(/^Final payment of /, "Final payment ")
+                                : null,
+                            ]
+                              .filter(Boolean)
+                              .join(". ")
+                          : planChoice?.body || NZ_PAYMENT_PLAN_CHOICE_COPY.lead}
                     </span>
-                    {planChoice && !showGstBreakdown ? (
+                    {planChoice && !showGstBreakdown && !tenant.checkout.hidePlanScheduleDetails ? (
                       <small data-testid="nz-payment-plan-total">{planChoice.totalLine}</small>
                     ) : null}
                   </span>
@@ -1780,6 +1819,8 @@ export function NzEnrolmentCheckout({
                     name="first-payment-date"
                     type="date"
                     value={resolvedFirstPaymentDate}
+                    min={paymentDateWindow.min || undefined}
+                    max={paymentDateWindow.max || undefined}
                     disabled={planLocked}
                     onChange={setFirstPaymentDate}
                   />
@@ -1901,7 +1942,13 @@ export function NzEnrolmentCheckout({
                 showGstBreakdown ? (
                   <>
                     <dt>Payment plan</dt>
-                    <dd>{display?.regularLabel}</dd>
+                    <dd>
+                      {tenant.checkout.hidePlanScheduleDetails && preview
+                        ? `${formatCompactNzdFromCents(preview.regularInstalmentAmountCents)} / week`
+                        : display?.regularLabel}
+                    </dd>
+                    {tenant.checkout.hidePlanScheduleDetails ? null : (
+                    <>
                     <dt>Schedule</dt>
                     <dd>
                       {preview?.hasResidualFinal
@@ -1914,10 +1961,16 @@ export function NzEnrolmentCheckout({
                         </>
                       ) : null}
                     </dd>
+                    </>
+                    )}
                     {renderFlags.showFirstPaymentDate ? (
                       <>
                         <dt>First payment date</dt>
-                        <dd>{resolvedFirstPaymentDate}</dd>
+                        <dd>
+                          {tenant.checkout.hidePlanScheduleDetails
+                            ? formatEnrolmentDisplayDate(resolvedFirstPaymentDate)
+                            : resolvedFirstPaymentDate}
+                        </dd>
                       </>
                     ) : null}
                   </>
@@ -2219,6 +2272,8 @@ function TextField({
   error,
   span,
   disabled,
+  min,
+  max,
   errorRef,
 }: {
   label: string;
@@ -2230,6 +2285,8 @@ function TextField({
   error?: string;
   span?: boolean;
   disabled?: boolean;
+  min?: string;
+  max?: string;
   errorRef?: RefObject<HTMLSpanElement | null>;
 }) {
   const id = `nz-enrol-${name}`;
@@ -2243,6 +2300,8 @@ function TextField({
         type={type}
         autoComplete={autoComplete}
         value={value}
+        min={min}
+        max={max}
         disabled={disabled}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? errorId : undefined}

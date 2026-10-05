@@ -466,6 +466,83 @@
   background: color-mix(in srgb, var(--nz-cta, var(--nz-primary)) 6%, #fff);
 }
 
+.choiceCard[data-hierarchy="savings_hierarchy"][data-choice="pay-now"] {
+  --oli-pay-now-bg: #f6ebe2;
+  --oli-pay-now-accent: #d87b4e;
+  --oli-pay-now-badge: #e8b398;
+  background: var(--oli-pay-now-bg);
+  border-color: var(--oli-pay-now-accent);
+  box-shadow: none;
+}
+
+.choiceCard[data-hierarchy="savings_hierarchy"][data-choice="pay-now"][data-selected="true"] {
+  background: var(--oli-pay-now-bg);
+  border-color: var(--oli-pay-now-accent);
+  border-width: 3px;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--oli-pay-now-accent) 32%, transparent);
+}
+
+.choiceCard[data-hierarchy="savings_hierarchy"][data-choice="pay-now"] em {
+  font-size: 1.7rem;
+  color: var(--nz-heading, #1c1c1c);
+}
+
+.choiceCard[data-hierarchy="savings_hierarchy"][data-choice="pay-now"] input {
+  accent-color: var(--oli-pay-now-accent);
+}
+
+.choiceCard[data-hierarchy="savings_hierarchy"][data-choice="pay-now"] input:focus-visible {
+  outline-color: var(--oli-pay-now-accent);
+}
+
+.choiceCard[data-hierarchy="savings_hierarchy"][data-choice="payment-plan"] {
+  --oli-plan-bg: #e4e9ee;
+  --oli-plan-accent: #2c67c9;
+  background: var(--oli-plan-bg);
+  border-color: var(--oli-plan-accent);
+  opacity: 1;
+  box-shadow: none;
+}
+
+.choiceCard[data-hierarchy="savings_hierarchy"][data-choice="payment-plan"][data-selected="true"] {
+  background: var(--oli-plan-bg);
+  border-color: var(--oli-plan-accent);
+  border-width: 3px;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--oli-plan-accent) 32%, transparent);
+}
+
+.choiceCard[data-hierarchy="savings_hierarchy"][data-choice="payment-plan"] em {
+  font-size: 1.9rem;
+  color: var(--oli-plan-accent);
+}
+
+.choiceCard[data-hierarchy="savings_hierarchy"][data-choice="payment-plan"] input {
+  accent-color: var(--oli-plan-accent);
+}
+
+.choiceCard[data-hierarchy="savings_hierarchy"][data-choice="payment-plan"] input:focus-visible {
+  outline-color: var(--oli-plan-accent);
+}
+
+.savingBadge {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--nz-cta, var(--nz-primary)) 14%, #fff);
+  color: var(--nz-cta, var(--nz-primary));
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.choiceCard[data-hierarchy="savings_hierarchy"][data-choice="pay-now"] .savingBadge {
+  background: var(--oli-pay-now-badge);
+  color: #3b2418;
+}
+
 .choiceCard input {
   width: 1.125rem;
   height: 1.125rem;

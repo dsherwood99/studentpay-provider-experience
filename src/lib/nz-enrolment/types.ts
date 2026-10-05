@@ -127,6 +127,14 @@ export type NzTenantCheckoutConfig = {
   };
   /** Opt-in display only. Undefined tenants keep a single GST-inclusive fee. */
   taxPresentation?: NzTaxPresentation;
+  /** Opt-in calendar-day cap from Auckland today. Undefined tenants keep current date behaviour. */
+  maxFirstPaymentDelayDays?: number;
+  /** Opt-in "View the [course name] Course Page" copy. */
+  coursePageLinkStyle?: "view_the_course_page";
+  /** Opt-in Pay Now savings hierarchy and simplified Payment Plan card. */
+  paymentChoicePresentation?: "savings_hierarchy";
+  /** Opt-in: hide instalment-count copy from choice cards and the pre-confirm summary. */
+  hidePlanScheduleDetails?: boolean;
 };
 
 export type NzTenant = {
@@ -294,6 +302,10 @@ export type NzPublicTenant = {
     defaultFrequency: NzPaymentFrequency;
     wording?: NzTenantCheckoutConfig["wording"];
     taxPresentation?: NzTaxPresentation;
+    maxFirstPaymentDelayDays?: number;
+    coursePageLinkStyle?: NzTenantCheckoutConfig["coursePageLinkStyle"];
+    paymentChoicePresentation?: NzTenantCheckoutConfig["paymentChoicePresentation"];
+    hidePlanScheduleDetails?: boolean;
   };
 };
 
