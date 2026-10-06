@@ -78,6 +78,8 @@ export type NzTenantPresentation = {
   preferredPathStyle?: NzHostedPathStyle;
   /** When false, hide category above the course title on the individual checkout hero. */
   showCourseCategory?: boolean;
+  /** Provider-specific favicon served from this app. Omit to keep the default icon. */
+  faviconPath?: string;
 };
 
 export type NzPaymentOptions = {
