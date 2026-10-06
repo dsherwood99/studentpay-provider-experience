@@ -11,7 +11,9 @@ import {
   hostedCheckoutConfirmDeclarations,
   hostedCheckoutCreatePlan,
   hostedCheckoutViewModel,
+  hostedPaymentPreferenceFromQuery,
   initialHostedPaymentOption,
+  paymentMethodSwitchLocked,
   resolveHostedPaymentMode,
   resolveHostedPaymentOption,
 } from "./checkout-payment-mode.ts";
@@ -351,6 +353,9 @@ describe("EnrolmentCheckout consumes the payment-mode view model", () => {
       /useState<NzPaymentOptionId>\(\s*"interest_free_payment_plan"\s*\)/,
     );
     assert.match(pageSource, /paymentPlanAvailable=\{eligibility\.paymentPlanAvailable\}/);
+    assert.match(pageSource, /initialPaymentQuery=\{payment \|\| null\}/);
+    assert.match(pageSource, /dda === "return" \|\| dda === "cancelled"/);
+    assert.match(pageSource, /ddaReturn=\{ddaReturn\}/);
   });
 
   it("does not render the payment-plan choice or DDA unless those flags are true", () => {
@@ -368,5 +373,140 @@ describe("EnrolmentCheckout consumes the payment-mode view model", () => {
     assert.match(checkoutSource, /copy\.paymentSectionTitle/);
     assert.match(checkoutSource, /copy\.confirmCta/);
     assert.match(checkoutSource, /nz-enrolment-unavailable/);
+  });
+});
+
+describe("Hosted payment query deep links", () => {
+  it("maps payment=full and payment=plan and ignores unknown values", () => {
+    assert.equal(hostedPaymentPreferenceFromQuery("full"), "pay_in_full");
+    assert.equal(hostedPaymentPreferenceFromQuery("plan"), "interest_free_payment_plan");
+    assert.equal(hostedPaymentPreferenceFromQuery(undefined), null);
+    assert.equal(hostedPaymentPreferenceFromQuery("afterpay"), null);
+    assert.equal(hostedPaymentPreferenceFromQuery("pay_in_full"), null);
+  });
+
+  it("selects Pay Now from payment=full when both options are available", () => {
+    const view = hostedCheckoutViewModel({
+      paymentPlanAvailable: true,
+      payInFullAvailable: true,
+      urlPreference: hostedPaymentPreferenceFromQuery("full"),
+    });
+    assert.equal(view.mode, "both_available");
+    assert.equal(view.selectedOption, "pay_in_full");
+    assert.equal(view.flags.showPayInFullSummary, true);
+    assert.equal(view.flags.showDdaSection, false);
+  });
+
+  it("selects Payment Plan from payment=plan when both options are available", () => {
+    const view = hostedCheckoutViewModel({
+      paymentPlanAvailable: true,
+      payInFullAvailable: true,
+      urlPreference: hostedPaymentPreferenceFromQuery("plan"),
+    });
+    assert.equal(view.selectedOption, "interest_free_payment_plan");
+    assert.equal(view.flags.showDdaSection, true);
+  });
+
+  it("keeps the Payment Plan default when no payment param is present", () => {
+    const view = hostedCheckoutViewModel({
+      paymentPlanAvailable: true,
+      payInFullAvailable: true,
+    });
+    assert.equal(view.selectedOption, "interest_free_payment_plan");
+  });
+
+  it("keeps the default when the payment param is invalid", () => {
+    const view = hostedCheckoutViewModel({
+      paymentPlanAvailable: true,
+      payInFullAvailable: true,
+      urlPreference: hostedPaymentPreferenceFromQuery("weekly"),
+    });
+    assert.equal(view.selectedOption, "interest_free_payment_plan");
+  });
+
+  it("cannot enter Pay Now from payment=full when Pay Now is unavailable", () => {
+    const view = hostedCheckoutViewModel({
+      paymentPlanAvailable: true,
+      payInFullAvailable: false,
+      urlPreference: hostedPaymentPreferenceFromQuery("full"),
+    });
+    assert.equal(view.mode, "plan_only");
+    assert.equal(view.selectedOption, "interest_free_payment_plan");
+    assert.equal(view.flags.showPayInFullChoice, false);
+    assert.equal(view.flags.showPayInFullSummary, false);
+  });
+
+  it("cannot enter Payment Plan from payment=plan when the plan is unavailable", () => {
+    const view = hostedCheckoutViewModel({
+      paymentPlanAvailable: false,
+      payInFullAvailable: true,
+      urlPreference: hostedPaymentPreferenceFromQuery("plan"),
+    });
+    assert.equal(view.mode, "pif_only");
+    assert.equal(view.selectedOption, "pay_in_full");
+    assert.equal(view.flags.showPaymentPlanChoice, false);
+    assert.equal(view.flags.showDdaSection, false);
+  });
+
+  it("lets an explicit URL option beat a stale stored-draft option before checkout create", () => {
+    const view = hostedCheckoutViewModel({
+      paymentPlanAvailable: true,
+      payInFullAvailable: true,
+      storedDraftOption: "interest_free_payment_plan",
+      urlPreference: hostedPaymentPreferenceFromQuery("full"),
+    });
+    assert.equal(view.selectedOption, "pay_in_full");
+  });
+
+  it("respects a later manual radio change over the original URL preference", () => {
+    const view = hostedCheckoutViewModel({
+      paymentPlanAvailable: true,
+      payInFullAvailable: true,
+      selected: "interest_free_payment_plan",
+      paymentChoiceTouched: true,
+      urlPreference: hostedPaymentPreferenceFromQuery("full"),
+    });
+    assert.equal(view.selectedOption, "interest_free_payment_plan");
+  });
+
+  it("does not let a query param change a locked existing checkout", () => {
+    assert.equal(paymentMethodSwitchLocked({ checkoutCreated: true }), true);
+    const resolved = resolveHostedPaymentOption({
+      mode: "both_available",
+      selected: "interest_free_payment_plan",
+      paymentChoiceTouched: false,
+      storedDraftOption: "interest_free_payment_plan",
+      urlPreference: hostedPaymentPreferenceFromQuery("full"),
+      checkoutLocked: true,
+      lockedCheckoutOption: "interest_free_payment_plan",
+    });
+    assert.equal(resolved, "interest_free_payment_plan");
+  });
+
+  it("does not create a checkout from loading a payment deep-link GET", () => {
+    assert.match(checkoutSource, /Resume only\. Never create or confirm from this effect\./);
+    assert.match(checkoutSource, /method: "GET"/);
+    assert.doesNotMatch(
+      checkoutSource,
+      /initialPaymentQuery[\s\S]{0,200}method:\s*"POST"/,
+    );
+    assert.match(pageSource, /ddaReturn=\{ddaReturn\}/);
+    assert.match(pageSource, /initialPaymentQuery=\{payment \|\| null\}/);
+  });
+
+  it("leaves BELA_NZ on its current plan-only default even with payment=full", () => {
+    process.env.STUDENTPAY_ENV = "sandbox";
+    const tenant = getNzTenantBySlug("bela-nz")!;
+    const course = getNzCourse("bela-nz", "lash-business-bundle")!;
+    const eligibility = resolveHostedPayInFullEligibility({ tenant, course });
+    const view = hostedCheckoutViewModel({
+      paymentPlanAvailable: eligibility.paymentPlanAvailable,
+      payInFullAvailable: eligibility.payInFullAvailable,
+      urlPreference: hostedPaymentPreferenceFromQuery("full"),
+    });
+    assert.equal(eligibility.payInFullAvailable, false);
+    assert.equal(view.mode, "plan_only");
+    assert.equal(view.selectedOption, "interest_free_payment_plan");
+    assert.equal(tenant.presentation.faviconPath, undefined);
   });
 });

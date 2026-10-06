@@ -18,6 +18,7 @@ import {
   safeSocialUrl,
   showsCourseCategory,
   tenantCssVars,
+  tenantFaviconPath,
   usesSiteHeader,
 } from "./presentation.ts";
 import { getDefaultProductionNzTenantSlug, getNzTenantBySlug, toPublicTenant } from "./tenants.ts";
@@ -65,6 +66,8 @@ describe("generic provider branding and presentation", () => {
     assert.equal(pub.checkout.hidePlanScheduleDetails, true);
     assert.equal(pub.presentation.showCourseCategory, false);
     assert.equal(showsCourseCategory(pub), false);
+    assert.equal(pub.presentation.faviconPath, "/nz-enrolment/oli/favicon.png");
+    assert.equal(tenantFaviconPath(pub), "/nz-enrolment/oli/favicon.png");
     assert.equal(pub.branding.backgroundColour, "#f9f7f3");
     assert.match(pub.branding.headingFontFamily || "", /Montserrat/);
     assert.match(tenantCssVars(pub)["--nz-heading-font"], /Montserrat/);
@@ -126,6 +129,8 @@ describe("generic provider branding and presentation", () => {
     assert.equal(pub.branding.ctaTextColour, "#5A332B");
     assert.equal(pub.presentation.showCourseCategory, undefined);
     assert.equal(showsCourseCategory(pub), true);
+    assert.equal(pub.presentation.faviconPath, undefined);
+    assert.equal(tenantFaviconPath(pub), null);
     assert.equal(pub.presentation.headerLayout, "logo");
     assert.equal(usesSiteHeader(pub), false);
     const chrome = readFileSync(
@@ -269,5 +274,34 @@ describe("enrolment display dates", () => {
     assert.equal(formatEnrolmentDisplayDate("2026-10-01"), "1 Oct 2026");
     assert.equal(formatEnrolmentDisplayDate("not-a-date"), "not-a-date");
     assert.equal(formatEnrolmentDisplayDate("2026-02-30"), "2026-02-30");
+  });
+});
+
+describe("provider-specific hosted favicon", () => {
+  it("keeps the OLI favicon on the enrol layout metadata and does not replace the root icon", () => {
+    const layout = readFileSync(
+      new URL("../../app/enrol/[providerSlug]/layout.tsx", import.meta.url),
+      "utf8",
+    );
+    const rootLayout = readFileSync(
+      new URL("../../app/layout.tsx", import.meta.url),
+      "utf8",
+    );
+    const rootFavicon = readFileSync(
+      new URL("../../app/favicon.ico", import.meta.url),
+    );
+    const oliFavicon = readFileSync(
+      new URL("../../../public/nz-enrolment/oli/favicon.png", import.meta.url),
+    );
+    assert.match(layout, /tenantFaviconPath/);
+    assert.match(layout, /icons:/);
+    assert.doesNotMatch(rootLayout, /nz-enrolment\/oli\/favicon/);
+    assert.ok(rootFavicon.byteLength > 0);
+    assert.ok(oliFavicon.byteLength > 0);
+    assert.notEqual(oliFavicon.equals(rootFavicon), true);
+    process.env.STUDENTPAY_ENV = "sandbox";
+    const bela = toPublicTenant(getNzTenantBySlug("bela-nz")!);
+    assert.equal(tenantFaviconPath(bela), null);
+    assert.notEqual(toPublicTenant(getNzTenantBySlug("oli")!).presentation.faviconPath, bela.presentation.faviconPath);
   });
 });

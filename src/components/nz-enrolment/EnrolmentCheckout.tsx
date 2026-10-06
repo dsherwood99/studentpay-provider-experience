@@ -47,6 +47,7 @@ import {
   hostedCheckoutCopy,
   hostedCheckoutCreatePlan,
   hostedCheckoutRenderFlags,
+  hostedPaymentPreferenceFromQuery,
   initialHostedPaymentOption,
   paymentMethodSwitchLocked,
   resolveHostedPaymentMode,
@@ -132,6 +133,7 @@ type Props = {
   payInFullAvailable?: boolean;
   paymentPlanAvailable?: boolean;
   reviewMode?: boolean;
+  initialPaymentQuery?: string | null;
 };
 
 const emptyStudent: NzStudentDetails = {
@@ -228,6 +230,7 @@ export function NzEnrolmentCheckout({
   payInFullAvailable = false,
   paymentPlanAvailable = true,
   reviewMode = false,
+  initialPaymentQuery = null,
 }: Props) {
   const [course, setCourse] = useState(initialCourse);
   const [configurationUnavailable, setConfigurationUnavailable] = useState(false);
@@ -326,12 +329,19 @@ export function NzEnrolmentCheckout({
 
   const derivedPlan = course.planPolicy.mode === "derived_regular";
   const payInFullEligible = payInFullAvailable;
+  const checkoutLocked = paymentMethodSwitchLocked({
+    checkoutCreated: Boolean(setupUrl || checkoutId),
+  });
+  const urlPreference = hostedPaymentPreferenceFromQuery(initialPaymentQuery);
   const resolvedPaymentOption: NzPaymentOptionId =
     resolveHostedPaymentOption({
       mode: paymentMode,
       selected: paymentOption,
       paymentChoiceTouched,
       storedDraftOption: storedDraft?.paymentOption,
+      urlPreference,
+      checkoutLocked,
+      lockedCheckoutOption: checkoutLocked ? paymentOption : null,
     }) ?? paymentOption;
   const isPayInFull = payInFullEligible && isPayInFullOption(resolvedPaymentOption);
   const renderFlags = hostedCheckoutRenderFlags({
@@ -533,6 +543,12 @@ export function NzEnrolmentCheckout({
     if (json.payment_option === "pay_in_full" || json.session?.paymentOption === "pay_in_full") {
       setPaymentOption("pay_in_full");
       setPaymentChoiceTouched(true);
+    } else if (
+      json.payment_option === "interest_free_payment_plan" ||
+      json.session?.paymentOption === "interest_free_payment_plan"
+    ) {
+      setPaymentOption("interest_free_payment_plan");
+      setPaymentChoiceTouched(true);
     }
     if (json.direct_debit?.setup_url) {
       setSetupUrl(json.direct_debit.setup_url);
@@ -694,6 +710,12 @@ export function NzEnrolmentCheckout({
           json.session?.courseSlug === course.slug;
         if (sessionApplies && json.session?.paymentOption === "pay_in_full") {
           setPaymentOption("pay_in_full");
+          setPaymentChoiceTouched(true);
+        } else if (
+          sessionApplies &&
+          json.session?.paymentOption === "interest_free_payment_plan"
+        ) {
+          setPaymentOption("interest_free_payment_plan");
           setPaymentChoiceTouched(true);
         }
       }

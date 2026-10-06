@@ -228,6 +228,12 @@ export function showsCourseCategory(
   return tenant.presentation.showCourseCategory !== false;
 }
 
+export function tenantFaviconPath(
+  tenant: Pick<NzPublicTenant, "presentation">,
+): string | null {
+  return safePublicAssetPath(tenant.presentation.faviconPath);
+}
+
 export function courseWebsiteLinkLabel(
   tenant: Pick<NzPublicTenant, "displayName" | "checkout">,
   course: Pick<NzPublicCourse, "name">,

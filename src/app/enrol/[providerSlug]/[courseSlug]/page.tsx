@@ -136,6 +136,7 @@ export default async function EnrolmentPage({
         payInFullAvailable={eligibility.payInFullAvailable}
         paymentPlanAvailable={eligibility.paymentPlanAvailable}
         reviewMode={reviewMode}
+        initialPaymentQuery={payment || null}
       />
     );
   }

@@ -118,11 +118,43 @@ export function initialHostedPaymentOption(
   return null;
 }
 
+/** Maps public CTA query values onto Hosted option IDs. Unknown values are ignored. */
+export function hostedPaymentPreferenceFromQuery(
+  payment: string | null | undefined,
+): NzPaymentOptionId | null {
+  if (payment === "full") {
+    return "pay_in_full";
+  }
+  if (payment === "plan") {
+    return "interest_free_payment_plan";
+  }
+  return null;
+}
+
+function optionEligibleForMode(
+  mode: HostedPaymentMode,
+  option: NzPaymentOptionId | null | undefined,
+): option is NzPaymentOptionId {
+  if (!option || mode === "neither") {
+    return false;
+  }
+  if (mode === "pif_only") {
+    return option === "pay_in_full";
+  }
+  if (mode === "plan_only") {
+    return option === "interest_free_payment_plan";
+  }
+  return option === "pay_in_full" || option === "interest_free_payment_plan";
+}
+
 export function resolveHostedPaymentOption(input: {
   mode: HostedPaymentMode;
   selected: NzPaymentOptionId | null;
   paymentChoiceTouched: boolean;
   storedDraftOption?: NzPaymentOptionId | null;
+  urlPreference?: NzPaymentOptionId | null;
+  checkoutLocked?: boolean;
+  lockedCheckoutOption?: NzPaymentOptionId | null;
 }): NzPaymentOptionId | null {
   if (input.mode === "neither") {
     return null;
@@ -134,10 +166,23 @@ export function resolveHostedPaymentOption(input: {
     return "interest_free_payment_plan";
   }
 
+  if (input.checkoutLocked) {
+    if (optionEligibleForMode(input.mode, input.lockedCheckoutOption)) {
+      return input.lockedCheckoutOption;
+    }
+    if (optionEligibleForMode(input.mode, input.selected)) {
+      return input.selected;
+    }
+    return initialHostedPaymentOption(input.mode);
+  }
+
   if (input.paymentChoiceTouched) {
     return input.selected === "pay_in_full"
       ? "pay_in_full"
       : "interest_free_payment_plan";
+  }
+  if (optionEligibleForMode(input.mode, input.urlPreference)) {
+    return input.urlPreference;
   }
   if (input.storedDraftOption === "pay_in_full") {
     return "pay_in_full";
@@ -391,6 +436,9 @@ export function hostedCheckoutViewModel(input: {
   selected?: NzPaymentOptionId | null;
   paymentChoiceTouched?: boolean;
   storedDraftOption?: NzPaymentOptionId | null;
+  urlPreference?: NzPaymentOptionId | null;
+  checkoutLocked?: boolean;
+  lockedCheckoutOption?: NzPaymentOptionId | null;
   amountCents?: number;
   tenantAttribution?: string;
   declarations?: {
@@ -411,6 +459,9 @@ export function hostedCheckoutViewModel(input: {
     selected: input.selected ?? initialHostedPaymentOption(mode),
     paymentChoiceTouched: Boolean(input.paymentChoiceTouched),
     storedDraftOption: input.storedDraftOption,
+    urlPreference: input.urlPreference,
+    checkoutLocked: input.checkoutLocked,
+    lockedCheckoutOption: input.lockedCheckoutOption,
   });
   const flags = hostedCheckoutRenderFlags({ mode, selectedOption });
   const copy = hostedCheckoutCopy({
