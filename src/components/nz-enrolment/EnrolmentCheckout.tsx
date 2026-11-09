@@ -413,6 +413,7 @@ export function NzEnrolmentCheckout({
       ? "Direct Debit setup was cancelled. You can try again without creating a second enrolment."
       : undefined);
   const alreadyCreated = Boolean(setupUrl || checkoutId);
+  const identitySatisfied = studentValid || alreadyCreated;
   const alreadyConfirmed = confirmed || isConfirmedCheckoutStatus(checkoutStatus || undefined);
   const providerAgreement = course.providerStudentAgreement || null;
   const psaRequired = Boolean(providerAgreement);
@@ -513,13 +514,14 @@ export function NzEnrolmentCheckout({
           busy: false,
         }));
   const canConfirm = isPayInFull
-    ? pifDeclarationsOk && studentValid && !alreadyConfirmed && Boolean(clientSecret)
+    ? pifDeclarationsOk && identitySatisfied && !alreadyConfirmed && Boolean(clientSecret)
     : confirmEnabled({
         studentValid,
         setupComplete,
         declarationsAccepted: accepted,
         busy: false,
         alreadyConfirmed,
+        alreadyCreated,
       });
 
   function persistDraft() {
@@ -1161,6 +1163,7 @@ export function NzEnrolmentCheckout({
           userClickedConfirm: true,
           busy,
           alreadyConfirmed,
+          alreadyCreated,
         })
       ) {
         setSectionErrors((current) => ({
@@ -1184,6 +1187,7 @@ export function NzEnrolmentCheckout({
         userClickedConfirm: true,
         busy,
         alreadyConfirmed,
+        alreadyCreated,
       })
     ) {
       setSectionErrors((current) => ({
@@ -1675,6 +1679,7 @@ export function NzEnrolmentCheckout({
                 value={resolvedStudent.firstName}
                 error={fieldErrors.firstName}
                 errorRef={fieldErrors.firstName ? firstErrorRef : undefined}
+                disabled={alreadyCreated}
                 onChange={(value) => updateStudent("firstName", value)}
               />
               <TextField
@@ -1683,6 +1688,7 @@ export function NzEnrolmentCheckout({
                 autoComplete="family-name"
                 value={resolvedStudent.lastName}
                 error={fieldErrors.lastName}
+                disabled={alreadyCreated}
                 onChange={(value) => updateStudent("lastName", value)}
               />
               <TextField
@@ -1692,6 +1698,7 @@ export function NzEnrolmentCheckout({
                 autoComplete="email"
                 value={resolvedStudent.email}
                 error={fieldErrors.email}
+                disabled={alreadyCreated}
                 onChange={(value) => updateStudent("email", value)}
               />
               <TextField
@@ -1701,6 +1708,7 @@ export function NzEnrolmentCheckout({
                 autoComplete="tel"
                 value={resolvedStudent.mobile}
                 error={fieldErrors.mobile}
+                disabled={alreadyCreated}
                 onChange={(value) => updateStudent("mobile", value)}
               />
               <TextField
@@ -1710,6 +1718,7 @@ export function NzEnrolmentCheckout({
                 autoComplete="bday"
                 value={resolvedStudent.dateOfBirth}
                 error={fieldErrors.dateOfBirth}
+                disabled={alreadyCreated}
                 onChange={(value) => updateStudent("dateOfBirth", value)}
               />
               <TextField
@@ -1718,6 +1727,7 @@ export function NzEnrolmentCheckout({
                 autoComplete="country-name"
                 value={resolvedStudent.country}
                 error={fieldErrors.country}
+                disabled={alreadyCreated}
                 onChange={(value) => updateStudent("country", value)}
               />
               <TextField
@@ -1727,6 +1737,7 @@ export function NzEnrolmentCheckout({
                 value={resolvedStudent.streetAddress}
                 error={fieldErrors.streetAddress}
                 span
+                disabled={alreadyCreated}
                 onChange={(value) => updateStudent("streetAddress", value)}
               />
               <TextField
@@ -1735,6 +1746,7 @@ export function NzEnrolmentCheckout({
                 autoComplete="address-line2"
                 value={resolvedStudent.suburb}
                 error={fieldErrors.suburb}
+                disabled={alreadyCreated}
                 onChange={(value) => updateStudent("suburb", value)}
               />
               <TextField
@@ -1743,6 +1755,7 @@ export function NzEnrolmentCheckout({
                 autoComplete="address-level1"
                 value={resolvedStudent.region}
                 error={fieldErrors.region}
+                disabled={alreadyCreated}
                 onChange={(value) => {
                   setStudent((current) => {
                     const base = studentDetailsStarted(current)
@@ -1758,6 +1771,7 @@ export function NzEnrolmentCheckout({
                 autoComplete="postal-code"
                 value={resolvedStudent.postcode}
                 error={fieldErrors.postcode}
+                disabled={alreadyCreated}
                 onChange={(value) => updateStudent("postcode", value)}
               />
             </div>

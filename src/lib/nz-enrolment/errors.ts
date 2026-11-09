@@ -12,6 +12,10 @@ const SAFE_MESSAGES: Record<string, string> = {
   METHOD_NOT_ALLOWED: "This enrolment step is not available.",
   NOT_CONFIGURED: "This enrolment page is not configured yet. Please try again later.",
   SESSION_EXPIRED: "Your enrolment session expired. Please start again.",
+  RECOVERY_DENIED:
+    "We could not resume this enrolment. Check the email and date of birth used when you started.",
+  RECOVERY_NOT_AVAILABLE: "This enrolment cannot be resumed from this page.",
+  RECOVERY_RATE_LIMITED: "Too many resume attempts. Wait a few minutes and try again.",
   TENANT_MISMATCH: "This enrolment belongs to a different provider.",
   PAY_IN_FULL_UNAVAILABLE: "Pay in full is not available yet. Choose a payment plan to continue.",
   ENROLMENT_PAY_IN_FULL_DISABLED:

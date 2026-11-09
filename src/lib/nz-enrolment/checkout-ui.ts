@@ -160,6 +160,13 @@ export function shouldCreateCheckout(input: {
   );
 }
 
+export function studentIdentitySatisfied(input: {
+  studentValid: boolean;
+  alreadyCreated?: boolean;
+}): boolean {
+  return Boolean(input.studentValid || input.alreadyCreated);
+}
+
 export function shouldConfirmCheckout(input: {
   studentValid: boolean;
   setupComplete: boolean;
@@ -167,9 +174,10 @@ export function shouldConfirmCheckout(input: {
   userClickedConfirm: boolean;
   busy: boolean;
   alreadyConfirmed: boolean;
+  alreadyCreated?: boolean;
 }): boolean {
   return (
-    input.studentValid &&
+    studentIdentitySatisfied(input) &&
     input.setupComplete &&
     input.declarationsAccepted &&
     input.userClickedConfirm &&
@@ -191,9 +199,10 @@ export function confirmEnabled(input: {
   declarationsAccepted: boolean;
   busy: boolean;
   alreadyConfirmed?: boolean;
+  alreadyCreated?: boolean;
 }): boolean {
   return (
-    input.studentValid &&
+    studentIdentitySatisfied(input) &&
     input.setupComplete &&
     input.declarationsAccepted &&
     !input.busy &&

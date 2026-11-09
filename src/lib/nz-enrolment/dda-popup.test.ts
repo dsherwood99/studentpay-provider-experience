@@ -267,8 +267,8 @@ describe("Hosted DDA popup setup", () => {
     );
     assert.match(resume, /readNzSession/);
     assert.match(resume, /redirect\(`\/enrol\/\$\{tenant\.slug\}\/\$\{courseSlug\}\?dda=return`\)/);
+    assert.match(resume, /OliCheckoutRecoveryForm/);
     assert.doesNotMatch(resume, /getNzCourse/);
-    assert.doesNotMatch(resume, /searchParams/);
     assert.doesNotMatch(resume, /window\.location/);
   });
 

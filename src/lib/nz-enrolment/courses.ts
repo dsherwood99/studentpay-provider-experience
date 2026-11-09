@@ -262,6 +262,19 @@ export function getNzCoursesForProvider(providerSlug: string): NzCourse[] {
   );
 }
 
+export function getNzCourseByCode(
+  providerSlug: string,
+  courseCode: string,
+): NzCourse | undefined {
+  const provider = providerSlug.trim().toLowerCase();
+  const code = courseCode.trim().toUpperCase();
+  const found = listConfiguredNzCourses().find(
+    (item) =>
+      item.providerSlug === provider && item.courseCode.trim().toUpperCase() === code,
+  );
+  return found && courseVisible(found) ? found : undefined;
+}
+
 export function getNzCourse(
   providerSlug: string,
   courseSlug: string,

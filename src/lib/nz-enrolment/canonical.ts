@@ -334,6 +334,35 @@ export async function canonicalGet(input: {
   return { httpStatus: response.status, body: parseCanonicalBody(text) };
 }
 
+export async function canonicalRecover(input: {
+  apiBaseUrl: string;
+  apiKey: string;
+  checkoutId: string;
+  email: string;
+  dateOfBirth: string;
+  courseCode?: string | null;
+}): Promise<{ httpStatus: number; body: CanonicalCheckoutResult }> {
+  const response = await fetch(
+    `${input.apiBaseUrl.replace(/\/$/, "")}/v1/provider-checkouts/${encodeURIComponent(input.checkoutId)}/recovery`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${input.apiKey}`,
+      },
+      body: JSON.stringify({
+        email: input.email,
+        date_of_birth: input.dateOfBirth,
+        ...(input.courseCode ? { course_code: input.courseCode } : {}),
+      }),
+      cache: "no-store",
+    },
+  );
+  const text = await response.text();
+  return { httpStatus: response.status, body: parseCanonicalBody(text) };
+}
+
 export async function canonicalConfirm(input: {
   apiBaseUrl: string;
   apiKey: string;

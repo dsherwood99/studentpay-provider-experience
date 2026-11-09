@@ -142,6 +142,16 @@ describe("single-page checkout presentation helpers", () => {
       false,
     );
     assert.equal(
+      confirmEnabled({
+        studentValid: false,
+        alreadyCreated: true,
+        setupComplete: true,
+        declarationsAccepted: true,
+        busy: false,
+      }),
+      true,
+    );
+    assert.equal(
       shouldConfirmCheckout({
         studentValid: true,
         setupComplete: true,

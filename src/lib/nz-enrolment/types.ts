@@ -356,6 +356,7 @@ export type CanonicalCheckoutResult = {
   idempotent_replay?: boolean;
   alreadyConfirmed?: boolean;
   already_confirmed?: boolean;
+  recovered?: boolean;
   requestId?: string;
   payment_option?: string;
   error?: {
@@ -398,6 +399,34 @@ export type CanonicalCheckoutResult = {
     authorised?: boolean;
     status?: string;
     processor_status?: string;
+  };
+  lifecycle?: {
+    checkout_status?: string | null;
+    recovery_state?: string;
+    terminal?: boolean;
+    recoverable?: boolean;
+    billing_request_remint_allowed?: boolean;
+    setup_complete?: boolean;
+    authorised?: boolean;
+  };
+  course?: {
+    course_code?: string | null;
+    course_name?: string | null;
+  };
+  student?: {
+    first_name?: string | null;
+    last_name?: string | null;
+    email?: string | null;
+    mobile?: string | null;
+    date_of_birth?: string | null;
+    address?: {
+      street_address?: string | null;
+      suburb?: string | null;
+      city?: string | null;
+      state?: string | null;
+      postcode?: string | null;
+      country?: string | null;
+    } | null;
   };
   agreement?: {
     id?: string;
