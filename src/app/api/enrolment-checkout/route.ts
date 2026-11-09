@@ -7,6 +7,7 @@ import {
   extractSetupUrl,
   previewCoursePlan,
 } from "@/lib/nz-enrolment/canonical";
+import { isGoCardlessHostedAuthorisationUrl } from "@/lib/nz-enrolment/checkout-ui";
 import { jsonError } from "@/lib/nz-enrolment/errors";
 import { GENERIC_MAX_RECURRING_INSTALMENTS } from "@/lib/nz-enrolment/environment";
 import { logNzEnrolmentEvent } from "@/lib/nz-enrolment/observability";
@@ -435,6 +436,11 @@ export async function POST(request: Request) {
     direct_debit: {
       setup_url: setupUrl,
       setup_complete: Boolean(upstream.body.direct_debit?.setup_complete),
+      authorisation_ready: Boolean(
+        upstream.body.direct_debit?.authorisation_ready ||
+          isGoCardlessHostedAuthorisationUrl(setupUrl),
+      ),
+      processing_state: upstream.body.direct_debit?.processing_state || null,
     },
     plan: preview,
     session: publicSessionView({

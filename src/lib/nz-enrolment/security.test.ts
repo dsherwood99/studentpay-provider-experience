@@ -109,7 +109,8 @@ describe("NZ enrolment checkout security", () => {
     assert.match(checkout, /nz-section-student/);
     assert.match(checkout, /nz-section-dda/);
     assert.match(checkout, /nz-section-review/);
-    assert.match(checkout, /NZ_DIRECT_DEBIT_CTA/);
+    assert.match(checkout, /directDebitActionLabel/);
+    assert.match(checkout, /NZ_DIRECT_DEBIT_COPY/);
     assert.match(checkout, /NZ_CONFIRM_CTA/);
     assert.match(checkout, /Complete your enrolment and set up your StudentPay payment plan below/);
     assert.match(checkout, /nz-enrolment-summary/);
