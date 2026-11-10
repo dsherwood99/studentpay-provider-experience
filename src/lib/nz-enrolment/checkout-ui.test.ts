@@ -8,6 +8,9 @@ import {
   NZ_CONFIRM_CTA,
   NZ_DIRECT_DEBIT_COPY,
   NZ_DIRECT_DEBIT_CTA,
+  directDebitActionLabel,
+  directDebitHelpCopy,
+  isGoCardlessHostedAuthorisationUrl,
   NZ_REMOVED_STEPPER_LABELS,
   NZ_STUDENT_DETAILS_COPY,
   combinedDetailsPrivacyAccepted,
@@ -62,8 +65,12 @@ describe("single-page checkout presentation helpers", () => {
     assert.equal(NZ_DIRECT_DEBIT_CTA, "Set up Direct Debit");
     assert.equal(NZ_CONFIRM_CTA, "Confirm enrolment & activate payment plan");
     assert.equal(
+      NZ_DIRECT_DEBIT_COPY.preparingTitle,
+      "Preparing your secure bank authorisation…",
+    );
+    assert.equal(
       NZ_DIRECT_DEBIT_COPY.waitingBody,
-      "Complete your Direct Debit setup in the secure window.",
+      "Complete authorisation in the secure GoCardless window. This page stays open.",
     );
   });
 
@@ -425,5 +432,47 @@ describe("confirmation summary presentation", () => {
     assert.match(checkout, /Keep an eye on/);
     assert.match(checkout, /onClick=\{\(\) => void startDirectDebitSetup\(\)\}/);
     assert.doesNotMatch(checkout, /<dd>\{preview\.firstPaymentDate\}<\/dd>/);
+    assert.match(checkout, /nz-dda-preparing/);
+    assert.doesNotMatch(checkout, /Creating enrolment/);
+    assert.doesNotMatch(checkout, /account number|BSB|bank account/i);
+  });
+
+  it("treats a ready GoCardless URL as immediately continuable", () => {
+    assert.equal(
+      isGoCardlessHostedAuthorisationUrl("https://pay.gocardless.com/billing/BRQ_NEW"),
+      true,
+    );
+    assert.equal(
+      isGoCardlessHostedAuthorisationUrl(
+        "https://sandbox-api.studentpay.co.nz/api/dd-setup?token=dda",
+      ),
+      false,
+    );
+    assert.equal(
+      directDebitActionLabel({
+        busy: true,
+        popupOpen: false,
+        alreadyCreated: false,
+        authorisationReady: false,
+      }),
+      "Preparing your secure bank authorisation…",
+    );
+    assert.equal(
+      directDebitActionLabel({
+        busy: false,
+        popupOpen: false,
+        alreadyCreated: true,
+        authorisationReady: true,
+      }),
+      "Continue to bank authorisation",
+    );
+    assert.equal(
+      directDebitHelpCopy({
+        studentValid: true,
+        alreadyCreated: false,
+        authorisationReady: false,
+      }),
+      NZ_DIRECT_DEBIT_COPY.readyHelp,
+    );
   });
 });

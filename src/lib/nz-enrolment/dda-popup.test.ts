@@ -257,7 +257,7 @@ describe("Hosted DDA popup setup", () => {
     assert.match(features, /width=580/);
     assert.match(features, /height=760/);
     assert.match(features, /left=610/);
-    assert.match(ddaPopupPreparingHtml(), /Preparing Direct Debit setup/);
+    assert.match(ddaPopupPreparingHtml(), /Preparing your secure bank authorisation/);
   });
 
   it("resumes a Hosted enrolment from the allowlisted /enrol/resume route", () => {

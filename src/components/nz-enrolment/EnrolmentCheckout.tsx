@@ -6,7 +6,9 @@ import {
   NZ_CONFIRM_CTA,
   NZ_CONFIRMATION_COPY,
   NZ_DIRECT_DEBIT_COPY,
-  NZ_DIRECT_DEBIT_CTA,
+  directDebitActionLabel,
+  directDebitHelpCopy,
+  isGoCardlessHostedAuthorisationUrl,
   NZ_PAYMENT_CHOICE_LEAD,
   NZ_PAYMENT_PLAN_CHOICE_COPY,
   NZ_PAY_IN_FULL_COPY,
@@ -213,6 +215,8 @@ type StatusPayload = {
   direct_debit?: {
     setup_complete?: boolean;
     setup_url?: string | null;
+    authorisation_ready?: boolean;
+    processing_state?: string | null;
   };
   session?: {
     providerSlug?: string;
@@ -413,6 +417,8 @@ export function NzEnrolmentCheckout({
       ? "Direct Debit setup was cancelled. You can try again without creating a second enrolment."
       : undefined);
   const alreadyCreated = Boolean(setupUrl || checkoutId);
+  const authorisationReady = isGoCardlessHostedAuthorisationUrl(setupUrl);
+  const preparingAuthorisation = busy && !setupComplete && !isPayInFull;
   const alreadyConfirmed = confirmed || isConfirmedCheckoutStatus(checkoutStatus || undefined);
   const providerAgreement = course.providerStudentAgreement || null;
   const psaRequired = Boolean(providerAgreement);
@@ -1877,20 +1883,31 @@ export function NzEnrolmentCheckout({
                 ) : (
                   <div
                     className={styles.ddaStatusPanel}
-                    data-state={ddaPopupOpen ? "waiting" : studentValid ? "ready" : "blocked"}
+                    data-state={
+                      preparingAuthorisation || ddaPopupOpen
+                        ? "waiting"
+                        : studentValid
+                          ? "ready"
+                          : "blocked"
+                    }
                   >
-                    {ddaPopupOpen ? (
+                    {preparingAuthorisation ? (
+                      <div data-testid="nz-dda-preparing" role="status">
+                        <h3>{NZ_DIRECT_DEBIT_COPY.preparingTitle}</h3>
+                        <p id={ddaHelpId}>{NZ_DIRECT_DEBIT_COPY.preparingBody}</p>
+                      </div>
+                    ) : ddaPopupOpen ? (
                       <div data-testid="nz-dda-waiting" role="status">
                         <h3>{NZ_DIRECT_DEBIT_COPY.waitingTitle}</h3>
                         <p id={ddaHelpId}>{NZ_DIRECT_DEBIT_COPY.waitingBody}</p>
                       </div>
                     ) : (
                       <p id={ddaHelpId}>
-                        {studentValid
-                          ? alreadyCreated
-                            ? "Continue Direct Debit setup in the secure StudentPay window. This page stays open."
-                            : "Your details are ready. Set up Direct Debit when you are ready to continue."
-                          : "Complete your details above before setting up Direct Debit."}
+                        {directDebitHelpCopy({
+                          studentValid,
+                          alreadyCreated,
+                          authorisationReady,
+                        })}
                       </p>
                     )}
                     <div className={styles.ddaStatusActions}>
@@ -1901,13 +1918,12 @@ export function NzEnrolmentCheckout({
                         aria-describedby={ddaHelpId}
                         onClick={() => void startDirectDebitSetup()}
                       >
-                        {ddaPopupOpen
-                          ? NZ_DIRECT_DEBIT_COPY.waitingTitle
-                          : busy
-                            ? "Creating enrolment…"
-                            : alreadyCreated
-                              ? "Continue Direct Debit setup"
-                              : NZ_DIRECT_DEBIT_CTA}
+                        {directDebitActionLabel({
+                          busy,
+                          popupOpen: ddaPopupOpen,
+                          alreadyCreated,
+                          authorisationReady,
+                        })}
                       </button>
                     </div>
                   </div>

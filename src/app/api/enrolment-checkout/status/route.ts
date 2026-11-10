@@ -1,4 +1,5 @@
 import { canonicalGet } from "@/lib/nz-enrolment/canonical";
+import { isGoCardlessHostedAuthorisationUrl } from "@/lib/nz-enrolment/checkout-ui";
 import { jsonError } from "@/lib/nz-enrolment/errors";
 import { logNzEnrolmentEvent } from "@/lib/nz-enrolment/observability";
 import {
@@ -102,6 +103,11 @@ export async function GET() {
         mandate_status: upstream.body.direct_debit?.mandate_status || null,
         authorised: Boolean(upstream.body.direct_debit?.authorised),
         setup_url: session.setupUrl || upstream.body.direct_debit?.setup_url || null,
+        authorisation_ready: Boolean(
+          isGoCardlessHostedAuthorisationUrl(
+            session.setupUrl || upstream.body.direct_debit?.setup_url || "",
+          ),
+        ),
       },
       session: publicSessionView(session),
     });

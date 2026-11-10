@@ -118,12 +118,12 @@ export function ddaPopupPreparingHtml(): string {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Preparing Direct Debit setup</title>
+    <title>Preparing your secure bank authorisation</title>
   </head>
   <body style="margin:0;min-height:100vh;display:grid;place-items:center;padding:32px;box-sizing:border-box;font-family:'Segoe UI',sans-serif;color:#1c2b24;background:#f3f7f4;text-align:center;">
     <div>
       <h1 style="margin:0 0 12px;font-size:1.35rem;">StudentPay NZ</h1>
-      <p style="margin:0;color:#4f5f59;">Preparing Direct Debit setup…</p>
+      <p style="margin:0;color:#4f5f59;">Preparing your secure bank authorisation…</p>
     </div>
   </body>
 </html>`;

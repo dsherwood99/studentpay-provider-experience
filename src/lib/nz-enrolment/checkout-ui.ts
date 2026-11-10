@@ -34,8 +34,15 @@ export const NZ_DIRECT_DEBIT_COPY = {
   heading: "Direct debit",
   authorisedTitle: "Direct Debit authorised",
   authorisedBody: "Your bank account has been securely authorised for scheduled payments.",
-  waitingTitle: "Waiting for Direct Debit setup...",
-  waitingBody: "Complete your Direct Debit setup in the secure window.",
+  preparingTitle: "Preparing your secure bank authorisation…",
+  preparingBody: "This page stays open. You can continue as soon as GoCardless is ready.",
+  waitingTitle: "Waiting for bank authorisation...",
+  waitingBody: "Complete authorisation in the secure GoCardless window. This page stays open.",
+  continueCta: "Continue to bank authorisation",
+  continueFallbackCta: "Continue Direct Debit setup",
+  readyHelp: "Your details are ready. Set up Direct Debit when you are ready to continue.",
+  blockedHelp: "Complete your details above before setting up Direct Debit.",
+  continueHelp: "Continue bank authorisation in the secure window. This page stays open.",
 } as const;
 
 export const NZ_REVIEW_COPY = {
@@ -482,4 +489,51 @@ export function paymentPlanConfirmationRows(input: {
     });
   }
   return rows;
+}
+
+export function isGoCardlessHostedAuthorisationUrl(url: string): boolean {
+  const text = String(url || "").trim();
+  if (!text) {
+    return false;
+  }
+  try {
+    const host = new URL(text).hostname.toLowerCase();
+    return host === "pay.gocardless.com" || host.endsWith(".gocardless.com");
+  } catch {
+    return false;
+  }
+}
+
+export function directDebitActionLabel(input: {
+  busy: boolean;
+  popupOpen: boolean;
+  alreadyCreated: boolean;
+  authorisationReady: boolean;
+}): string {
+  if (input.busy) {
+    return NZ_DIRECT_DEBIT_COPY.preparingTitle;
+  }
+  if (input.popupOpen) {
+    return NZ_DIRECT_DEBIT_COPY.waitingTitle;
+  }
+  if (input.alreadyCreated) {
+    return input.authorisationReady
+      ? NZ_DIRECT_DEBIT_COPY.continueCta
+      : NZ_DIRECT_DEBIT_COPY.continueFallbackCta;
+  }
+  return NZ_DIRECT_DEBIT_CTA;
+}
+
+export function directDebitHelpCopy(input: {
+  studentValid: boolean;
+  alreadyCreated: boolean;
+  authorisationReady: boolean;
+}): string {
+  if (!input.studentValid) {
+    return NZ_DIRECT_DEBIT_COPY.blockedHelp;
+  }
+  if (input.alreadyCreated) {
+    return NZ_DIRECT_DEBIT_COPY.continueHelp;
+  }
+  return NZ_DIRECT_DEBIT_COPY.readyHelp;
 }
