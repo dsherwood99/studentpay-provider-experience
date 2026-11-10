@@ -252,9 +252,12 @@ describe("OLI payment-choice and enrolment-summary presentation", () => {
     assert.match(css, /\[data-layout="compact-pricing"\]/);
     assert.match(
       css,
-      /grid-template-columns:\s*minmax\(0, 1\.2fr\) minmax\(0, 0\.85fr\)/,
+      /grid-template-columns:\s*minmax\(0, 1fr\) minmax\(min-content, 1\.15fr\)/,
     );
+    assert.match(css, /min-width:\s*min-content/);
     assert.match(taxCss, /\[data-compact="true"\]/);
+    assert.match(taxCss, /white-space:\s*nowrap/);
+    assert.match(taxCss, /grid-template-columns:\s*max-content minmax\(4\.5rem, 1fr\)/);
     const previousBound = process.env.NZ_HOSTED_TENANT_SLUG;
     delete process.env.NZ_HOSTED_TENANT_SLUG;
     process.env.STUDENTPAY_ENV = "sandbox";
@@ -295,7 +298,7 @@ describe("OLI payment-choice and enrolment-summary presentation", () => {
     assert.match(css, /\.summaryCard \.review\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 1\.1fr\) minmax\(0, 0\.9fr\)/);
     assert.match(
       css,
-      /grid-template-columns:\s*minmax\(0, 1\.2fr\) minmax\(0, 0\.85fr\)/,
+      /grid-template-columns:\s*minmax\(0, 1fr\) minmax\(min-content, 1\.15fr\)/,
     );
     assert.doesNotMatch(checkout, /providerSlug\s*===\s*['"]oli['"]/);
     assert.match(checkout, /NZ_DIRECT_DEBIT_COPY\.preparingTitle/);

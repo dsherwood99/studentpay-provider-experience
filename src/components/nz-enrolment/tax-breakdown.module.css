@@ -33,7 +33,16 @@
 
 .breakdown[data-compact="true"] {
   margin: 0;
-  gap: 4px 12px;
+  gap: 4px 10px;
+}
+
+.breakdown[data-compact="true"] .row {
+  grid-template-columns: max-content minmax(4.5rem, 1fr);
+  gap: 8px 10px;
+}
+
+.breakdown[data-compact="true"] dt {
+  white-space: nowrap;
 }
 
 .breakdown[data-compact="true"] dt,

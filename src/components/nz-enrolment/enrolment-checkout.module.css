@@ -631,9 +631,13 @@
 
 .choiceCard[data-layout="compact-pricing"] .choiceCardInner {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.85fr);
-  gap: 12px 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(min-content, 1.15fr);
+  gap: 12px 14px;
   align-items: center;
+}
+
+.choiceCard[data-layout="compact-pricing"] .choiceCardInner > :last-child {
+  min-width: min-content;
 }
 
 .choiceCard[data-hierarchy="savings_hierarchy"][data-layout="compact-pricing"][data-choice="pay-now"] em {
