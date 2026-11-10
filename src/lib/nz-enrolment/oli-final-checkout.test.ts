@@ -272,6 +272,53 @@ describe("OLI payment-choice and enrolment-summary presentation", () => {
     }
   });
 
+  it("tightens remaining checkout sections without changing compact payment cards", () => {
+    const checkout = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/EnrolmentCheckout.tsx"),
+      "utf8",
+    );
+    const css = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/enrolment-checkout.module.css"),
+      "utf8",
+    );
+    assert.match(checkout, /styles\.addressRow/);
+    assert.match(checkout, /styles\.agreementItem/);
+    assert.match(checkout, /styles\.agreementMeta/);
+    assert.match(checkout, /data-total=/);
+    assert.match(checkout, /styles\.ddaStatusActions/);
+    assert.match(checkout, /onClick=\{\(\) => void startDirectDebitSetup\(\)\}/);
+    assert.match(css, /\.addressRow\s*\{/);
+    assert.match(css, /grid-template-columns:\s*minmax\(0, 1\.15fr\) minmax\(0, 1\.15fr\) minmax\(0, 0\.7fr\)/);
+    assert.match(css, /\.section h2\s*\{[\s\S]*font-size:\s*1\.05rem/);
+    assert.match(css, /\.field input,[\s\S]*min-height:\s*42px/);
+    assert.match(css, /\.ddaStatusPanel\s*\{[\s\S]*padding:\s*14px/);
+    assert.match(css, /\.summaryCard \.review\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 1\.1fr\) minmax\(0, 0\.9fr\)/);
+    assert.match(
+      css,
+      /grid-template-columns:\s*minmax\(0, 1\.2fr\) minmax\(0, 0\.85fr\)/,
+    );
+    assert.doesNotMatch(checkout, /providerSlug\s*===\s*['"]oli['"]/);
+    assert.match(checkout, /NZ_DIRECT_DEBIT_COPY\.preparingTitle/);
+    assert.match(checkout, /NZ_CONFIRM_CTA/);
+    assert.doesNotMatch(checkout, /Creating enrolment/);
+    const previousBound = process.env.NZ_HOSTED_TENANT_SLUG;
+    delete process.env.NZ_HOSTED_TENANT_SLUG;
+    process.env.STUDENTPAY_ENV = "sandbox";
+    try {
+      const oli = toPublicTenant(getNzTenantBySlug("oli")!);
+      const bela = toPublicTenant(getNzTenantBySlug("bela-nz")!);
+      assert.equal(oli.checkout.paymentChoicePresentation, "savings_hierarchy");
+      assert.equal(bela.checkout.paymentChoicePresentation, undefined);
+      assert.equal(bela.checkout.taxPresentation, undefined);
+    } finally {
+      if (previousBound === undefined) {
+        delete process.env.NZ_HOSTED_TENANT_SLUG;
+      } else {
+        process.env.NZ_HOSTED_TENANT_SLUG = previousBound;
+      }
+    }
+  });
+
   it("scopes orange Pay Now and blue Payment Plan styles to savings_hierarchy only", () => {
     const css = fs.readFileSync(
       path.join(srcRoot, "components/nz-enrolment/enrolment-checkout.module.css"),
