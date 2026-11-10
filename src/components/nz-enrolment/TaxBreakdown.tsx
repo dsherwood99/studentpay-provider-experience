@@ -6,15 +6,20 @@ type Props = {
   grossCents: number;
   tax: NzTaxPresentation;
   testId?: string;
+  compact?: boolean;
 };
 
-export function TaxBreakdown({ grossCents, tax, testId }: Props) {
+export function TaxBreakdown({ grossCents, tax, testId, compact }: Props) {
   const rows = gstInclusiveDisplayRows(grossCents, tax);
   if (!rows) {
     return null;
   }
   return (
-    <dl className={styles.breakdown} data-testid={testId || "nz-gst-breakdown"}>
+    <dl
+      className={styles.breakdown}
+      data-compact={compact ? "true" : undefined}
+      data-testid={testId || "nz-gst-breakdown"}
+    >
       {rows.map((row) => (
         <div key={row.label} className={styles.row}>
           <dt>{row.label}</dt>
