@@ -438,22 +438,23 @@
   position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
+  gap: 14px;
   margin: 4px 0 8px;
   padding: 0;
   border: 0;
   min-width: 0;
+  align-items: stretch;
 }
 
 .choiceCard {
   display: flex;
-  gap: 14px;
+  gap: 12px;
   align-items: flex-start;
   min-width: 0;
   min-height: 100%;
-  border: 2px solid color-mix(in srgb, var(--nz-primary) 18%, #e6e2dc);
-  border-radius: 16px;
-  padding: 22px 20px;
+  border: 1px solid color-mix(in srgb, var(--nz-primary) 18%, #e6e2dc);
+  border-radius: 10px;
+  padding: 16px;
   background: #fff;
   cursor: pointer;
   font-size: var(--nz-form-size);
@@ -462,7 +463,7 @@
 
 .choiceCard[data-selected="true"] {
   border-color: var(--nz-cta, var(--nz-primary));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--nz-cta, var(--nz-primary)) 18%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--nz-cta, var(--nz-primary)) 14%, transparent);
   background: color-mix(in srgb, var(--nz-cta, var(--nz-primary)) 6%, #fff);
 }
 
@@ -478,8 +479,8 @@
 .choiceCard[data-hierarchy="savings_hierarchy"][data-choice="pay-now"][data-selected="true"] {
   background: var(--oli-pay-now-bg);
   border-color: var(--oli-pay-now-accent);
-  border-width: 3px;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--oli-pay-now-accent) 32%, transparent);
+  border-width: 2px;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--oli-pay-now-accent) 18%, transparent);
 }
 
 .choiceCard[data-hierarchy="savings_hierarchy"][data-choice="pay-now"] em {
@@ -507,8 +508,8 @@
 .choiceCard[data-hierarchy="savings_hierarchy"][data-choice="payment-plan"][data-selected="true"] {
   background: var(--oli-plan-bg);
   border-color: var(--oli-plan-accent);
-  border-width: 3px;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--oli-plan-accent) 32%, transparent);
+  border-width: 2px;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--oli-plan-accent) 18%, transparent);
 }
 
 .choiceCard[data-hierarchy="savings_hierarchy"][data-choice="payment-plan"] em {
@@ -527,15 +528,16 @@
 .savingBadge {
   display: inline-flex;
   align-items: center;
-  margin: 0 0 10px;
-  padding: 4px 10px;
+  margin: 0;
+  padding: 2px 8px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--nz-cta, var(--nz-primary)) 14%, #fff);
   color: var(--nz-cta, var(--nz-primary));
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
+  line-height: 1.3;
 }
 
 .choiceCard[data-hierarchy="savings_hierarchy"][data-choice="pay-now"] .savingBadge {
@@ -543,10 +545,30 @@
   color: #3b2418;
 }
 
+.choiceCardInner {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.choiceCardMain {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.choiceCardHeading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .choiceCard input {
   width: 1.125rem;
   height: 1.125rem;
-  margin: 0.25rem 0 0;
+  margin: 0.2rem 0 0;
   flex-shrink: 0;
   accent-color: var(--nz-cta, var(--nz-primary));
 }
@@ -562,7 +584,7 @@
   font-size: 1.08rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  margin-bottom: 8px;
+  margin: 0;
 }
 
 .choiceCard em {
@@ -572,7 +594,7 @@
   font-size: 1.55rem;
   letter-spacing: -0.03em;
   color: var(--nz-heading, var(--nz-text));
-  margin: 0 0 10px;
+  margin: 6px 0 8px;
 }
 
 .choiceCardPeriod {
@@ -587,6 +609,39 @@
   color: var(--nz-heading, var(--nz-text));
   font-size: 0.95rem;
   line-height: 1.45;
+}
+
+.choiceCard[data-layout="compact-pricing"] {
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+}
+
+.choiceCard[data-layout="compact-pricing"] strong {
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.choiceCard[data-layout="compact-pricing"] .choiceCardBody {
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.choiceCard[data-layout="compact-pricing"] .choiceCardInner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.85fr);
+  gap: 12px 16px;
+  align-items: center;
+}
+
+.choiceCard[data-hierarchy="savings_hierarchy"][data-layout="compact-pricing"][data-choice="pay-now"] em {
+  font-size: 1.375rem;
+  margin: 6px 0 2px;
+}
+
+.choiceCard[data-hierarchy="savings_hierarchy"][data-layout="compact-pricing"][data-choice="payment-plan"] em {
+  font-size: 1.5rem;
+  margin: 6px 0 2px;
 }
 
 .choiceCard small {
@@ -613,10 +668,27 @@
   margin: 8px 0 12px;
 }
 
+@media (max-width: 900px) {
+  .choiceCard[data-layout="compact-pricing"] .choiceCardInner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+  }
+}
+
 @media (max-width: 768px) {
   .choiceGrid,
   .options {
     grid-template-columns: 1fr;
+  }
+
+  .choiceCard[data-layout="compact-pricing"] {
+    padding: 14px;
+  }
+
+  .choiceCard[data-layout="compact-pricing"] .choiceCardBody,
+  .choiceCard[data-layout="compact-pricing"] strong {
+    font-size: 0.8125rem;
   }
 }
 

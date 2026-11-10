@@ -404,6 +404,8 @@ export function NzEnrolmentCheckout({
     tenant.checkout.paymentChoicePresentation === "savings_hierarchy"
       ? formatSavingBadge(payNowSaving?.savingCents || 0)
       : null;
+  const compactPricing =
+    tenant.checkout.paymentChoicePresentation === "savings_hierarchy";
   const payNowBody = payNowChoiceBody({
     paymentInFullCourseFeeCents: course.paymentInFullCourseFeeCents,
     paymentPlanCourseFeeCents: course.paymentPlanCourseFeeCents,
@@ -1551,6 +1553,7 @@ export function NzEnrolmentCheckout({
                   className={styles.choiceCard}
                   data-choice="pay-now"
                   data-hierarchy={tenant.checkout.paymentChoicePresentation || undefined}
+                  data-layout={compactPricing ? "compact-pricing" : undefined}
                   data-selected={isPayInFull ? "true" : undefined}
                   data-testid="nz-pay-in-full-choice"
                 >
@@ -1561,36 +1564,48 @@ export function NzEnrolmentCheckout({
                     disabled={planLocked}
                     onChange={() => selectPaymentOption("pay_in_full")}
                   />
-                  <span>
-                    {payNowSavingBadge ? (
-                      <span className={styles.savingBadge} data-testid="nz-pay-now-saving">
-                        {payNowSavingBadge}
+                  <span className={styles.choiceCardInner}>
+                    <span className={styles.choiceCardMain}>
+                      <span className={styles.choiceCardHeading}>
+                        <strong>{NZ_PAY_IN_FULL_COPY.choiceTitle}</strong>
+                        {payNowSavingBadge ? (
+                          <span className={styles.savingBadge} data-testid="nz-pay-now-saving">
+                            {payNowSavingBadge}
+                          </span>
+                        ) : null}
                       </span>
-                    ) : null}
-                    <strong>{NZ_PAY_IN_FULL_COPY.choiceTitle}</strong>
-                    <em data-testid="nz-pay-now-amount" className={showGstBreakdown && tenant.checkout.paymentChoicePresentation !== "savings_hierarchy" ? styles.srOnly : undefined}>
-                      <span data-testid="nz-authoritative-price">
-                        {tenant.checkout.paymentChoicePresentation === "savings_hierarchy" && payNowGstRows
-                          ? `${payNowGstRows[0]?.value} + GST`
-                          : formatNzdFromCents(course.paymentInFullCourseFeeCents)}
+                      <em data-testid="nz-pay-now-amount" className={showGstBreakdown && tenant.checkout.paymentChoicePresentation !== "savings_hierarchy" ? styles.srOnly : undefined}>
+                        <span data-testid="nz-authoritative-price">
+                          {tenant.checkout.paymentChoicePresentation === "savings_hierarchy" && payNowGstRows
+                            ? `${payNowGstRows[0]?.value} + GST`
+                            : formatNzdFromCents(course.paymentInFullCourseFeeCents)}
+                        </span>
+                      </em>
+                      <span className={styles.choiceCardBody} data-testid="nz-pay-now-body">
+                        {tenant.checkout.paymentChoicePresentation === "savings_hierarchy"
+                          ? "One-off payment"
+                          : payNowBody}
                       </span>
-                    </em>
-                    <span className={styles.choiceCardBody} data-testid="nz-pay-now-body">
-                      {tenant.checkout.paymentChoicePresentation === "savings_hierarchy"
-                        ? "One-off payment"
-                        : payNowBody}
+                      {showGstBreakdown && taxPresentation && !compactPricing ? (
+                        <TaxBreakdown
+                          grossCents={course.paymentInFullCourseFeeCents}
+                          tax={taxPresentation}
+                          testId="nz-pay-now-gst"
+                        />
+                      ) : null}
+                      {isPayInFull ? (
+                        <span className={styles.srOnly} data-testid="nz-pay-in-full-today">
+                          {formatNzdFromCents(displayedCoursePriceCents)} today
+                        </span>
+                      ) : null}
                     </span>
-                    {showGstBreakdown && taxPresentation ? (
+                    {showGstBreakdown && taxPresentation && compactPricing ? (
                       <TaxBreakdown
+                        compact
                         grossCents={course.paymentInFullCourseFeeCents}
                         tax={taxPresentation}
                         testId="nz-pay-now-gst"
                       />
-                    ) : null}
-                    {isPayInFull ? (
-                      <span className={styles.srOnly} data-testid="nz-pay-in-full-today">
-                        {formatNzdFromCents(displayedCoursePriceCents)} today
-                      </span>
                     ) : null}
                   </span>
                 </label>
@@ -1600,6 +1615,7 @@ export function NzEnrolmentCheckout({
                   className={styles.choiceCard}
                   data-choice="payment-plan"
                   data-hierarchy={tenant.checkout.paymentChoicePresentation || undefined}
+                  data-layout={compactPricing ? "compact-pricing" : undefined}
                   data-selected={!isPayInFull ? "true" : undefined}
                   data-testid="nz-payment-plan-choice"
                 >
@@ -1610,41 +1626,53 @@ export function NzEnrolmentCheckout({
                     disabled={planLocked}
                     onChange={() => selectPaymentOption("interest_free_payment_plan")}
                   />
-                  <span>
-                    <strong>{NZ_PAYMENT_PLAN_CHOICE_COPY.title}</strong>
-                    <em data-testid="nz-payment-plan-amount">
-                      {tenant.checkout.paymentChoicePresentation === "savings_hierarchy" && preview
-                        ? `${formatCompactNzdFromCents(preview.regularInstalmentAmountCents)} / week`
-                        : planChoice?.weeklyAmountLabel ||
-                          display?.regularLabel ||
-                          formatNzdFromCents(course.paymentPlanCourseFeeCents)}
-                      {tenant.checkout.paymentChoicePresentation === "savings_hierarchy" || !planChoice ? null : (
-                        <span className={styles.choiceCardPeriod}> {planChoice.periodSuffix}</span>
-                      )}
-                    </em>
-                    {showGstBreakdown && taxPresentation ? (
+                  <span className={styles.choiceCardInner}>
+                    <span className={styles.choiceCardMain}>
+                      <span className={styles.choiceCardHeading}>
+                        <strong>{NZ_PAYMENT_PLAN_CHOICE_COPY.title}</strong>
+                      </span>
+                      <em data-testid="nz-payment-plan-amount">
+                        {tenant.checkout.paymentChoicePresentation === "savings_hierarchy" && preview
+                          ? `${formatCompactNzdFromCents(preview.regularInstalmentAmountCents)} / week`
+                          : planChoice?.weeklyAmountLabel ||
+                            display?.regularLabel ||
+                            formatNzdFromCents(course.paymentPlanCourseFeeCents)}
+                        {tenant.checkout.paymentChoicePresentation === "savings_hierarchy" || !planChoice ? null : (
+                          <span className={styles.choiceCardPeriod}> {planChoice.periodSuffix}</span>
+                        )}
+                      </em>
+                      {showGstBreakdown && taxPresentation && !compactPricing ? (
+                        <TaxBreakdown
+                          grossCents={course.paymentPlanCourseFeeCents}
+                          tax={taxPresentation}
+                          testId="nz-payment-plan-gst"
+                        />
+                      ) : null}
+                      <span className={styles.choiceCardBody} data-testid="nz-payment-plan-body">
+                        {tenant.checkout.hidePlanScheduleDetails
+                          ? "Interest-free payment plan"
+                          : showGstBreakdown
+                            ? [
+                                display?.regularCountLabel,
+                                display?.finalPaymentLabel
+                                  ? display.finalPaymentLabel.replace(/^Final payment of /, "Final payment ")
+                                  : null,
+                              ]
+                                .filter(Boolean)
+                                .join(". ")
+                            : planChoice?.body || NZ_PAYMENT_PLAN_CHOICE_COPY.lead}
+                      </span>
+                      {planChoice && !showGstBreakdown && !tenant.checkout.hidePlanScheduleDetails ? (
+                        <small data-testid="nz-payment-plan-total">{planChoice.totalLine}</small>
+                      ) : null}
+                    </span>
+                    {showGstBreakdown && taxPresentation && compactPricing ? (
                       <TaxBreakdown
+                        compact
                         grossCents={course.paymentPlanCourseFeeCents}
                         tax={taxPresentation}
                         testId="nz-payment-plan-gst"
                       />
-                    ) : null}
-                    <span className={styles.choiceCardBody} data-testid="nz-payment-plan-body">
-                      {tenant.checkout.hidePlanScheduleDetails
-                        ? "Interest-free payment plan"
-                        : showGstBreakdown
-                          ? [
-                              display?.regularCountLabel,
-                              display?.finalPaymentLabel
-                                ? display.finalPaymentLabel.replace(/^Final payment of /, "Final payment ")
-                                : null,
-                            ]
-                              .filter(Boolean)
-                              .join(". ")
-                          : planChoice?.body || NZ_PAYMENT_PLAN_CHOICE_COPY.lead}
-                    </span>
-                    {planChoice && !showGstBreakdown && !tenant.checkout.hidePlanScheduleDetails ? (
-                      <small data-testid="nz-payment-plan-total">{planChoice.totalLine}</small>
                     ) : null}
                   </span>
                 </label>

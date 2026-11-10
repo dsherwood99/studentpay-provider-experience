@@ -221,6 +221,57 @@ describe("OLI payment-choice and enrolment-summary presentation", () => {
     assert.equal(fixture.checkout.maxFirstPaymentDelayDays, undefined);
   });
 
+  it("uses a compact two-column pricing layout for savings_hierarchy cards only", () => {
+    const checkout = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/EnrolmentCheckout.tsx"),
+      "utf8",
+    );
+    const css = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/enrolment-checkout.module.css"),
+      "utf8",
+    );
+    const taxCss = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/tax-breakdown.module.css"),
+      "utf8",
+    );
+    const taxComponent = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/TaxBreakdown.tsx"),
+      "utf8",
+    );
+    assert.match(checkout, /compactPricing/);
+    assert.match(
+      checkout,
+      /data-layout=\{compactPricing \? "compact-pricing" : undefined\}/,
+    );
+    assert.match(checkout, /styles\.choiceCardInner/);
+    assert.match(checkout, /styles\.choiceCardHeading/);
+    assert.match(checkout, /styles\.choiceCardMain/);
+    assert.match(taxComponent, /compact\?: boolean/);
+    assert.match(taxComponent, /data-compact=\{compact \? "true" : undefined\}/);
+    assert.doesNotMatch(checkout, /providerSlug\s*===\s*['"]oli['"]/);
+    assert.match(css, /\[data-layout="compact-pricing"\]/);
+    assert.match(
+      css,
+      /grid-template-columns:\s*minmax\(0, 1\.2fr\) minmax\(0, 0\.85fr\)/,
+    );
+    assert.match(taxCss, /\[data-compact="true"\]/);
+    const previousBound = process.env.NZ_HOSTED_TENANT_SLUG;
+    delete process.env.NZ_HOSTED_TENANT_SLUG;
+    process.env.STUDENTPAY_ENV = "sandbox";
+    try {
+      const oli = toPublicTenant(getNzTenantBySlug("oli")!);
+      const bela = toPublicTenant(getNzTenantBySlug("bela-nz")!);
+      assert.equal(oli.checkout.paymentChoicePresentation, "savings_hierarchy");
+      assert.equal(bela.checkout.paymentChoicePresentation, undefined);
+    } finally {
+      if (previousBound === undefined) {
+        delete process.env.NZ_HOSTED_TENANT_SLUG;
+      } else {
+        process.env.NZ_HOSTED_TENANT_SLUG = previousBound;
+      }
+    }
+  });
+
   it("scopes orange Pay Now and blue Payment Plan styles to savings_hierarchy only", () => {
     const css = fs.readFileSync(
       path.join(srcRoot, "components/nz-enrolment/enrolment-checkout.module.css"),

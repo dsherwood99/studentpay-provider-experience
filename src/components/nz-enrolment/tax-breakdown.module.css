@@ -30,3 +30,27 @@
   font-weight: 750;
   color: var(--nz-heading, var(--nz-text));
 }
+
+.breakdown[data-compact="true"] {
+  margin: 0;
+  gap: 4px 12px;
+}
+
+.breakdown[data-compact="true"] dt,
+.breakdown[data-compact="true"] dd {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.breakdown[data-compact="true"] .row:last-child {
+  padding-top: 4px;
+  margin-top: 2px;
+  border-top: 1px solid color-mix(in srgb, var(--nz-border, #d8d2ca) 85%, transparent);
+}
+
+@media (max-width: 768px) {
+  .breakdown[data-compact="true"] dt,
+  .breakdown[data-compact="true"] dd {
+    font-size: 0.8125rem;
+  }
+}
