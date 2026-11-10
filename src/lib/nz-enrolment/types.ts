@@ -394,10 +394,13 @@ export type CanonicalCheckoutResult = {
     token?: string;
     dda_id?: string | null;
     billing_request_status?: string;
+    billing_request_id?: string | null;
     mandate_status?: string;
     authorised?: boolean;
     status?: string;
     processor_status?: string;
+    authorisation_ready?: boolean;
+    processing_state?: string | null;
   };
   agreement?: {
     id?: string;
