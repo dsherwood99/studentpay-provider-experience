@@ -42,6 +42,7 @@
 }
 
 .breakdown[data-compact="true"] dt {
+  /* Keep "Course fee excl. GST" on one line above the GST amount row. */
   white-space: nowrap;
 }
 
