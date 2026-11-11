@@ -2,11 +2,11 @@
 
 import type { CSSProperties, ReactNode, RefObject } from "react";
 import { Fragment, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { Check } from "lucide-react";
 import {
   NZ_CONFIRM_CTA,
   NZ_CONFIRMATION_COPY,
   NZ_DIRECT_DEBIT_COPY,
+  NZ_PAY_IN_FULL_CONFIRMATION_NEXT_STEPS,
   directDebitActionLabel,
   directDebitHelpCopy,
   isGoCardlessHostedAuthorisationUrl,
@@ -15,14 +15,15 @@ import {
   NZ_PAY_IN_FULL_COPY,
   NZ_REVIEW_COPY,
   NZ_STUDENT_DETAILS_COPY,
-  CONFIRMATION_SUMMARY_GROUPS,
   combinedDetailsPrivacyAccepted,
+  confirmationStudentName,
   confirmEnabled,
   declarationsAccepted,
   decorateConfirmationRows,
   isConfirmedCheckoutStatus,
   formatCompactNzdFromCents,
   formatSavingBadge,
+  paymentPlanConfirmationNarrative,
   paymentPlanConfirmationRows,
   payNowChoiceBody,
   payNowSavingFromCatalogue,
@@ -36,7 +37,6 @@ import {
   shouldPollDirectDebitStatus,
   studentDetailsAreValid,
   studentDetailsStarted,
-  type ConfirmationSummaryRow,
 } from "@/lib/nz-enrolment/checkout-ui";
 import {
   gstInclusiveDisplayRows,
@@ -81,6 +81,7 @@ import {
 import { confirmPayInFullElementsPayment } from "@/lib/nz-enrolment/pay-in-full-stripe";
 import { PayInFullCardForm } from "@/components/nz-enrolment/PayInFullCardForm";
 import { NzCourseConfigurationUnavailable } from "@/components/nz-enrolment/CourseConfigurationUnavailable";
+import { EnrolmentConfirmation } from "@/components/nz-enrolment/EnrolmentConfirmation";
 import { ProviderNativeHeader } from "@/components/nz-enrolment/ProviderNativeHeader";
 import { StudentPayAttribution } from "@/components/nz-enrolment/StudentPayAttribution";
 import type { Stripe, StripeElements } from "@stripe/stripe-js";
@@ -1303,6 +1304,7 @@ export function NzEnrolmentCheckout({
   }
 
   if (alreadyConfirmed) {
+    const studentName = confirmationStudentName(student);
     const pifSuccess = isPayInFull
       ? payInFullSuccessCopy({
           courseName: course.name,
@@ -1311,6 +1313,31 @@ export function NzEnrolmentCheckout({
           checkoutId,
         })
       : null;
+    const schedule =
+      pifSuccess || !preview ? null : paymentPlanConfirmationNarrative(preview);
+    const confirmationRows = pifSuccess
+      ? decorateConfirmationRows([
+          ...pifSuccess.rows.slice(0, 2),
+          ...(studentName
+            ? [{ label: "Student", value: studentName, group: "course" as const }]
+            : []),
+          ...(payNowGstRows || []).map((row) => ({ ...row, group: "course" as const })),
+          ...pifSuccess.rows.slice(2).map((row) =>
+            row.label === "Reference" ? { ...row, label: "Checkout reference" } : row,
+          ),
+        ])
+      : paymentPlanConfirmationRows({
+          courseName: course.name,
+          providerName: tenant.displayName,
+          studentName,
+          courseFeeLabel: formatNzdFromCents(course.paymentPlanCourseFeeCents),
+          courseFeeRows: planGstRows?.map((row) => ({
+            ...row,
+            group: "course" as const,
+          })),
+          agreementNumber,
+          checkoutId,
+        });
     return (
       <>
       <ProviderNativeHeader tenant={tenant} course={course} />
@@ -1348,88 +1375,39 @@ export function NzEnrolmentCheckout({
         style={tenantCssVars(tenant) as CSSProperties}
       >
         <div className={styles.shell}>
-          <section className={styles.confirmation} aria-labelledby="nz-enrolment-confirmed-heading">
-            <div className={styles.confirmationHero}>
-              <span className={styles.successMark} aria-hidden="true">
-                <Check strokeWidth={2.75} />
-              </span>
-              <p className={styles.kicker}>{tenant.displayName}</p>
-              <h1 id="nz-enrolment-confirmed-heading">
-                {reviewMode
-                  ? REVIEW_CONFIRMATION_HEADING
-                  : pifSuccess?.heading || NZ_CONFIRMATION_COPY.heading}
-              </h1>
-              <p className={styles.lead}>
-                {reviewMode
-                  ? REVIEW_CONFIRMATION_LEAD
-                  : pifSuccess
-                    ? pifSuccess.lead
-                    : NZ_CONFIRMATION_COPY.lead}
-              </p>
-              {!reviewMode && !pifSuccess && display ? (
-                <p className={styles.confirmationAmount} data-testid="nz-confirmation-repayment">
-                  <span className={styles.confirmationAmountValue}>{display.heroLabel}</span>
-                  <span className={styles.confirmationAmountHint}>repayment amount</span>
-                </p>
-              ) : null}
-            </div>
-            <ConfirmationSummary
-              rows={
-                pifSuccess
-                  ? decorateConfirmationRows([
-                      ...pifSuccess.rows.slice(0, 2),
-                      ...(payNowGstRows || []),
-                      ...pifSuccess.rows.slice(2),
-                    ])
-                  : paymentPlanConfirmationRows({
-                      courseName: course.name,
-                      providerName: tenant.displayName,
-                      courseFeeLabel: formatNzdFromCents(course.paymentPlanCourseFeeCents),
-                      courseFeeRows: planGstRows?.map((row) => ({
-                        ...row,
-                        group: "payments" as const,
-                      })),
-                      paymentPlanLabel: display?.regularCountLabel || display?.regularLabel || null,
-                      totalPayableLabel: display?.totalLabel || null,
-                      finalPaymentLabel: display?.finalPaymentLabel || null,
-                      firstPaymentDate: preview?.firstPaymentDate,
-                      agreementNumber,
-                      checkoutId,
-                    })
-              }
-            />
-            {reviewMode ? null : (
-              <div className={styles.nextSteps} data-testid="nz-confirmation-next-steps">
-                <p className={styles.nextStepsHeading}>
-                  {NZ_CONFIRMATION_COPY.nextStepsHeading}
-                </p>
-                <ol>
-                  {(pifSuccess
-                    ? [
-                        `${tenant.displayName} will confirm your course access separately.`,
-                      ]
-                    : NZ_CONFIRMATION_COPY.nextSteps
-                  ).map((step) => (
-                    <li key={step}>{step}</li>
-                  ))}
-                </ol>
-              </div>
-            )}
-            {returnToProviderUrl ? (
-              <div className={styles.actions}>
-                <a className={`${styles.btn} ${styles.btnPrimary}`} href={returnToProviderUrl}>
-                  {tenant.presentation.returnToProviderLabel ||
-                    `Return to ${tenant.displayName}`}
-                </a>
-              </div>
-            ) : null}
-            {checkoutId ? (
-              <p className={styles.confirmationSupport}>
-                Support reference: <span>{checkoutId}</span>
-              </p>
-            ) : null}
-            <StudentPayAttribution />
-          </section>
+          <EnrolmentConfirmation
+            heading={
+              reviewMode
+                ? REVIEW_CONFIRMATION_HEADING
+                : pifSuccess?.heading || NZ_CONFIRMATION_COPY.heading
+            }
+            lead={
+              reviewMode
+                ? REVIEW_CONFIRMATION_LEAD
+                : pifSuccess
+                  ? pifSuccess.lead
+                  : NZ_CONFIRMATION_COPY.lead
+            }
+            schedule={schedule}
+            scheduleNote={
+              !reviewMode && !pifSuccess && !schedule
+                ? NZ_CONFIRMATION_COPY.scheduleFallback
+                : null
+            }
+            rows={confirmationRows}
+            nextSteps={
+              reviewMode
+                ? null
+                : pifSuccess
+                  ? NZ_PAY_IN_FULL_CONFIRMATION_NEXT_STEPS
+                  : NZ_CONFIRMATION_COPY.nextSteps
+            }
+            returnHref={returnToProviderUrl}
+            returnLabel={
+              tenant.presentation.returnToProviderLabel || `Return to ${tenant.displayName}`
+            }
+          />
+          <StudentPayAttribution />
         </div>
       </div>
       </>
@@ -2321,36 +2299,6 @@ export function NzEnrolmentCheckout({
       </div>
     </div>
     </>
-  );
-}
-
-function ConfirmationSummary({ rows }: { rows: ConfirmationSummaryRow[] }) {
-  const visibleGroups = CONFIRMATION_SUMMARY_GROUPS.filter((group) =>
-    rows.some((row) => row.group === group),
-  );
-
-  return (
-    <div className={styles.confirmationCard} data-testid="nz-enrolment-confirmed-summary">
-      {visibleGroups.map((group) => {
-        const items = rows.filter((row) => row.group === group);
-        return (
-          <div key={group} className={styles.confirmationGroup} data-group={group}>
-            <dl className={styles.confirmationTable}>
-              {items.map((row) => (
-                <div
-                  key={row.label}
-                  className={styles.confirmationRow}
-                  data-tone={row.tone || "default"}
-                >
-                  <dt>{row.label}</dt>
-                  <dd>{row.value}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        );
-      })}
-    </div>
   );
 }
 

@@ -52,14 +52,21 @@ export const NZ_REVIEW_COPY = {
 
 export const NZ_CONFIRMATION_COPY = {
   heading: "Enrolment confirmed",
-  lead: "Your StudentPay payment plan has been established. Your direct debit authorisation has been received, and your payments will be processed according to your repayment schedule.",
+  lead: "Your enrolment and StudentPay payment plan have been confirmed.",
   nextStepsHeading: "What happens next",
   nextSteps: [
-    "StudentPay will send your payment plan agreement.",
-    "Your education provider will confirm course access.",
-    "Payments will follow the agreed schedule. No payment has been taken today.",
+    "Keep this payment plan confirmation for your records.",
+    "Your education provider will provide course access and enrolment information.",
+    "StudentPay will manage payments in accordance with the agreed repayment schedule.",
   ],
+  scheduleFallback:
+    "Payments will follow the repayment schedule agreed during checkout.",
 } as const;
+
+export const NZ_PAY_IN_FULL_CONFIRMATION_NEXT_STEPS = [
+  "Keep this confirmation for your records.",
+  "Your education provider will provide course access and enrolment information.",
+] as const;
 
 export const NZ_PAY_IN_FULL_COPY = {
   heading: "Pay now",
@@ -415,6 +422,69 @@ export function paymentPlanChoiceCopy(preview: NzPlanPreview): {
   };
 }
 
+export type PaymentPlanConfirmationNarrative = {
+  heroLabel: string;
+  firstPaymentLabel: string | null;
+  scheduleSentence: string | null;
+  upfrontLabel: string | null;
+  totalLabel: string;
+};
+
+export function confirmationStudentName(student: {
+  firstName?: string | null;
+  lastName?: string | null;
+}): string | null {
+  const name = [student.firstName, student.lastName]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean)
+    .join(" ");
+  return name || null;
+}
+
+export function paymentPlanConfirmationNarrative(
+  preview: NzPlanPreview,
+): PaymentPlanConfirmationNarrative | null {
+  if (
+    !Number.isInteger(preview.regularInstalmentAmountCents) ||
+    preview.regularInstalmentAmountCents < 0 ||
+    !Number.isInteger(preview.totalPayableCents) ||
+    preview.totalPayableCents < 0
+  ) {
+    return null;
+  }
+  const amount = formatNzdFromCents(preview.regularInstalmentAmountCents);
+  const period = periodLabel(preview.frequency);
+  const adjective = frequencyAdjective(preview.frequency);
+  const firstPaymentLabel = preview.firstPaymentDate
+    ? formatEnrolmentDisplayDate(preview.firstPaymentDate)
+    : null;
+  let scheduleSentence: string | null = null;
+  if (
+    preview.hasResidualFinal &&
+    preview.finalInstalmentAmountCents != null &&
+    Number.isInteger(preview.finalInstalmentAmountCents) &&
+    Number.isInteger(preview.fullRegularInstalmentCount) &&
+    preview.fullRegularInstalmentCount > 0
+  ) {
+    scheduleSentence = `${preview.fullRegularInstalmentCount} regular ${adjective} instalments and one final instalment of ${formatNzdFromCents(preview.finalInstalmentAmountCents)}.`;
+  } else if (
+    Number.isInteger(preview.numberOfInstalments) &&
+    preview.numberOfInstalments > 0
+  ) {
+    scheduleSentence = `${preview.numberOfInstalments} ${adjective} instalments of ${amount}.`;
+  }
+  return {
+    heroLabel: `${amount} / ${period}`,
+    firstPaymentLabel,
+    scheduleSentence,
+    upfrontLabel:
+      Number.isInteger(preview.upfrontAmountCents) && preview.upfrontAmountCents > 0
+        ? formatNzdFromCents(preview.upfrontAmountCents)
+        : null,
+    totalLabel: formatNzdFromCents(preview.totalPayableCents),
+  };
+}
+
 export type ConfirmationSummaryGroup = "course" | "payments" | "references";
 
 export type ConfirmationSummaryRow = {
@@ -437,16 +507,24 @@ export const CONFIRMATION_SUMMARY_GROUPS: ConfirmationSummaryGroup[] = [
 ];
 
 export function decorateConfirmationRows(
-  rows: { label: string; value: string }[],
+  rows: { label: string; value: string; group?: ConfirmationSummaryGroup }[],
 ): ConfirmationSummaryRow[] {
   return rows.map((row) => {
-    if (row.label === "Reference" || row.label === "Checkout") {
+    if (
+      row.label === "Reference" ||
+      row.label === "Checkout" ||
+      row.label === "Checkout reference" ||
+      row.label === "Checkout ID"
+    ) {
       return { ...row, tone: "reference" as const, group: "references" as const };
     }
     if (row.label === "Payment Plan Agreement") {
       return { ...row, group: "references" as const };
     }
-    if (row.label === "Course" || row.label === "Provider") {
+    if (row.label === "Course" || row.label === "Provider" || row.label === "Student") {
+      return { ...row, group: "course" as const };
+    }
+    if (row.group === "course") {
       return { ...row, group: "course" as const };
     }
     return { ...row, group: "payments" as const };
@@ -456,6 +534,7 @@ export function decorateConfirmationRows(
 export function paymentPlanConfirmationRows(input: {
   courseName: string;
   providerName?: string | null;
+  studentName?: string | null;
   courseFeeLabel: string;
   courseFeeRows?: ConfirmationSummaryRow[];
   paymentPlanLabel?: string | null;
@@ -475,10 +554,17 @@ export function paymentPlanConfirmationRows(input: {
       group: "course",
     });
   }
+  if (input.studentName) {
+    rows.push({
+      label: "Student",
+      value: input.studentName,
+      group: "course",
+    });
+  }
   rows.push(
     ...(input.courseFeeRows && input.courseFeeRows.length > 0
-      ? input.courseFeeRows
-      : [{ label: "Course fee", value: input.courseFeeLabel, group: "payments" as const }]),
+      ? input.courseFeeRows.map((row) => ({ ...row, group: "course" as const }))
+      : [{ label: "Course fee", value: input.courseFeeLabel, group: "course" as const }]),
   );
   if (input.totalPayableLabel) {
     rows.push({
@@ -517,7 +603,7 @@ export function paymentPlanConfirmationRows(input: {
   }
   if (input.checkoutId) {
     rows.push({
-      label: "Checkout ID",
+      label: "Checkout reference",
       value: input.checkoutId,
       tone: "reference",
       group: "references",

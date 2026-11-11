@@ -888,6 +888,62 @@
   color: var(--nz-muted);
 }
 
+.confirmationSchedule {
+  margin: 0 0 16px;
+  padding: 18px 18px 16px;
+  border: 1px solid color-mix(in srgb, var(--nz-primary) 28%, var(--nz-border));
+  border-radius: 14px;
+  background: var(--nz-surface);
+  text-align: center;
+}
+
+.confirmationSchedule .confirmationAmount {
+  margin-bottom: 10px;
+}
+
+.confirmationScheduleLine {
+  margin: 0 0 6px;
+  color: var(--nz-text);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.confirmationScheduleLine strong {
+  font-weight: 700;
+  color: var(--nz-heading);
+}
+
+.confirmationTotal {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--nz-border);
+  color: var(--nz-muted);
+  font-size: 0.84rem;
+}
+
+.confirmationTotal strong {
+  color: var(--nz-heading);
+  font-weight: 700;
+}
+
+.confirmationReferences {
+  margin-top: 14px;
+}
+
+.confirmationReferences .confirmationCard {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.confirmationReferences .confirmationRow {
+  padding: 6px 2px;
+  border-bottom: 0;
+}
+
 .confirmationCard {
   margin: 6px 0 16px;
   border: 1px solid var(--nz-border);
@@ -1393,8 +1449,13 @@
   }
 
   .confirmationHero,
+  .confirmationSchedule,
   .confirmationSupport {
     text-align: left;
+  }
+
+  .confirmationTotal {
+    justify-content: space-between;
   }
 
   .confirmation .actions {

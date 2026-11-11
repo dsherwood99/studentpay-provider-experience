@@ -1,19 +1,21 @@
 import type { CSSProperties } from "react";
 import { notFound } from "next/navigation";
-import { Check } from "lucide-react";
+import { EnrolmentConfirmation } from "@/components/nz-enrolment/EnrolmentConfirmation";
 import { ProviderNativeHeader } from "@/components/nz-enrolment/ProviderNativeHeader";
 import { StudentPayAttribution } from "@/components/nz-enrolment/StudentPayAttribution";
 import {
-  CONFIRMATION_SUMMARY_GROUPS,
   NZ_CONFIRMATION_COPY,
+  NZ_PAY_IN_FULL_CONFIRMATION_NEXT_STEPS,
+  decorateConfirmationRows,
+  paymentPlanConfirmationNarrative,
   paymentPlanConfirmationRows,
-  planDisplay,
 } from "@/lib/nz-enrolment/checkout-ui";
 import { previewCoursePlan } from "@/lib/nz-enrolment/canonical";
 import { getNzCourse, toPublicCourse } from "@/lib/nz-enrolment/courses";
 import { NZ_TENANTS, toPublicTenant } from "@/lib/nz-enrolment/tenants";
+import { payInFullSuccessCopy } from "@/lib/nz-enrolment/pay-in-full-flow";
 import { formatNzdFromCents } from "@/lib/nz-enrolment/plan-math";
-import { tenantCssVars } from "@/lib/nz-enrolment/presentation";
+import { safeReturnToProviderUrl, tenantCssVars } from "@/lib/nz-enrolment/presentation";
 import {
   gstInclusiveDisplayRows,
   isGstInclusiveBreakdown,
@@ -63,92 +65,81 @@ const PREVIEW_BELA_COURSE: NzCourse = {
   },
 };
 
-function Fixture({ tenant, course }: { tenant: NzTenant; course: NzCourse }) {
-  const preview = previewCoursePlan(course, { firstPaymentDate: "2026-11-18" });
-  const display = planDisplay(preview);
-  const gstRows = isGstInclusiveBreakdown(tenant.checkout.taxPresentation)
-    ? gstInclusiveDisplayRows(
-        course.paymentPlanCourseFeeCents,
-        tenant.checkout.taxPresentation,
-      )
-    : null;
-  const rows = paymentPlanConfirmationRows({
-    courseName: course.name,
-    providerName: tenant.displayName,
-    courseFeeLabel: formatNzdFromCents(course.paymentPlanCourseFeeCents),
-    courseFeeRows: gstRows?.map((row) => ({ ...row, group: "payments" as const })),
-    paymentPlanLabel: display.regularCountLabel,
-    totalPayableLabel: display.totalLabel,
-    finalPaymentLabel: display.finalPaymentLabel,
-    firstPaymentDate: preview.firstPaymentDate,
-    agreementNumber: "PPA-000018",
-    checkoutId: `${tenant.providerCode}-PREVIEW-CONFIRM`,
-  });
+const PREVIEW_STUDENTS: Record<string, string> = {
+  oli: "Alex Taylor",
+  "bela-nz": "Jamie Reid",
+};
+
+function Fixture({
+  tenant,
+  course,
+  payNow,
+}: {
+  tenant: NzTenant;
+  course: NzCourse;
+  payNow: boolean;
+}) {
   const publicTenant = toPublicTenant(tenant);
-  const visibleGroups = CONFIRMATION_SUMMARY_GROUPS.filter((group) =>
-    rows.some((row) => row.group === group),
-  );
+  const studentName = PREVIEW_STUDENTS[tenant.slug] || null;
+  const checkoutId = `${tenant.providerCode}-PREVIEW-CONFIRM`;
+  const gstSource = payNow
+    ? course.paymentInFullCourseFeeCents
+    : course.paymentPlanCourseFeeCents;
+  const gstRows = isGstInclusiveBreakdown(tenant.checkout.taxPresentation)
+    ? gstInclusiveDisplayRows(gstSource, tenant.checkout.taxPresentation)
+    : null;
+  const payNowCopy = payNow
+    ? payInFullSuccessCopy({
+        courseName: course.name,
+        providerName: tenant.displayName,
+        amountLabel: formatNzdFromCents(course.paymentInFullCourseFeeCents),
+        checkoutId,
+      })
+    : null;
+  const preview = payNow
+    ? null
+    : previewCoursePlan(course, { firstPaymentDate: "2026-11-18" });
+  const schedule = preview ? paymentPlanConfirmationNarrative(preview) : null;
+  const rows = payNowCopy
+    ? decorateConfirmationRows([
+        ...payNowCopy.rows.slice(0, 2),
+        ...(studentName ? [{ label: "Student", value: studentName }] : []),
+        ...(gstRows || []).map((row) => ({ ...row, group: "course" as const })),
+        ...payNowCopy.rows.slice(2).map((row) =>
+          row.label === "Reference" ? { ...row, label: "Checkout reference" } : row,
+        ),
+      ])
+    : paymentPlanConfirmationRows({
+        courseName: course.name,
+        providerName: tenant.displayName,
+        studentName,
+        courseFeeLabel: formatNzdFromCents(course.paymentPlanCourseFeeCents),
+        courseFeeRows: gstRows?.map((row) => ({ ...row, group: "course" as const })),
+        agreementNumber: "PPA-000018",
+        checkoutId,
+      });
 
   return (
     <div
       className={styles.page}
       data-testid={`nz-confirmation-preview-${tenant.slug}`}
+      data-payment-option={payNow ? "pay_in_full" : "payment_plan"}
       style={tenantCssVars(publicTenant) as CSSProperties}
     >
       <ProviderNativeHeader tenant={publicTenant} course={toPublicCourse(course)} />
       <div className={styles.shell}>
-        <section className={styles.confirmation}>
-          <div className={styles.confirmationHero}>
-            <span className={styles.successMark} aria-hidden="true">
-              <Check strokeWidth={2.75} />
-            </span>
-            <p className={styles.kicker}>{tenant.displayName}</p>
-            <h1>{NZ_CONFIRMATION_COPY.heading}</h1>
-            <p className={styles.lead}>{NZ_CONFIRMATION_COPY.lead}</p>
-            <p className={styles.confirmationAmount}>
-              <span className={styles.confirmationAmountValue}>{display.heroLabel}</span>
-              <span className={styles.confirmationAmountHint}>repayment amount</span>
-            </p>
-          </div>
-          <div className={styles.confirmationCard} data-testid="nz-enrolment-confirmed-summary">
-            {visibleGroups.map((group) => {
-              const items = rows.filter((row) => row.group === group);
-              return (
-                <div key={group} className={styles.confirmationGroup} data-group={group}>
-                  <dl className={styles.confirmationTable}>
-                    {items.map((row) => (
-                      <div
-                        key={row.label}
-                        className={styles.confirmationRow}
-                        data-tone={row.tone || "default"}
-                      >
-                        <dt>{row.label}</dt>
-                        <dd>{row.value}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                </div>
-              );
-            })}
-          </div>
-          <div className={styles.nextSteps}>
-            <p className={styles.nextStepsHeading}>{NZ_CONFIRMATION_COPY.nextStepsHeading}</p>
-            <ol>
-              {NZ_CONFIRMATION_COPY.nextSteps.map((step) => (
-                <li key={step}>{step}</li>
-              ))}
-            </ol>
-          </div>
-          <div className={styles.actions}>
-            <span className={`${styles.btn} ${styles.btnPrimary}`}>
-              {tenant.presentation.returnToProviderLabel || `Return to ${tenant.displayName}`}
-            </span>
-          </div>
-          <p className={styles.confirmationSupport}>
-            Support reference: <span>{tenant.providerCode}-PREVIEW-CONFIRM</span>
-          </p>
-          <StudentPayAttribution />
-        </section>
+        <EnrolmentConfirmation
+          heading={payNowCopy?.heading || NZ_CONFIRMATION_COPY.heading}
+          lead={payNowCopy?.lead || NZ_CONFIRMATION_COPY.lead}
+          schedule={schedule}
+          rows={rows}
+          nextSteps={payNow ? NZ_PAY_IN_FULL_CONFIRMATION_NEXT_STEPS : NZ_CONFIRMATION_COPY.nextSteps}
+          returnHref={safeReturnToProviderUrl(publicTenant)}
+          returnLabel={
+            tenant.presentation.returnToProviderLabel || `Return to ${tenant.displayName}`
+          }
+        />
+        <StudentPayAttribution />
       </div>
     </div>
   );
@@ -157,13 +148,14 @@ function Fixture({ tenant, course }: { tenant: NzTenant; course: NzCourse }) {
 export default async function NzConfirmationPreviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tenant?: string }>;
+  searchParams: Promise<{ tenant?: string; variant?: string }>;
 }) {
   if (process.env.VERCEL_ENV === "production") {
     notFound();
   }
 
-  const { tenant: tenantSlug } = await searchParams;
+  const { tenant: tenantSlug, variant } = await searchParams;
+  const payNow = variant === "pay-now";
   const oli = NZ_TENANTS.find((tenant) => tenant.slug === "oli");
   const oliCourse =
     getNzCourse("oli", "certificate-in-business-administration") || PREVIEW_OLI_COURSE;
@@ -176,15 +168,27 @@ export default async function NzConfirmationPreviewPage({
   const visible = requested
     ? fixtures.filter((item) => item.tenant.slug === requested)
     : fixtures;
+  const shown = payNow
+    ? visible.filter((item) =>
+        (item.course.enrolmentPaymentOptions || ["payment_plan", "pay_in_full"]).includes(
+          "pay_in_full",
+        ),
+      )
+    : visible;
 
-  if (visible.length === 0) {
+  if (shown.length === 0) {
     notFound();
   }
 
   return (
     <main>
-      {visible.map((item) => (
-        <Fixture key={item.tenant.slug} tenant={item.tenant} course={item.course} />
+      {shown.map((item) => (
+        <Fixture
+          key={item.tenant.slug}
+          tenant={item.tenant}
+          course={item.course}
+          payNow={payNow}
+        />
       ))}
     </main>
   );
