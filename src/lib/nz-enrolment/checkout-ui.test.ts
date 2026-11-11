@@ -34,7 +34,8 @@ import {
 } from "./checkout-ui.ts";
 import { getNzCourse } from "./courses.ts";
 import { previewCoursePlan } from "./canonical.ts";
-import { getNzTenantBySlug, toPublicTenant } from "./tenants.ts";
+import { gstInclusiveDisplayRows } from "./tax-presentation.ts";
+import { NZ_TENANTS, getNzTenantBySlug, toPublicTenant } from "./tenants.ts";
 
 const validStudent = {
   firstName: "Alex",
@@ -378,26 +379,33 @@ describe("confirmation summary presentation", () => {
     const display = planDisplay(preview);
     const rows = paymentPlanConfirmationRows({
       courseName: course.name,
+      providerName: "Online Learning Institute",
       courseFeeLabel: display.rows[0]?.value || "",
-      paymentPlanLabel: `${display.regularLabel} · ${display.finalPaymentLabel}`,
+      paymentPlanLabel: display.regularCountLabel,
+      totalPayableLabel: display.totalLabel,
+      finalPaymentLabel: display.finalPaymentLabel,
       firstPaymentDate: preview.firstPaymentDate,
       agreementNumber: "PPA-000004",
       checkoutId: "chk_example_ref",
     });
     assert.equal(course.name, "Certificate in Business Administration");
+    assert.equal(display.heroLabel, "$25.00 / week");
     assert.deepEqual(
       rows.map((row) => `${row.label}: ${row.value}`),
       [
         "Course: Certificate in Business Administration",
+        "Provider: Online Learning Institute",
         "Course fee: $1,834.25",
-        "Payment plan: $25.00 per week · Final payment of $9.25",
+        "Total amount payable: $1,834.25",
+        "Payment plan: 73 weekly payments of $25.00",
+        "Final instalment: Final payment of $9.25",
         "First payment date: 24 Sep 2026",
         "Payment Plan Agreement: PPA-000004",
-        "Checkout: chk_example_ref",
+        "Checkout ID: chk_example_ref",
       ],
     );
-    assert.equal(rows.find((row) => row.label === "Checkout")?.tone, "reference");
-    assert.equal(rows.find((row) => row.label === "Checkout")?.group, "references");
+    assert.equal(rows.find((row) => row.label === "Checkout ID")?.tone, "reference");
+    assert.equal(rows.find((row) => row.label === "Checkout ID")?.group, "references");
     assert.equal(rows.find((row) => row.label === "Course")?.group, "course");
     assert.equal(rows.find((row) => row.label === "Payment plan")?.group, "payments");
   });
@@ -430,7 +438,9 @@ describe("confirmation summary presentation", () => {
     assert.match(checkout, /styles\.ddaStatusPanel/);
     assert.match(checkout, /formatEnrolmentDisplayDate\(resolvedFirstPaymentDate\)/);
     assert.match(checkout, /data-testid="nz-enrolment-confirmed-summary"/);
-    assert.match(checkout, /Keep an eye on/);
+    assert.match(checkout, /data-testid="nz-confirmation-next-steps"/);
+    assert.match(checkout, /styles\.successMark/);
+    assert.match(checkout, /NZ_CONFIRMATION_COPY\.nextSteps/);
     assert.match(checkout, /onClick=\{\(\) => void startDirectDebitSetup\(\)\}/);
     assert.doesNotMatch(checkout, /<dd>\{preview\.firstPaymentDate\}<\/dd>/);
     assert.match(checkout, /nz-dda-preparing/);
@@ -448,6 +458,45 @@ describe("confirmation summary presentation", () => {
     );
     assert.doesNotMatch(NZ_CONFIRMATION_COPY.lead, /\bactive\b/i);
     assert.doesNotMatch(NZ_CONFIRMATION_COPY.lead, /collected|settled|taken/i);
+    assert.equal(NZ_CONFIRMATION_COPY.nextSteps.length, 3);
+    assert.match(NZ_CONFIRMATION_COPY.nextSteps.join(" "), /No payment has been taken today/);
+    assert.doesNotMatch(NZ_CONFIRMATION_COPY.nextSteps.join(" "), /\bactive\b/i);
+  });
+
+  it("does not invent GST rows for Bela NZ confirmation", () => {
+    const bela = NZ_TENANTS.find((tenant) => tenant.slug === "bela-nz");
+    assert.ok(bela);
+    assert.equal(bela?.checkout.taxPresentation, undefined);
+    const gstRows = gstInclusiveDisplayRows(280_000, bela?.checkout.taxPresentation);
+    assert.equal(gstRows, null);
+    const rows = paymentPlanConfirmationRows({
+      courseName: "Lash Business Bundle",
+      providerName: bela?.displayName,
+      courseFeeLabel: "$2,800.00",
+      courseFeeRows: gstRows?.map((row) => ({ ...row, group: "payments" as const })),
+      paymentPlanLabel: "186 weekly payments of $15.00",
+      totalPayableLabel: "$2,800.00",
+      firstPaymentDate: "2026-11-18",
+      agreementNumber: "PPA-000018",
+      checkoutId: "BELA_NZ-PREVIEW-CONFIRM",
+    });
+    assert.deepEqual(
+      rows.map((row) => row.label),
+      [
+        "Course",
+        "Provider",
+        "Course fee",
+        "Total amount payable",
+        "Payment plan",
+        "First payment date",
+        "Payment Plan Agreement",
+        "Checkout ID",
+      ],
+    );
+    assert.equal(
+      rows.some((row) => /gst|excl\.|incl\./i.test(`${row.label} ${row.value}`)),
+      false,
+    );
   });
 
   it("treats a ready GoCardless URL as immediately continuable", () => {

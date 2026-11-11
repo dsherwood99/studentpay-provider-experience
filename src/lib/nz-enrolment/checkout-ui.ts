@@ -53,6 +53,12 @@ export const NZ_REVIEW_COPY = {
 export const NZ_CONFIRMATION_COPY = {
   heading: "Enrolment confirmed",
   lead: "Your StudentPay payment plan has been established. Your direct debit authorisation has been received, and your payments will be processed according to your repayment schedule.",
+  nextStepsHeading: "What happens next",
+  nextSteps: [
+    "StudentPay will send your payment plan agreement.",
+    "Your education provider will confirm course access.",
+    "Payments will follow the agreed schedule. No payment has been taken today.",
+  ],
 } as const;
 
 export const NZ_PAY_IN_FULL_COPY = {
@@ -264,6 +270,7 @@ function frequencyAdjective(frequency: NzPaymentFrequency): string {
 
 export type NzPlanDisplay = {
   regularLabel: string;
+  heroLabel: string;
   upfrontLabel: string;
   regularCountLabel: string;
   finalPaymentLabel: string | null;
@@ -324,6 +331,7 @@ export function planDisplay(preview: NzPlanPreview): NzPlanDisplay {
 
   return {
     regularLabel: `${amount} per ${period}`,
+    heroLabel: `${amount} / ${period}`,
     upfrontLabel: `${formatNzdFromCents(preview.upfrontAmountCents)} upfront`,
     regularCountLabel,
     finalPaymentLabel,
@@ -447,23 +455,49 @@ export function decorateConfirmationRows(
 
 export function paymentPlanConfirmationRows(input: {
   courseName: string;
+  providerName?: string | null;
   courseFeeLabel: string;
   courseFeeRows?: ConfirmationSummaryRow[];
   paymentPlanLabel?: string | null;
+  totalPayableLabel?: string | null;
+  finalPaymentLabel?: string | null;
   firstPaymentDate?: string | null;
   agreementNumber?: string | null;
   checkoutId?: string | null;
 }): ConfirmationSummaryRow[] {
   const rows: ConfirmationSummaryRow[] = [
     { label: "Course", value: input.courseName, group: "course" },
+  ];
+  if (input.providerName) {
+    rows.push({
+      label: "Provider",
+      value: input.providerName,
+      group: "course",
+    });
+  }
+  rows.push(
     ...(input.courseFeeRows && input.courseFeeRows.length > 0
       ? input.courseFeeRows
       : [{ label: "Course fee", value: input.courseFeeLabel, group: "payments" as const }]),
-  ];
+  );
+  if (input.totalPayableLabel) {
+    rows.push({
+      label: "Total amount payable",
+      value: input.totalPayableLabel,
+      group: "payments",
+    });
+  }
   if (input.paymentPlanLabel) {
     rows.push({
       label: "Payment plan",
       value: input.paymentPlanLabel,
+      group: "payments",
+    });
+  }
+  if (input.finalPaymentLabel) {
+    rows.push({
+      label: "Final instalment",
+      value: input.finalPaymentLabel,
       group: "payments",
     });
   }
@@ -483,7 +517,7 @@ export function paymentPlanConfirmationRows(input: {
   }
   if (input.checkoutId) {
     rows.push({
-      label: "Checkout",
+      label: "Checkout ID",
       value: input.checkoutId,
       tone: "reference",
       group: "references",
