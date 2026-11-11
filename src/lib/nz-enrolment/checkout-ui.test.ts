@@ -6,6 +6,7 @@ import { describe, it } from "node:test";
 import {
   NZ_CHECKOUT_SECTIONS,
   NZ_CONFIRM_CTA,
+  NZ_CONFIRMATION_COPY,
   NZ_DIRECT_DEBIT_COPY,
   NZ_DIRECT_DEBIT_CTA,
   directDebitActionLabel,
@@ -435,6 +436,18 @@ describe("confirmation summary presentation", () => {
     assert.match(checkout, /nz-dda-preparing/);
     assert.doesNotMatch(checkout, /Creating enrolment/);
     assert.doesNotMatch(checkout, /account number|BSB|bank account/i);
+    assert.match(checkout, /NZ_CONFIRMATION_COPY\.lead/);
+    assert.doesNotMatch(checkout, /now active/);
+  });
+
+  it("does not claim the mandate is already active on confirmation", () => {
+    assert.equal(NZ_CONFIRMATION_COPY.heading, "Enrolment confirmed");
+    assert.equal(
+      NZ_CONFIRMATION_COPY.lead,
+      "Your StudentPay payment plan has been established. Your direct debit authorisation has been received, and your payments will be processed according to your repayment schedule.",
+    );
+    assert.doesNotMatch(NZ_CONFIRMATION_COPY.lead, /\bactive\b/i);
+    assert.doesNotMatch(NZ_CONFIRMATION_COPY.lead, /collected|settled|taken/i);
   });
 
   it("treats a ready GoCardless URL as immediately continuable", () => {

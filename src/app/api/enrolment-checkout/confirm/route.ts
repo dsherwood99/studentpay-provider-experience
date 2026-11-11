@@ -8,11 +8,12 @@ import { logNzEnrolmentEvent } from "@/lib/nz-enrolment/observability";
 import { isPayInFullOption, payInFullDeclarationsAccepted } from "@/lib/nz-enrolment/pay-in-full-flow";
 import { providerStudentAgreementAccepted } from "@/lib/nz-enrolment/hosted-agreement";
 import { isSalesforceAuthorityCourse } from "@/lib/nz-enrolment/catalogue-authority";
+import { getStudentpayEnv } from "@/lib/nz-enrolment/environment";
 import {
   readNzSession,
   requireNzApiBaseUrl,
   requireTenantKey,
-  resolveAuthoritativeCourseContext,
+  resolveConfirmCourseContext,
   writeNzSession,
 } from "@/lib/nz-enrolment/request-context";
 import { reviewModeMutationResponse } from "@/lib/nz-enrolment/review-mode";
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
     return jsonError(400, "VALIDATION_ERROR", "Invalid JSON.");
   }
 
+  const routeStarted = Date.now();
   const session = await readNzSession();
   if (!session?.checkoutId || !session.providerSlug || !session.courseSlug) {
     return jsonError(409, "SESSION_EXPIRED");
@@ -59,7 +61,9 @@ export async function POST(request: Request) {
 
   const payInFull = isPayInFullOption(session.paymentOption || session.plan?.paymentOption);
 
-  const resolved = await resolveAuthoritativeCourseContext(session.providerSlug, session.courseSlug);
+  const catalogueStarted = Date.now();
+  const resolved = await resolveConfirmCourseContext(session.providerSlug, session.courseSlug);
+  const catalogueMs = Date.now() - catalogueStarted;
   if (resolved.error || !resolved.tenant) {
     return resolved.error || jsonError(404, "PROVIDER_NOT_FOUND");
   }
@@ -156,12 +160,14 @@ export async function POST(request: Request) {
         declarations,
       });
 
+  const bffTimerStarted = Date.now();
   const upstream = await canonicalConfirm({
     apiBaseUrl: apiBase.url,
     apiKey: key.apiKey,
     checkoutId: session.checkoutId,
     payload,
   });
+  const bffMs = Date.now() - bffTimerStarted;
 
   if (!upstream.body.success) {
     const code = upstream.body.error?.code || "VALIDATION_ERROR";
@@ -206,6 +212,14 @@ export async function POST(request: Request) {
     payment_option: payInFull ? "pay_in_full" : "payment_plan",
   });
 
+  const exposeTimings = getStudentpayEnv() === "sandbox";
+  const upstreamTimings =
+    exposeTimings &&
+    upstream.body.timings &&
+    typeof upstream.body.timings === "object"
+      ? upstream.body.timings
+      : null;
+
   return Response.json({
     success: true,
     already_confirmed: alreadyConfirmed,
@@ -229,6 +243,18 @@ export async function POST(request: Request) {
       : {
           number: upstream.body.agreement?.number || null,
           pdf_generated: Boolean(upstream.body.agreement?.pdf_generated),
+          pdf_status: upstream.body.agreement?.pdf_status || null,
         },
+    ...(exposeTimings
+      ? {
+          timings: {
+            pe_ms: Date.now() - routeStarted,
+            catalogue_ms: catalogueMs,
+            catalogue_source: resolved.source,
+            bff_ms: bffMs,
+            ...(upstreamTimings || {}),
+          },
+        }
+      : {}),
   });
 }

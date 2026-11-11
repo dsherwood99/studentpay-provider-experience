@@ -406,6 +406,7 @@ export type CanonicalCheckoutResult = {
     id?: string;
     number?: string;
     pdf_generated?: boolean;
+    pdf_status?: string;
   };
   enrolment?: {
     status?: string;
@@ -416,5 +417,6 @@ export type CanonicalCheckoutResult = {
     amount?: number | null;
     ledger_posted?: boolean;
   };
+  timings?: Record<string, unknown>;
   raw?: unknown;
 };

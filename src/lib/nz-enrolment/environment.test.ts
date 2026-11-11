@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { getNzCourse, getNzCoursesForProvider } from "./courses.ts";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   GENERIC_MAX_RECURRING_INSTALMENTS,
   getHostedProductMode,
@@ -23,6 +26,7 @@ const managed = [
   "E13_INTERNAL_CANARY_HOSTED_ENABLED",
   "NZ_HOSTED_TENANT_SLUG",
   "VERCEL_PROJECT_PRODUCTION_URL",
+  "VERCEL_ENV",
 ];
 
 const previous: Record<string, string | undefined> = {};
@@ -58,6 +62,63 @@ describe("NZ hosted product and environment isolation", () => {
     assert.equal(resolveNzApiBaseUrl().url, "https://sandbox-api.studentpay.co.nz");
     assert.ok(getNzCourse("oli", "certification-course"));
     assert.ok(getNzTenantBySlug("fixture-institute"));
+  });
+
+  it("A2. sandbox Preview may target the NZ API Preview host", () => {
+    process.env.HOSTED_PRODUCT_MODE = "nz_enrolment";
+    process.env.STUDENTPAY_ENV = "sandbox";
+    process.env.NZ_STUDENTPAY_API_BASE_URL =
+      "https://studentpay-nz-api-sandbox-git-cursor-oli-con-479571-student-pay.vercel.app";
+
+    assert.equal(
+      resolveNzApiBaseUrl().url,
+      "https://studentpay-nz-api-sandbox-git-cursor-oli-con-479571-student-pay.vercel.app",
+    );
+  });
+
+  it("A3. production cannot use a sandbox or Preview API host", () => {
+    process.env.HOSTED_PRODUCT_MODE = "nz_enrolment";
+    process.env.STUDENTPAY_ENV = "production";
+    process.env.NZ_STUDENTPAY_API_BASE_URL =
+      "https://studentpay-nz-api-sandbox-git-cursor-oli-con-479571-student-pay.vercel.app";
+    assert.equal(resolveNzApiBaseUrl().error, "NZ_API_PRODUCTION_INVALID");
+  });
+
+  it("A4b. confirm uses the bound session course and does not refetch the catalogue first", () => {
+    const srcRoot = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
+    const confirmRoute = readFileSync(
+      path.join(srcRoot, "app/api/enrolment-checkout/confirm/route.ts"),
+      "utf8",
+    );
+    const requestContext = readFileSync(
+      path.join(srcRoot, "lib/nz-enrolment/request-context.ts"),
+      "utf8",
+    );
+    const checkout = readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/EnrolmentCheckout.tsx"),
+      "utf8",
+    );
+    assert.match(confirmRoute, /resolveConfirmCourseContext\(session\.providerSlug, session\.courseSlug\)/);
+    assert.match(confirmRoute, /catalogue_ms/);
+    assert.match(confirmRoute, /pe_ms/);
+    assert.match(requestContext, /source: "local"/);
+    assert.match(requestContext, /resolveAuthoritativeCourseContext/);
+    assert.match(checkout, /data-confirm-pe-ms/);
+    assert.match(checkout, /data-confirm-catalogue-ms/);
+  });
+
+  it("A4. sandbox environment probe reports the resolved API host and 404s in production", () => {
+    const srcRoot = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
+    const probe = readFileSync(
+      path.join(srcRoot, "app/api/enrolment-checkout/environment/route.ts"),
+      "utf8",
+    );
+    assert.match(probe, /getStudentpayEnv\(\) !== "sandbox"/);
+    assert.match(probe, /status: 404/);
+    assert.match(probe, /api_base_url/);
+    assert.match(probe, /api_git_commit_sha/);
+    assert.match(probe, /\/v1\/environment/);
+    assert.doesNotMatch(probe, /api_key|Authorization|Bearer/);
   });
 
   it("B. nz_enrolment production exposes approved OLI catalogue", () => {

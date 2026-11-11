@@ -52,6 +52,7 @@ export const NZ_REVIEW_COPY = {
 
 export const NZ_CONFIRMATION_COPY = {
   heading: "Enrolment confirmed",
+  lead: "Your StudentPay payment plan has been established. Your direct debit authorisation has been received, and your payments will be processed according to your repayment schedule.",
 } as const;
 
 export const NZ_PAY_IN_FULL_COPY = {
