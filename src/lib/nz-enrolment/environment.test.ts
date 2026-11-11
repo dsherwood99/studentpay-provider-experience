@@ -93,6 +93,8 @@ describe("NZ hosted product and environment isolation", () => {
     assert.match(probe, /getStudentpayEnv\(\) !== "sandbox"/);
     assert.match(probe, /status: 404/);
     assert.match(probe, /api_base_url/);
+    assert.match(probe, /api_git_commit_sha/);
+    assert.match(probe, /\/v1\/environment/);
     assert.doesNotMatch(probe, /api_key|Authorization|Bearer/);
   });
 

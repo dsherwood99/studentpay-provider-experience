@@ -417,5 +417,6 @@ export type CanonicalCheckoutResult = {
     amount?: number | null;
     ledger_posted?: boolean;
   };
+  timings?: Record<string, unknown>;
   raw?: unknown;
 };

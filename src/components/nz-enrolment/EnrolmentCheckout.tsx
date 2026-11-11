@@ -275,6 +275,11 @@ export function NzEnrolmentCheckout({
   const [checkoutStatus, setCheckoutStatus] = useState<string | null>(null);
   const [agreementNumber, setAgreementNumber] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
+  const [confirmBrowserMs, setConfirmBrowserMs] = useState<number | null>(null);
+  const [confirmServerTimings, setConfirmServerTimings] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
   const ddaFocusedRef = useRef(false);
   const ddaPopupRef = useRef<Window | null>(null);
   const statusRefreshRef = useRef<() => Promise<void>>(async () => {});
@@ -1214,6 +1219,7 @@ export function NzEnrolmentCheckout({
       if (!confirmDeclarations) {
         return;
       }
+      const confirmStarted = performance.now();
       const response = await fetch("/api/enrolment-checkout/confirm", {
         method: "POST",
         credentials: "same-origin",
@@ -1223,7 +1229,12 @@ export function NzEnrolmentCheckout({
       const json = (await response.json().catch(() => ({}))) as StatusPayload & {
         success?: boolean;
         already_confirmed?: boolean;
+        timings?: Record<string, unknown>;
       };
+      setConfirmBrowserMs(Math.round(performance.now() - confirmStarted));
+      if (json.timings && typeof json.timings === "object") {
+        setConfirmServerTimings(json.timings);
+      }
       if (!response.ok || json.success === false) {
         throw new Error(json.error?.message || "Unable to confirm this enrolment.");
       }
@@ -1308,6 +1319,22 @@ export function NzEnrolmentCheckout({
         data-testid={reviewMode ? "nz-review-confirmation" : "nz-enrolment-confirmed"}
         data-review-mode={reviewMode ? "true" : "false"}
         data-payment-option={isPayInFull ? "pay_in_full" : "payment_plan"}
+        data-confirm-browser-ms={confirmBrowserMs ?? undefined}
+        data-confirm-visible-ms={
+          typeof confirmServerTimings?.visible_ms === "number"
+            ? confirmServerTimings.visible_ms
+            : undefined
+        }
+        data-confirm-handler-ms={
+          typeof confirmServerTimings?.handler_ms === "number"
+            ? confirmServerTimings.handler_ms
+            : undefined
+        }
+        data-confirm-bff-ms={
+          typeof confirmServerTimings?.bff_ms === "number"
+            ? confirmServerTimings.bff_ms
+            : undefined
+        }
         style={tenantCssVars(tenant) as CSSProperties}
       >
         <div className={styles.shell}>

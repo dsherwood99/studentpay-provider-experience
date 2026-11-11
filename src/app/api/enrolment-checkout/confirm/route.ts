@@ -8,6 +8,7 @@ import { logNzEnrolmentEvent } from "@/lib/nz-enrolment/observability";
 import { isPayInFullOption, payInFullDeclarationsAccepted } from "@/lib/nz-enrolment/pay-in-full-flow";
 import { providerStudentAgreementAccepted } from "@/lib/nz-enrolment/hosted-agreement";
 import { isSalesforceAuthorityCourse } from "@/lib/nz-enrolment/catalogue-authority";
+import { getStudentpayEnv } from "@/lib/nz-enrolment/environment";
 import {
   readNzSession,
   requireNzApiBaseUrl,
@@ -156,12 +157,14 @@ export async function POST(request: Request) {
         declarations,
       });
 
+  const bffTimerStarted = Date.now();
   const upstream = await canonicalConfirm({
     apiBaseUrl: apiBase.url,
     apiKey: key.apiKey,
     checkoutId: session.checkoutId,
     payload,
   });
+  const bffMs = Date.now() - bffTimerStarted;
 
   if (!upstream.body.success) {
     const code = upstream.body.error?.code || "VALIDATION_ERROR";
@@ -206,6 +209,14 @@ export async function POST(request: Request) {
     payment_option: payInFull ? "pay_in_full" : "payment_plan",
   });
 
+  const exposeTimings = getStudentpayEnv() === "sandbox";
+  const upstreamTimings =
+    exposeTimings &&
+    upstream.body.timings &&
+    typeof upstream.body.timings === "object"
+      ? upstream.body.timings
+      : null;
+
   return Response.json({
     success: true,
     already_confirmed: alreadyConfirmed,
@@ -231,5 +242,13 @@ export async function POST(request: Request) {
           pdf_generated: Boolean(upstream.body.agreement?.pdf_generated),
           pdf_status: upstream.body.agreement?.pdf_status || null,
         },
+    ...(exposeTimings
+      ? {
+          timings: {
+            bff_ms: bffMs,
+            ...(upstreamTimings || {}),
+          },
+        }
+      : {}),
   });
 }
