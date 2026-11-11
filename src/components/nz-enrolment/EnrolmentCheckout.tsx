@@ -1335,6 +1335,16 @@ export function NzEnrolmentCheckout({
             ? confirmServerTimings.bff_ms
             : undefined
         }
+        data-confirm-pe-ms={
+          typeof confirmServerTimings?.pe_ms === "number"
+            ? confirmServerTimings.pe_ms
+            : undefined
+        }
+        data-confirm-catalogue-ms={
+          typeof confirmServerTimings?.catalogue_ms === "number"
+            ? confirmServerTimings.catalogue_ms
+            : undefined
+        }
         style={tenantCssVars(tenant) as CSSProperties}
       >
         <div className={styles.shell}>

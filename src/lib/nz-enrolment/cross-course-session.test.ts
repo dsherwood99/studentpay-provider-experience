@@ -244,7 +244,7 @@ describe("same-provider course session reuse", () => {
     assert.match(confirmRoute, /readNzSession\(\)/);
     assert.match(
       confirmRoute,
-      /resolveAuthoritativeCourseContext\(session\.providerSlug, session\.courseSlug\)/,
+      /resolveConfirmCourseContext\(session\.providerSlug, session\.courseSlug\)/,
     );
     assert.doesNotMatch(confirmRoute, /body\.courseSlug/);
     assert.doesNotMatch(checkoutUi, /providerOrderId:/);

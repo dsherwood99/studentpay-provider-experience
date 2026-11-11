@@ -84,6 +84,29 @@ describe("NZ hosted product and environment isolation", () => {
     assert.equal(resolveNzApiBaseUrl().error, "NZ_API_PRODUCTION_INVALID");
   });
 
+  it("A4b. confirm uses the bound session course and does not refetch the catalogue first", () => {
+    const srcRoot = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
+    const confirmRoute = readFileSync(
+      path.join(srcRoot, "app/api/enrolment-checkout/confirm/route.ts"),
+      "utf8",
+    );
+    const requestContext = readFileSync(
+      path.join(srcRoot, "lib/nz-enrolment/request-context.ts"),
+      "utf8",
+    );
+    const checkout = readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/EnrolmentCheckout.tsx"),
+      "utf8",
+    );
+    assert.match(confirmRoute, /resolveConfirmCourseContext\(session\.providerSlug, session\.courseSlug\)/);
+    assert.match(confirmRoute, /catalogue_ms/);
+    assert.match(confirmRoute, /pe_ms/);
+    assert.match(requestContext, /source: "local"/);
+    assert.match(requestContext, /resolveAuthoritativeCourseContext/);
+    assert.match(checkout, /data-confirm-pe-ms/);
+    assert.match(checkout, /data-confirm-catalogue-ms/);
+  });
+
   it("A4. sandbox environment probe reports the resolved API host and 404s in production", () => {
     const srcRoot = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
     const probe = readFileSync(

@@ -123,6 +123,28 @@ export async function resolveAuthoritativeCourseContext(
   return { tenant: resolved.tenant, course: resolved.course };
 }
 
+/**
+ * Confirm already has a bound checkout. Agreement hashes and setup-complete
+ * are fail-closed on the NZ API, so skip the catalogue round-trip when the
+ * local course listing is present. Fall back to Salesforce overlay if not.
+ */
+export async function resolveConfirmCourseContext(
+  providerSlug: string,
+  courseSlug: string,
+): Promise<{
+  tenant?: NzTenant;
+  course?: NzCourse;
+  error?: Response;
+  source: "local" | "authoritative";
+}> {
+  const local = resolveCourseContext(providerSlug, courseSlug);
+  if (local.tenant && local.course && !local.error) {
+    return { tenant: local.tenant, course: local.course, source: "local" };
+  }
+  const remote = await resolveAuthoritativeCourseContext(providerSlug, courseSlug);
+  return { ...remote, source: "authoritative" };
+}
+
 export function requireTenantKey(tenant: NzTenant): {
   apiKey?: string;
   error?: Response;
