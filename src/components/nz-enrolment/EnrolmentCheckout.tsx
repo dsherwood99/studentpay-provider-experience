@@ -1324,7 +1324,7 @@ export function NzEnrolmentCheckout({
                   ? REVIEW_CONFIRMATION_LEAD
                   : pifSuccess
                     ? pifSuccess.lead
-                    : `Your ${tenant.displayName} enrolment and StudentPay payment plan are now active.`}
+                    : NZ_CONFIRMATION_COPY.lead}
               </p>
               <ConfirmationSummary
                 rows={

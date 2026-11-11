@@ -229,6 +229,7 @@ export async function POST(request: Request) {
       : {
           number: upstream.body.agreement?.number || null,
           pdf_generated: Boolean(upstream.body.agreement?.pdf_generated),
+          pdf_status: upstream.body.agreement?.pdf_status || null,
         },
   });
 }

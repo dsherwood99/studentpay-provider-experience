@@ -406,6 +406,7 @@ export type CanonicalCheckoutResult = {
     id?: string;
     number?: string;
     pdf_generated?: boolean;
+    pdf_status?: string;
   };
   enrolment?: {
     status?: string;
