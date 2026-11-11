@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { getNzCourse, getNzCoursesForProvider } from "./courses.ts";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   GENERIC_MAX_RECURRING_INSTALMENTS,
   getHostedProductMode,
@@ -23,6 +26,7 @@ const managed = [
   "E13_INTERNAL_CANARY_HOSTED_ENABLED",
   "NZ_HOSTED_TENANT_SLUG",
   "VERCEL_PROJECT_PRODUCTION_URL",
+  "VERCEL_ENV",
 ];
 
 const previous: Record<string, string | undefined> = {};
@@ -58,6 +62,38 @@ describe("NZ hosted product and environment isolation", () => {
     assert.equal(resolveNzApiBaseUrl().url, "https://sandbox-api.studentpay.co.nz");
     assert.ok(getNzCourse("oli", "certification-course"));
     assert.ok(getNzTenantBySlug("fixture-institute"));
+  });
+
+  it("A2. sandbox Preview may target the NZ API Preview host", () => {
+    process.env.HOSTED_PRODUCT_MODE = "nz_enrolment";
+    process.env.STUDENTPAY_ENV = "sandbox";
+    process.env.NZ_STUDENTPAY_API_BASE_URL =
+      "https://studentpay-nz-api-sandbox-git-cursor-oli-con-479571-student-pay.vercel.app";
+
+    assert.equal(
+      resolveNzApiBaseUrl().url,
+      "https://studentpay-nz-api-sandbox-git-cursor-oli-con-479571-student-pay.vercel.app",
+    );
+  });
+
+  it("A3. production cannot use a sandbox or Preview API host", () => {
+    process.env.HOSTED_PRODUCT_MODE = "nz_enrolment";
+    process.env.STUDENTPAY_ENV = "production";
+    process.env.NZ_STUDENTPAY_API_BASE_URL =
+      "https://studentpay-nz-api-sandbox-git-cursor-oli-con-479571-student-pay.vercel.app";
+    assert.equal(resolveNzApiBaseUrl().error, "NZ_API_PRODUCTION_INVALID");
+  });
+
+  it("A4. sandbox environment probe reports the resolved API host and 404s in production", () => {
+    const srcRoot = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "../..");
+    const probe = readFileSync(
+      path.join(srcRoot, "app/api/enrolment-checkout/environment/route.ts"),
+      "utf8",
+    );
+    assert.match(probe, /getStudentpayEnv\(\) !== "sandbox"/);
+    assert.match(probe, /status: 404/);
+    assert.match(probe, /api_base_url/);
+    assert.doesNotMatch(probe, /api_key|Authorization|Bearer/);
   });
 
   it("B. nz_enrolment production exposes approved OLI catalogue", () => {
