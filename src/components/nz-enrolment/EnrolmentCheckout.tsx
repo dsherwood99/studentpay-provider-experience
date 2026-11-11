@@ -2325,8 +2325,10 @@ function CheckoutSection({
       ref={sectionRef}
     >
       <div className={styles.sectionHeading}>
-        <span className={styles.sectionIndex}>{number}</span>
-        <h2 id={headingId}>{title}</h2>
+        <div className={styles.sectionTitle}>
+          <span className={styles.sectionIndex}>{number}</span>
+          <h2 id={headingId}>{title}</h2>
+        </div>
         <span className={styles.statusBadge} data-status={status}>
           {sectionStatusLabel(status)}
         </span>

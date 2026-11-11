@@ -275,6 +275,28 @@ describe("OLI payment-choice and enrolment-summary presentation", () => {
     }
   });
 
+  it("keeps the step number and section heading on one row", () => {
+    const checkout = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/EnrolmentCheckout.tsx"),
+      "utf8",
+    );
+    const css = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/enrolment-checkout.module.css"),
+      "utf8",
+    );
+    assert.match(
+      checkout,
+      /className=\{styles\.sectionTitle\}[\s\S]*styles\.sectionIndex[\s\S]*<h2 id=\{headingId\}>\{title\}<\/h2>/,
+    );
+    assert.match(checkout, /styles\.statusBadge/);
+    assert.match(css, /\.sectionTitle\s*\{[\s\S]*display:\s*flex/);
+    assert.match(css, /\.sectionTitle\s*\{[\s\S]*align-items:\s*center/);
+    assert.match(css, /\.sectionTitle\s*\{[\s\S]*gap:\s*8px/);
+    assert.match(css, /\.sectionHeading\s*\{[\s\S]*flex-wrap:\s*wrap/);
+    assert.match(css, /\.sectionIndex\s*\{[\s\S]*flex-shrink:\s*0/);
+    assert.doesNotMatch(css, /\.section h2\s*\{[^}]*width:\s*100%/);
+  });
+
   it("tightens remaining checkout sections without changing compact payment cards", () => {
     const checkout = fs.readFileSync(
       path.join(srcRoot, "components/nz-enrolment/EnrolmentCheckout.tsx"),
