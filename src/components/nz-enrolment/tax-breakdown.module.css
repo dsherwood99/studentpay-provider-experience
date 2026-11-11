@@ -33,7 +33,17 @@
 
 .breakdown[data-compact="true"] {
   margin: 0;
-  gap: 4px 12px;
+  gap: 4px 10px;
+}
+
+.breakdown[data-compact="true"] .row {
+  grid-template-columns: max-content minmax(4.5rem, 1fr);
+  gap: 8px 10px;
+}
+
+.breakdown[data-compact="true"] dt {
+  /* Keep "Course fee excl. GST" on one line above the GST amount row. */
+  white-space: nowrap;
 }
 
 .breakdown[data-compact="true"] dt,

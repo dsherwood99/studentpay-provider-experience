@@ -252,9 +252,12 @@ describe("OLI payment-choice and enrolment-summary presentation", () => {
     assert.match(css, /\[data-layout="compact-pricing"\]/);
     assert.match(
       css,
-      /grid-template-columns:\s*minmax\(0, 1\.2fr\) minmax\(0, 0\.85fr\)/,
+      /grid-template-columns:\s*minmax\(0, 1fr\) minmax\(min-content, 1\.15fr\)/,
     );
+    assert.match(css, /min-width:\s*min-content/);
     assert.match(taxCss, /\[data-compact="true"\]/);
+    assert.match(taxCss, /white-space:\s*nowrap/);
+    assert.match(taxCss, /grid-template-columns:\s*max-content minmax\(4\.5rem, 1fr\)/);
     const previousBound = process.env.NZ_HOSTED_TENANT_SLUG;
     delete process.env.NZ_HOSTED_TENANT_SLUG;
     process.env.STUDENTPAY_ENV = "sandbox";
@@ -263,6 +266,75 @@ describe("OLI payment-choice and enrolment-summary presentation", () => {
       const bela = toPublicTenant(getNzTenantBySlug("bela-nz")!);
       assert.equal(oli.checkout.paymentChoicePresentation, "savings_hierarchy");
       assert.equal(bela.checkout.paymentChoicePresentation, undefined);
+    } finally {
+      if (previousBound === undefined) {
+        delete process.env.NZ_HOSTED_TENANT_SLUG;
+      } else {
+        process.env.NZ_HOSTED_TENANT_SLUG = previousBound;
+      }
+    }
+  });
+
+  it("keeps the step number and section heading on one row", () => {
+    const checkout = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/EnrolmentCheckout.tsx"),
+      "utf8",
+    );
+    const css = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/enrolment-checkout.module.css"),
+      "utf8",
+    );
+    assert.match(
+      checkout,
+      /className=\{styles\.sectionTitle\}[\s\S]*styles\.sectionIndex[\s\S]*<h2 id=\{headingId\}>\{title\}<\/h2>/,
+    );
+    assert.match(checkout, /styles\.statusBadge/);
+    assert.match(css, /\.sectionTitle\s*\{[\s\S]*display:\s*flex/);
+    assert.match(css, /\.sectionTitle\s*\{[\s\S]*align-items:\s*center/);
+    assert.match(css, /\.sectionTitle\s*\{[\s\S]*gap:\s*8px/);
+    assert.match(css, /\.sectionHeading\s*\{[\s\S]*flex-wrap:\s*wrap/);
+    assert.match(css, /\.sectionIndex\s*\{[\s\S]*flex-shrink:\s*0/);
+    assert.doesNotMatch(css, /\.section h2\s*\{[^}]*width:\s*100%/);
+  });
+
+  it("tightens remaining checkout sections without changing compact payment cards", () => {
+    const checkout = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/EnrolmentCheckout.tsx"),
+      "utf8",
+    );
+    const css = fs.readFileSync(
+      path.join(srcRoot, "components/nz-enrolment/enrolment-checkout.module.css"),
+      "utf8",
+    );
+    assert.match(checkout, /styles\.addressRow/);
+    assert.match(checkout, /styles\.agreementItem/);
+    assert.match(checkout, /styles\.agreementMeta/);
+    assert.match(checkout, /data-total=/);
+    assert.match(checkout, /styles\.ddaStatusActions/);
+    assert.match(checkout, /onClick=\{\(\) => void startDirectDebitSetup\(\)\}/);
+    assert.match(css, /\.addressRow\s*\{/);
+    assert.match(css, /grid-template-columns:\s*minmax\(0, 1\.15fr\) minmax\(0, 1\.15fr\) minmax\(0, 0\.7fr\)/);
+    assert.match(css, /\.section h2\s*\{[\s\S]*font-size:\s*1\.05rem/);
+    assert.match(css, /\.field input,[\s\S]*min-height:\s*42px/);
+    assert.match(css, /\.ddaStatusPanel\s*\{[\s\S]*padding:\s*14px/);
+    assert.match(css, /\.summaryCard \.review\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 1\.1fr\) minmax\(0, 0\.9fr\)/);
+    assert.match(
+      css,
+      /grid-template-columns:\s*minmax\(0, 1fr\) minmax\(min-content, 1\.15fr\)/,
+    );
+    assert.doesNotMatch(checkout, /providerSlug\s*===\s*['"]oli['"]/);
+    assert.match(checkout, /NZ_DIRECT_DEBIT_COPY\.preparingTitle/);
+    assert.match(checkout, /NZ_CONFIRM_CTA/);
+    assert.doesNotMatch(checkout, /Creating enrolment/);
+    const previousBound = process.env.NZ_HOSTED_TENANT_SLUG;
+    delete process.env.NZ_HOSTED_TENANT_SLUG;
+    process.env.STUDENTPAY_ENV = "sandbox";
+    try {
+      const oli = toPublicTenant(getNzTenantBySlug("oli")!);
+      const bela = toPublicTenant(getNzTenantBySlug("bela-nz")!);
+      assert.equal(oli.checkout.paymentChoicePresentation, "savings_hierarchy");
+      assert.equal(bela.checkout.paymentChoicePresentation, undefined);
+      assert.equal(bela.checkout.taxPresentation, undefined);
     } finally {
       if (previousBound === undefined) {
         delete process.env.NZ_HOSTED_TENANT_SLUG;

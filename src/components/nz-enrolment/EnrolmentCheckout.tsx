@@ -1763,37 +1763,39 @@ export function NzEnrolmentCheckout({
                 span
                 onChange={(value) => updateStudent("streetAddress", value)}
               />
-              <TextField
-                label="Suburb"
-                name="address-level3"
-                autoComplete="address-line2"
-                value={resolvedStudent.suburb}
-                error={fieldErrors.suburb}
-                onChange={(value) => updateStudent("suburb", value)}
-              />
-              <TextField
-                label="City / region"
-                name="address-level1"
-                autoComplete="address-level1"
-                value={resolvedStudent.region}
-                error={fieldErrors.region}
-                onChange={(value) => {
-                  setStudent((current) => {
-                    const base = studentDetailsStarted(current)
-                      ? current
-                      : (storedDraft?.student ?? current);
-                    return { ...base, region: value, city: value };
-                  });
-                }}
-              />
-              <TextField
-                label="Postcode"
-                name="postal-code"
-                autoComplete="postal-code"
-                value={resolvedStudent.postcode}
-                error={fieldErrors.postcode}
-                onChange={(value) => updateStudent("postcode", value)}
-              />
+              <div className={styles.addressRow}>
+                <TextField
+                  label="Suburb"
+                  name="address-level3"
+                  autoComplete="address-line2"
+                  value={resolvedStudent.suburb}
+                  error={fieldErrors.suburb}
+                  onChange={(value) => updateStudent("suburb", value)}
+                />
+                <TextField
+                  label="City / region"
+                  name="address-level1"
+                  autoComplete="address-level1"
+                  value={resolvedStudent.region}
+                  error={fieldErrors.region}
+                  onChange={(value) => {
+                    setStudent((current) => {
+                      const base = studentDetailsStarted(current)
+                        ? current
+                        : (storedDraft?.student ?? current);
+                      return { ...base, region: value, city: value };
+                    });
+                  }}
+                />
+                <TextField
+                  label="Postcode"
+                  name="postal-code"
+                  autoComplete="postal-code"
+                  value={resolvedStudent.postcode}
+                  error={fieldErrors.postcode}
+                  onChange={(value) => updateStudent("postcode", value)}
+                />
+              </div>
             </div>
           </CheckoutSection>
 
@@ -1919,25 +1921,6 @@ export function NzEnrolmentCheckout({
                           : "blocked"
                     }
                   >
-                    {preparingAuthorisation ? (
-                      <div data-testid="nz-dda-preparing" role="status">
-                        <h3>{NZ_DIRECT_DEBIT_COPY.preparingTitle}</h3>
-                        <p id={ddaHelpId}>{NZ_DIRECT_DEBIT_COPY.preparingBody}</p>
-                      </div>
-                    ) : ddaPopupOpen ? (
-                      <div data-testid="nz-dda-waiting" role="status">
-                        <h3>{NZ_DIRECT_DEBIT_COPY.waitingTitle}</h3>
-                        <p id={ddaHelpId}>{NZ_DIRECT_DEBIT_COPY.waitingBody}</p>
-                      </div>
-                    ) : (
-                      <p id={ddaHelpId}>
-                        {directDebitHelpCopy({
-                          studentValid,
-                          alreadyCreated,
-                          authorisationReady,
-                        })}
-                      </p>
-                    )}
                     <div className={styles.ddaStatusActions}>
                       <button
                         type="button"
@@ -1954,6 +1937,25 @@ export function NzEnrolmentCheckout({
                         })}
                       </button>
                     </div>
+                    {preparingAuthorisation ? (
+                      <div data-testid="nz-dda-preparing" role="status">
+                        <h3>{NZ_DIRECT_DEBIT_COPY.preparingTitle}</h3>
+                        <p id={ddaHelpId}>{NZ_DIRECT_DEBIT_COPY.preparingBody}</p>
+                      </div>
+                    ) : ddaPopupOpen ? (
+                      <div data-testid="nz-dda-waiting" role="status">
+                        <h3>{NZ_DIRECT_DEBIT_COPY.waitingTitle}</h3>
+                        <p id={ddaHelpId}>{NZ_DIRECT_DEBIT_COPY.waitingBody}</p>
+                      </div>
+                    ) : (
+                      <p id={ddaHelpId} className={styles.ddaStatusCopy}>
+                        {directDebitHelpCopy({
+                          studentValid,
+                          alreadyCreated,
+                          authorisationReady,
+                        })}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -1986,7 +1988,7 @@ export function NzEnrolmentCheckout({
               {selectedGstRows ? (
                 selectedGstRows.map((row) => (
                   <Fragment key={row.label}>
-                    <dt>{row.label}</dt>
+                    <dt data-total={/total/i.test(row.label) ? "true" : undefined}>{row.label}</dt>
                     <dd>{row.value}</dd>
                   </Fragment>
                 ))
@@ -2088,37 +2090,42 @@ export function NzEnrolmentCheckout({
                       {REVIEW_DRAFT_AGREEMENT_NOTE}
                     </p>
                   ) : null}
-                  <label className={styles.check}>
-                    <input
-                      type="checkbox"
-                      checked={declarations.provider_student_agreement_accepted}
-                      onChange={(event) =>
-                        setDeclarations((current) => ({
-                          ...current,
-                          provider_student_agreement_accepted: event.target.checked,
-                        }))
-                      }
-                    />
-                    <span>
-                      I have read and agree to the {providerAgreement.title}
-                      {providerAgreement.version
-                        ? ` (version ${providerAgreement.version})`
-                        : ""}
-                      . This is separate from the StudentPay Payment Plan Agreement.
-                    </span>
-                  </label>
-                  <details
-                    className={styles.agreementPanel}
-                    open={providerAgreement.reviewOnly === true}
-                  >
-                    <summary>
-                      Read {providerAgreement.title} version {providerAgreement.version}
-                    </summary>
-                    <div
-                      className={styles.agreementHtml}
-                      dangerouslySetInnerHTML={{ __html: providerAgreement.html }}
-                    />
-                  </details>
+                  <div className={styles.agreementItem}>
+                    <label className={styles.check}>
+                      <input
+                        type="checkbox"
+                        checked={declarations.provider_student_agreement_accepted}
+                        onChange={(event) =>
+                          setDeclarations((current) => ({
+                            ...current,
+                            provider_student_agreement_accepted: event.target.checked,
+                          }))
+                        }
+                      />
+                      <span>
+                        I have read and agree to the {providerAgreement.title}
+                        {providerAgreement.version ? (
+                          <span className={styles.agreementMeta}>
+                            {" "}
+                            (version {providerAgreement.version})
+                          </span>
+                        ) : null}
+                        . This is separate from the StudentPay Payment Plan Agreement.
+                      </span>
+                    </label>
+                    <details
+                      className={styles.agreementPanel}
+                      open={providerAgreement.reviewOnly === true}
+                    >
+                      <summary>
+                        Read {providerAgreement.title} version {providerAgreement.version}
+                      </summary>
+                      <div
+                        className={styles.agreementHtml}
+                        dangerouslySetInnerHTML={{ __html: providerAgreement.html }}
+                      />
+                    </details>
+                  </div>
                 </>
               ) : null}
               {renderFlags.showPayInFullSummary ? null : renderFlags.showPaymentPlanAccepted ? (
@@ -2318,13 +2325,13 @@ function CheckoutSection({
       ref={sectionRef}
     >
       <div className={styles.sectionHeading}>
-        <p className={styles.kicker}>
+        <div className={styles.sectionTitle}>
           <span className={styles.sectionIndex}>{number}</span>
-          <span className={styles.statusBadge} data-status={status}>
-            {sectionStatusLabel(status)}
-          </span>
-        </p>
-        <h2 id={headingId}>{title}</h2>
+          <h2 id={headingId}>{title}</h2>
+        </div>
+        <span className={styles.statusBadge} data-status={status}>
+          {sectionStatusLabel(status)}
+        </span>
       </div>
       {children}
     </section>
