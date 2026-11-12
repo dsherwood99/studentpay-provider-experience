@@ -823,8 +823,129 @@
   margin: 0 0 10px;
 }
 
+.confirmation {
+  width: min(640px, 100%);
+  margin: 0 auto;
+  padding-top: 8px;
+}
+
+.confirmationHero {
+  text-align: center;
+  margin: 0 0 18px;
+}
+
+.confirmationHero h1 {
+  margin: 0 0 8px;
+  font-size: clamp(1.7rem, 3vw, 2.15rem);
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.confirmationHero .lead {
+  margin: 0 auto 14px;
+  max-width: 38rem;
+}
+
+.successMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin: 0 0 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--nz-primary) 16%, #ffffff);
+  color: var(--nz-primary-deep);
+}
+
+.successMark svg {
+  width: 26px;
+  height: 26px;
+}
+
+.confirmationAmount {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 4px auto 0;
+}
+
+.confirmationAmountValue {
+  font-family: var(--nz-heading-font, var(--nz-font, Inter, "Segoe UI", sans-serif));
+  font-size: clamp(1.85rem, 4vw, 2.4rem);
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  color: var(--nz-heading);
+  line-height: 1.1;
+}
+
+.confirmationAmountHint {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--nz-muted);
+}
+
+.confirmationSchedule {
+  margin: 0 0 16px;
+  padding: 18px 18px 16px;
+  border: 1px solid color-mix(in srgb, var(--nz-primary) 28%, var(--nz-border));
+  border-radius: 14px;
+  background: var(--nz-surface);
+  text-align: center;
+}
+
+.confirmationSchedule .confirmationAmount {
+  margin-bottom: 10px;
+}
+
+.confirmationScheduleLine {
+  margin: 0 0 6px;
+  color: var(--nz-text);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.confirmationScheduleLine strong {
+  font-weight: 700;
+  color: var(--nz-heading);
+}
+
+.confirmationTotal {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--nz-border);
+  color: var(--nz-muted);
+  font-size: 0.84rem;
+}
+
+.confirmationTotal strong {
+  color: var(--nz-heading);
+  font-weight: 700;
+}
+
+.confirmationReferences {
+  margin-top: 14px;
+}
+
+.confirmationReferences .confirmationCard {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.confirmationReferences .confirmationRow {
+  padding: 6px 2px;
+  border-bottom: 0;
+}
+
 .confirmationCard {
-  margin: 6px 0 18px;
+  margin: 6px 0 16px;
   border: 1px solid var(--nz-border);
   border-radius: 14px;
   background: var(--nz-surface);
@@ -889,6 +1010,52 @@
   font-weight: 500;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   font-size: 0.84rem;
+}
+
+.nextSteps {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--nz-border);
+  border-radius: 14px;
+  background: var(--nz-soft);
+}
+
+.nextStepsHeading {
+  margin: 0 0 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--nz-muted);
+}
+
+.nextSteps ol {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+.nextSteps li {
+  margin: 0 0 6px;
+  color: var(--nz-text);
+}
+
+.nextSteps li:last-child {
+  margin-bottom: 0;
+}
+
+.confirmationSupport {
+  margin: 10px 0 0;
+  text-align: center;
+  color: var(--nz-muted);
+  font-size: 0.78rem;
+}
+
+.confirmationSupport span {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+.confirmation .actions {
+  justify-content: center;
 }
 
 .ddaLayout {
@@ -1279,6 +1446,20 @@
 
   .confirmationRow dd {
     text-align: left;
+  }
+
+  .confirmationHero,
+  .confirmationSchedule,
+  .confirmationSupport {
+    text-align: left;
+  }
+
+  .confirmationTotal {
+    justify-content: space-between;
+  }
+
+  .confirmation .actions {
+    justify-content: stretch;
   }
 
   .btnBlock,

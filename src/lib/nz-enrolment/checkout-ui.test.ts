@@ -7,6 +7,7 @@ import {
   NZ_CHECKOUT_SECTIONS,
   NZ_CONFIRM_CTA,
   NZ_CONFIRMATION_COPY,
+  NZ_PAY_IN_FULL_CONFIRMATION_NEXT_STEPS,
   NZ_DIRECT_DEBIT_COPY,
   NZ_DIRECT_DEBIT_CTA,
   directDebitActionLabel,
@@ -20,6 +21,8 @@ import {
   decorateConfirmationRows,
   isConfirmedCheckoutStatus,
   isPayInFullChoiceVisible,
+  confirmationStudentName,
+  paymentPlanConfirmationNarrative,
   paymentPlanConfirmationRows,
   payNowChoiceBody,
   payNowSavingFromCatalogue,
@@ -34,7 +37,8 @@ import {
 } from "./checkout-ui.ts";
 import { getNzCourse } from "./courses.ts";
 import { previewCoursePlan } from "./canonical.ts";
-import { getNzTenantBySlug, toPublicTenant } from "./tenants.ts";
+import { gstInclusiveDisplayRows } from "./tax-presentation.ts";
+import { NZ_TENANTS, getNzTenantBySlug, toPublicTenant } from "./tenants.ts";
 
 const validStudent = {
   firstName: "Alex",
@@ -378,28 +382,74 @@ describe("confirmation summary presentation", () => {
     const display = planDisplay(preview);
     const rows = paymentPlanConfirmationRows({
       courseName: course.name,
+      providerName: "Online Learning Institute",
+      studentName: "Alex Taylor",
       courseFeeLabel: display.rows[0]?.value || "",
-      paymentPlanLabel: `${display.regularLabel} · ${display.finalPaymentLabel}`,
-      firstPaymentDate: preview.firstPaymentDate,
       agreementNumber: "PPA-000004",
       checkoutId: "chk_example_ref",
     });
+    const narrative = paymentPlanConfirmationNarrative(preview);
     assert.equal(course.name, "Certificate in Business Administration");
+    assert.equal(display.heroLabel, "$25.00 / week");
+    assert.equal(narrative?.heroLabel, "$25.00 / week");
+    assert.equal(narrative?.firstPaymentLabel, "24 Sep 2026");
+    assert.equal(narrative?.totalLabel, display.totalLabel);
+    assert.equal(
+      narrative?.scheduleSentence,
+      `${preview.fullRegularInstalmentCount} regular weekly instalments and one final instalment of $9.25.`,
+    );
     assert.deepEqual(
       rows.map((row) => `${row.label}: ${row.value}`),
       [
         "Course: Certificate in Business Administration",
+        "Provider: Online Learning Institute",
+        "Student: Alex Taylor",
         "Course fee: $1,834.25",
-        "Payment plan: $25.00 per week · Final payment of $9.25",
-        "First payment date: 24 Sep 2026",
         "Payment Plan Agreement: PPA-000004",
-        "Checkout: chk_example_ref",
+        "Checkout reference: chk_example_ref",
       ],
     );
-    assert.equal(rows.find((row) => row.label === "Checkout")?.tone, "reference");
-    assert.equal(rows.find((row) => row.label === "Checkout")?.group, "references");
+    assert.equal(rows.find((row) => row.label === "Checkout reference")?.tone, "reference");
+    assert.equal(rows.find((row) => row.label === "Checkout reference")?.group, "references");
     assert.equal(rows.find((row) => row.label === "Course")?.group, "course");
-    assert.equal(rows.find((row) => row.label === "Payment plan")?.group, "payments");
+    assert.equal(rows.find((row) => row.label === "Student")?.group, "course");
+  });
+
+  it("builds a non-weekly schedule only from confirmed plan fields", () => {
+    const narrative = paymentPlanConfirmationNarrative({
+      coursePriceCents: 120000,
+      upfrontAmountCents: 0,
+      amountToFinanceCents: 120000,
+      frequency: "Monthly",
+      numberOfInstalments: 12,
+      instalmentAmountCents: 10000,
+      regularInstalmentAmountCents: 10000,
+      finalInstalmentAmountCents: null,
+      fullRegularInstalmentCount: 12,
+      hasResidualFinal: false,
+      firstPaymentDate: "2026-12-01",
+      totalPayableCents: 120000,
+    });
+    assert.equal(narrative?.heroLabel, "$100.00 / month");
+    assert.equal(narrative?.firstPaymentLabel, "1 Dec 2026");
+    assert.equal(narrative?.scheduleSentence, "12 monthly instalments of $100.00.");
+    assert.equal(narrative?.upfrontLabel, null);
+    assert.doesNotMatch(narrative?.scheduleSentence || "", /week/i);
+    assert.equal(paymentPlanConfirmationNarrative({
+      coursePriceCents: 120000,
+      upfrontAmountCents: 0,
+      amountToFinanceCents: 120000,
+      frequency: "Monthly",
+      numberOfInstalments: 12,
+      instalmentAmountCents: 10000,
+      regularInstalmentAmountCents: Number.NaN,
+      finalInstalmentAmountCents: null,
+      fullRegularInstalmentCount: 12,
+      hasResidualFinal: false,
+      firstPaymentDate: "2026-12-01",
+      totalPayableCents: 120000,
+    }), null);
+    assert.equal(confirmationStudentName({ firstName: "  ", lastName: "" }), null);
   });
 
   it("mutes Pay Now reference rows without changing the success fields", () => {
@@ -419,35 +469,92 @@ describe("confirmation summary presentation", () => {
   });
 
   it("uses a confirmation card and a two-column Direct Debit layout in EnrolmentCheckout", () => {
+    const root = fileURLToPath(new URL("../../", import.meta.url));
     const checkout = fs.readFileSync(
-      path.join(fileURLToPath(new URL("../../", import.meta.url)), "components/nz-enrolment/EnrolmentCheckout.tsx"),
+      path.join(root, "components/nz-enrolment/EnrolmentCheckout.tsx"),
+      "utf8",
+    );
+    const confirmation = fs.readFileSync(
+      path.join(root, "components/nz-enrolment/EnrolmentConfirmation.tsx"),
       "utf8",
     );
     assert.match(checkout, /paymentPlanConfirmationRows/);
+    assert.match(checkout, /paymentPlanConfirmationNarrative/);
     assert.match(checkout, /decorateConfirmationRows/);
-    assert.match(checkout, /styles\.confirmationCard/);
     assert.match(checkout, /styles\.ddaLayout/);
     assert.match(checkout, /styles\.ddaStatusPanel/);
     assert.match(checkout, /formatEnrolmentDisplayDate\(resolvedFirstPaymentDate\)/);
-    assert.match(checkout, /data-testid="nz-enrolment-confirmed-summary"/);
-    assert.match(checkout, /Keep an eye on/);
+    assert.match(checkout, /data-confirm-catalogue-ms/);
+    assert.match(confirmation, /styles\.confirmationCard/);
+    assert.match(confirmation, /data-testid="nz-enrolment-confirmed-summary"/);
+    assert.match(confirmation, /data-testid="nz-confirmation-next-steps"/);
+    assert.match(confirmation, /data-testid="nz-confirmation-repayment"/);
+    assert.match(confirmation, /styles\.successMark/);
+    assert.match(checkout, /NZ_CONFIRMATION_COPY\.nextSteps/);
     assert.match(checkout, /onClick=\{\(\) => void startDirectDebitSetup\(\)\}/);
     assert.doesNotMatch(checkout, /<dd>\{preview\.firstPaymentDate\}<\/dd>/);
     assert.match(checkout, /nz-dda-preparing/);
     assert.doesNotMatch(checkout, /Creating enrolment/);
     assert.doesNotMatch(checkout, /account number|BSB|bank account/i);
     assert.match(checkout, /NZ_CONFIRMATION_COPY\.lead/);
-    assert.doesNotMatch(checkout, /now active/);
+    assert.doesNotMatch(`${checkout}\n${confirmation}`, /now active|pdf-retry|refetchCatalogue/i);
   });
 
   it("does not claim the mandate is already active on confirmation", () => {
     assert.equal(NZ_CONFIRMATION_COPY.heading, "Enrolment confirmed");
     assert.equal(
       NZ_CONFIRMATION_COPY.lead,
-      "Your StudentPay payment plan has been established. Your direct debit authorisation has been received, and your payments will be processed according to your repayment schedule.",
+      "Your enrolment and StudentPay payment plan have been confirmed.",
     );
     assert.doesNotMatch(NZ_CONFIRMATION_COPY.lead, /\bactive\b/i);
     assert.doesNotMatch(NZ_CONFIRMATION_COPY.lead, /collected|settled|taken/i);
+    assert.deepEqual(NZ_CONFIRMATION_COPY.nextSteps, [
+      "Keep this payment plan confirmation for your records.",
+      "Your education provider will provide course access and enrolment information.",
+      "StudentPay will manage payments in accordance with the agreed repayment schedule.",
+    ]);
+    assert.doesNotMatch(NZ_CONFIRMATION_COPY.nextSteps.join(" "), /email|pdf|sent|active|taken/i);
+    assert.deepEqual(NZ_PAY_IN_FULL_CONFIRMATION_NEXT_STEPS, [
+      "Keep this confirmation for your records.",
+      "Your education provider will provide course access and enrolment information.",
+    ]);
+  });
+
+  it("does not invent GST rows for Bela NZ confirmation", () => {
+    const bela = NZ_TENANTS.find((tenant) => tenant.slug === "bela-nz");
+    assert.ok(bela);
+    assert.equal(bela?.checkout.taxPresentation, undefined);
+    const gstRows = gstInclusiveDisplayRows(280_000, bela?.checkout.taxPresentation);
+    assert.equal(gstRows, null);
+    const rows = paymentPlanConfirmationRows({
+      courseName: "Lash Business Bundle",
+      providerName: bela?.displayName,
+      courseFeeLabel: "$2,800.00",
+      courseFeeRows: gstRows?.map((row) => ({ ...row, group: "payments" as const })),
+      paymentPlanLabel: "186 weekly payments of $15.00",
+      totalPayableLabel: "$2,800.00",
+      firstPaymentDate: "2026-11-18",
+      agreementNumber: "PPA-000018",
+      checkoutId: "BELA_NZ-PREVIEW-CONFIRM",
+    });
+    assert.deepEqual(
+      rows.map((row) => row.label),
+      [
+        "Course",
+        "Provider",
+        "Course fee",
+        "Total amount payable",
+        "Payment plan",
+        "First payment date",
+        "Payment Plan Agreement",
+        "Checkout reference",
+      ],
+    );
+    assert.equal(rows.some((row) => /Online Learning Institute|ADM101/i.test(row.value)), false);
+    assert.equal(
+      rows.some((row) => /gst|excl\.|incl\./i.test(`${row.label} ${row.value}`)),
+      false,
+    );
   });
 
   it("treats a ready GoCardless URL as immediately continuable", () => {
