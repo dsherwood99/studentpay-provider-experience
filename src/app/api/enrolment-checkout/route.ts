@@ -17,6 +17,11 @@ import {
   publicCardPayment,
   resolveHostedPayInFullEligibility,
 } from "@/lib/nz-enrolment/pay-in-full";
+import {
+  directDebitPreparationKey,
+  preparationPlanFromSelection,
+  shouldWritePreparedSession,
+} from "@/lib/nz-enrolment/direct-debit-preparation";
 import { isPayInFullOption, resolveHostedCreateProviderOrderId } from "@/lib/nz-enrolment/pay-in-full-flow";
 import { hostedFirstPaymentDateError } from "@/lib/nz-enrolment/first-payment-window";
 import { defaultFirstPaymentDate } from "@/lib/nz-enrolment/plan-math";
@@ -180,6 +185,7 @@ type CreateBody = {
   student?: Parameters<typeof sanitiseStudent>[0];
   plan?: Partial<NzPlanSelection>;
   providerOrderId?: string;
+  preparationRevision?: number;
 };
 
 export async function POST(request: Request) {
@@ -336,12 +342,30 @@ export async function POST(request: Request) {
     );
   }
 
+  const sessionKey =
+    reusable?.student && reusable.plan
+      ? directDebitPreparationKey({
+          student: reusable.student,
+          plan: preparationPlanFromSelection(reusable.plan),
+        })
+      : null;
+  const requestKey = directDebitPreparationKey({
+    student,
+    plan: preparationPlanFromSelection(plan),
+  });
+  const paymentPlanOrderId = resolveHostedCreateProviderOrderId({
+    session: sessionKey && sessionKey !== requestKey ? null : reusable,
+    providerSlug: tenant.slug,
+    courseSlug: course.slug,
+    fallbackOrderId: sessionKey && sessionKey !== requestKey ? hostedOrderId(tenant) : providerOrderId,
+  });
+
   const payload = buildCanonicalCreatePayload({
     tenant,
     course,
     student,
     plan: { ...plan, firstPaymentDate: preview.firstPaymentDate },
-    providerOrderId,
+    providerOrderId: paymentPlanOrderId,
     successUrl: `${origin}${returnPath}?dda=return`,
     cancelUrl: `${origin}${returnPath}?dda=cancelled`,
   });
@@ -386,11 +410,33 @@ export async function POST(request: Request) {
   const setupUrl = extractSetupUrl(upstream.body);
   const checkoutId = upstream.body.checkout?.checkout_id || "";
 
+  const requestRevision = Number.isInteger(body.preparationRevision)
+    ? body.preparationRevision
+    : null;
+  const latestSession = await readNzSession();
+  if (
+    !shouldWritePreparedSession({
+      existingRevision: latestSession?.preparationRevision,
+      requestRevision,
+    })
+  ) {
+    return Response.json({
+      success: true,
+      session_superseded: true,
+      payment_option: "interest_free_payment_plan",
+      direct_debit: { setup_url: null, setup_complete: false },
+      checkout: {
+        checkout_id: checkoutId,
+        status: upstream.body.checkout?.status,
+      },
+    });
+  }
+
   try {
     await writeNzSession({
       providerSlug: tenant.slug,
       courseSlug: course.slug,
-      providerOrderId,
+      providerOrderId: paymentPlanOrderId,
       checkoutId,
       opportunityId: upstream.body.records?.opportunity_id,
       ddaId: upstream.body.records?.dda_id || upstream.body.direct_debit?.dda_id || undefined,
@@ -399,6 +445,7 @@ export async function POST(request: Request) {
       student,
       plan,
       paymentOption: "interest_free_payment_plan",
+      preparationRevision: requestRevision ?? latestSession?.preparationRevision,
     });
   } catch (error) {
     if (error instanceof NzSessionConfigError) {
@@ -409,7 +456,7 @@ export async function POST(request: Request) {
 
   logNzEnrolmentEvent("checkout_created", {
     provider_slug: tenant.slug,
-    provider_order_id: providerOrderId,
+    provider_order_id: paymentPlanOrderId,
     checkout_id: checkoutId,
     payment_option: "payment_plan",
     idempotent_replay: Boolean(

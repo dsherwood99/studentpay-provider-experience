@@ -284,6 +284,8 @@ export type NzCheckoutSession = {
   plan?: NzPlanSelection;
   paymentOption?: NzPaymentOptionId;
   authoritativePriceCents?: number;
+  /** Monotonic client token so an older create cannot replace a newer session. */
+  preparationRevision?: number;
 };
 
 export type NzPublicTenant = {
