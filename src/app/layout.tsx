@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Caveat, DM_Sans, Inter, Montserrat, Plus_Jakarta_Sans, Poppins } from "next/font/google";
+import localFont from "next/font/local";
 import { PlatformFooter } from "@/components/layout/PlatformFooter";
 import { PlatformHeader } from "@/components/layout/PlatformHeader";
 import { isNzEnrolmentProductAvailable } from "@/lib/nz-enrolment/environment";
@@ -11,40 +11,50 @@ import { getPlatformBrand } from "@/lib/provider-experience/branding";
 import "./globals.css";
 import "../styles/studentpay-platform.css";
 
-const plusJakarta = Plus_Jakarta_Sans({
+const plusJakarta = localFont({
+  src: "../fonts/plus-jakarta-sans-latin.woff2",
   variable: "--font-academy-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: "200 800",
+  display: "swap",
 });
 
-const caveat = Caveat({
+const caveat = localFont({
+  src: "../fonts/caveat-latin.woff2",
   variable: "--font-academy-script",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: "400 700",
+  display: "swap",
 });
 
-const poppins = Poppins({
+const poppins = localFont({
+  src: [
+    { path: "../fonts/poppins-latin-500.woff2", weight: "500", style: "normal" },
+    { path: "../fonts/poppins-latin-600.woff2", weight: "600", style: "normal" },
+    { path: "../fonts/poppins-latin-700.woff2", weight: "700", style: "normal" },
+    { path: "../fonts/poppins-latin-900.woff2", weight: "900", style: "normal" },
+  ],
   variable: "--font-studentpay-heading",
-  subsets: ["latin"],
-  weight: ["500", "600", "700", "900"],
+  display: "swap",
 });
 
-const inter = Inter({
+const inter = localFont({
+  src: "../fonts/inter-latin.woff2",
   variable: "--font-studentpay-body",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: "100 900",
+  display: "swap",
 });
 
-const montserrat = Montserrat({
+const montserrat = localFont({
+  src: "../fonts/montserrat-latin.woff2",
   variable: "--font-nz-heading",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: "100 900",
+  display: "swap",
 });
 
-const dmSans = DM_Sans({
+const dmSans = localFont({
+  src: "../fonts/dm-sans-latin.woff2",
   variable: "--font-nz-body",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: "100 1000",
+  display: "swap",
 });
 
 export function generateMetadata(): Metadata {

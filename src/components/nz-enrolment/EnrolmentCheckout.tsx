@@ -36,8 +36,16 @@ import {
   shouldCreateCheckout,
   shouldPollDirectDebitStatus,
   studentDetailsAreValid,
+  studentDetailsPreparationNotice,
   studentDetailsStarted,
 } from "@/lib/nz-enrolment/checkout-ui";
+import {
+  DIRECT_DEBIT_PREPARATION_DEBOUNCE_MS,
+  DirectDebitPreparationQueue,
+  directDebitPreparationKey,
+  shouldPrepareDirectDebit,
+  type DirectDebitPreparationResult,
+} from "@/lib/nz-enrolment/direct-debit-preparation";
 import {
   gstInclusiveDisplayRows,
   isGstInclusiveBreakdown,
@@ -264,6 +272,12 @@ export function NzEnrolmentCheckout({
   );
   const [firstPaymentDate, setFirstPaymentDate] = useState(defaultFirstPaymentDate());
   const [busy, setBusy] = useState(false);
+  const [awaitingDirectDebit, setAwaitingDirectDebit] = useState(false);
+  const [preparationState, setPreparationState] = useState<
+    "idle" | "preparing" | "ready" | "failed"
+  >("idle");
+  const [prepareMs, setPrepareMs] = useState<number | null>(null);
+  const [openMs, setOpenMs] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [sectionErrors, setSectionErrors] = useState<{
     student?: string;
@@ -307,6 +321,24 @@ export function NzEnrolmentCheckout({
   const [serverErrorAfterPayment, setServerErrorAfterPayment] = useState(false);
   const [confirmCode, setConfirmCode] = useState<string | null>(null);
   const creatingRef = useRef(false);
+  const preparationQueueRef = useRef(new DirectDebitPreparationQueue());
+  const preparationBrowserIdRef = useRef(
+    typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "",
+  );
+  const preparationRevisionRef = useRef(0);
+  const preparationKeyRef = useRef<string | null>(null);
+  const preparationContextRef = useRef({
+    student: emptyStudent,
+    plan: {
+      upfrontAmountCents: 0,
+      frequency: course.planPolicy.frequency,
+      numberOfInstalments: 0,
+      firstPaymentDate: defaultFirstPaymentDate(),
+    },
+  });
+  const postPreparationRef = useRef<
+    (key: string) => Promise<DirectDebitPreparationResult>
+  >(async () => ({ ok: false, message: "Unable to start Direct Debit setup." }));
   const payingRef = useRef(false);
   const stripeApiRef = useRef<{ stripe: Stripe; elements: StripeElements } | null>(null);
   const cardSectionRef = useRef<HTMLElement | null>(null);
@@ -426,7 +458,28 @@ export function NzEnrolmentCheckout({
       : undefined);
   const alreadyCreated = Boolean(setupUrl || checkoutId);
   const authorisationReady = isGoCardlessHostedAuthorisationUrl(setupUrl);
-  const preparingAuthorisation = busy && !setupComplete && !isPayInFull;
+  const preparingAuthorisation =
+    (busy || awaitingDirectDebit) && !setupComplete && !isPayInFull;
+  const preparationPlan = {
+    upfrontAmountCents: resolvedUpfront,
+    frequency: resolvedFrequency,
+    numberOfInstalments: resolvedInstalments,
+    firstPaymentDate: resolvedFirstPaymentDate,
+  };
+  const preparationKey = shouldPrepareDirectDebit({
+    studentValid,
+    alreadyCreated,
+    payInFull: isPayInFull,
+    reviewMode: Boolean(reviewMode),
+    setupComplete,
+  })
+    ? directDebitPreparationKey({ student: resolvedStudent, plan: preparationPlan })
+    : null;
+  preparationKeyRef.current = preparationKey;
+  preparationContextRef.current = {
+    student: resolvedStudent,
+    plan: preparationPlan,
+  };
   const alreadyConfirmed = confirmed || isConfirmedCheckoutStatus(checkoutStatus || undefined);
   const providerAgreement = course.providerStudentAgreement || null;
   const psaRequired = Boolean(providerAgreement);
@@ -788,6 +841,37 @@ export function NzEnrolmentCheckout({
     ddaFocusedRef.current = true;
   }, [ddaReturn, setupComplete]);
 
+  useEffect(() => {
+    if (!preparationKey) {
+      setPreparationState("idle");
+      return;
+    }
+    const key = preparationKey;
+    setPreparationState("idle");
+    setPrepareMs(null);
+    const timer = window.setTimeout(() => {
+      if (preparationKeyRef.current !== key) {
+        return;
+      }
+      setPreparationState("preparing");
+      void preparationQueueRef.current
+        .request(key, () => postPreparationRef.current(key))
+        .then((result) => {
+          if (preparationKeyRef.current !== key) {
+            return;
+          }
+          if (result.ok) {
+            setPreparationState("ready");
+            return;
+          }
+          if (!result.superseded && result.message) {
+            setPreparationState("failed");
+          }
+        });
+    }, DIRECT_DEBIT_PREPARATION_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [preparationKey]);
+
   function updateStudent<K extends keyof NzStudentDetails>(
     key: K,
     value: NzStudentDetails[K],
@@ -910,6 +994,72 @@ export function NzEnrolmentCheckout({
     }
   }
 
+  async function postPreparation(key: string): Promise<DirectDebitPreparationResult> {
+    const started = performance.now();
+    const revision = ++preparationRevisionRef.current;
+    const context = preparationContextRef.current;
+    if (directDebitPreparationKey(context) !== key) {
+      return { ok: false, message: "", superseded: true };
+    }
+    const createPlan = hostedCheckoutCreatePlan({
+      mode: paymentMode,
+      selectedOption: resolvedPaymentOption,
+      plan: context.plan,
+    });
+    if (!createPlan || createPlan.paymentOption !== "interest_free_payment_plan") {
+      return { ok: false, message: "Complete your details before setting up Direct Debit." };
+    }
+    persistDraft();
+    try {
+      const response = await fetch("/api/enrolment-checkout", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          providerSlug: tenant.slug,
+          courseSlug: course.slug,
+          student: context.student,
+          plan: createPlan,
+          preparationRevision: revision,
+          preparationBrowserId: preparationBrowserIdRef.current,
+        }),
+      });
+      const json = (await response.json().catch(() => ({}))) as StatusPayload & {
+        success?: boolean;
+        session_superseded?: boolean;
+        direct_debit?: { setup_url?: string | null; setup_complete?: boolean };
+        error?: { message?: string; invalid_fields?: Record<string, string> };
+      };
+      if (preparationRevisionRef.current !== revision || json.session_superseded) {
+        return { ok: false, message: "", superseded: true };
+      }
+      if (!response.ok || json.success === false) {
+        return {
+          ok: false,
+          message: json.error?.message || "Unable to create this enrolment.",
+        };
+      }
+      const nextSetupUrl = json.direct_debit?.setup_url || "";
+      if (!nextSetupUrl) {
+        return { ok: false, message: "Unable to start Direct Debit setup." };
+      }
+      if (preparationKeyRef.current === key) {
+        setPrepareMs(Math.round(performance.now() - started));
+      }
+      return {
+        ok: true,
+        setupUrl: nextSetupUrl,
+        checkoutId: json.checkout?.checkout_id || null,
+      };
+    } catch (caught) {
+      return {
+        ok: false,
+        message: caught instanceof Error ? caught.message : "Unable to create this enrolment.",
+      };
+    }
+  }
+  postPreparationRef.current = postPreparation;
+
   async function startDirectDebitSetup() {
     if (reviewMode) {
       const nextErrors = validateStudentDetails(resolvedStudent);
@@ -949,6 +1099,8 @@ export function NzEnrolmentCheckout({
     }
 
     ddaOpeningRef.current = true;
+    setAwaitingDirectDebit(true);
+    const openedAt = performance.now();
     let sameTabUrl: string | null = null;
     try {
       const result = await runDdaSetupClick({
@@ -991,11 +1143,41 @@ export function NzEnrolmentCheckout({
           };
         },
         async createOrLoad() {
-          const url = alreadyCreated ? setupUrl : await createCheckout();
-          if (!url) {
-            throw new Error("Unable to start Direct Debit setup.");
+          if (alreadyCreated && setupUrl) {
+            setOpenMs(Math.round(performance.now() - openedAt));
+            return { setupUrl };
           }
-          return { setupUrl: url };
+          const key = preparationKeyRef.current;
+          if (!key) {
+            const url = await createCheckout();
+            if (!url) {
+              throw new Error("Unable to start Direct Debit setup.");
+            }
+            setOpenMs(Math.round(performance.now() - openedAt));
+            return { setupUrl: url };
+          }
+          const prepared = await preparationQueueRef.current.request(key, () =>
+            postPreparationRef.current(key),
+          );
+          setOpenMs(Math.round(performance.now() - openedAt));
+          if (preparationKeyRef.current !== key) {
+            throw new Error("Your details changed. Set up Direct Debit again.");
+          }
+          if (!prepared.ok || !prepared.setupUrl) {
+            const message =
+              !prepared.ok && prepared.message
+                ? prepared.message
+                : "Unable to start Direct Debit setup.";
+            setError(message);
+            setSectionErrors((current) => ({ ...current, dda: message }));
+            throw new Error(message);
+          }
+          setSetupUrl(prepared.setupUrl);
+          if (prepared.checkoutId) {
+            setCheckoutId(prepared.checkoutId);
+          }
+          setSectionErrors((current) => ({ ...current, dda: undefined }));
+          return { setupUrl: prepared.setupUrl };
         },
       });
       if (result.closedPopupOnError) {
@@ -1007,6 +1189,7 @@ export function NzEnrolmentCheckout({
       }
     } finally {
       ddaOpeningRef.current = false;
+      setAwaitingDirectDebit(false);
     }
     if (sameTabUrl) {
       window.location.assign(sameTabUrl);
@@ -1734,6 +1917,15 @@ export function NzEnrolmentCheckout({
             <p className={styles.lead}>
               {copy.studentLead}
             </p>
+            {!isPayInFull && !reviewMode ? (
+              <p className={styles.note} data-testid="nz-details-preparation-notice">
+                {studentDetailsPreparationNotice(tenant.legalName).beforeLink}
+                <a href={tenant.privacyUrl} target="_blank" rel="noreferrer">
+                  {studentDetailsPreparationNotice(tenant.legalName).linkLabel}
+                </a>
+                {studentDetailsPreparationNotice(tenant.legalName).afterLink}
+              </p>
+            ) : null}
             {sectionErrors.student ? (
               <p className={styles.error} role="alert">
                 {sectionErrors.student}
@@ -1958,17 +2150,25 @@ export function NzEnrolmentCheckout({
                           ? "ready"
                           : "blocked"
                     }
+                    data-dda-preparation={preparationState}
+                    data-dda-prepare-ms={prepareMs ?? undefined}
+                    data-dda-open-ms={openMs ?? undefined}
                   >
                     <div className={styles.ddaStatusActions}>
                       <button
                         type="button"
                         className={`${styles.btn} ${styles.btnPrimary} ${styles.btnBlock}`}
-                        disabled={(!canCreate && !alreadyCreated) || busy || ddaPopupOpen}
+                        disabled={
+                          (!canCreate && !alreadyCreated) ||
+                          busy ||
+                          awaitingDirectDebit ||
+                          ddaPopupOpen
+                        }
                         aria-describedby={ddaHelpId}
                         onClick={() => void startDirectDebitSetup()}
                       >
                         {directDebitActionLabel({
-                          busy,
+                          busy: busy || awaitingDirectDebit,
                           popupOpen: ddaPopupOpen,
                           alreadyCreated,
                           authorisationReady,
