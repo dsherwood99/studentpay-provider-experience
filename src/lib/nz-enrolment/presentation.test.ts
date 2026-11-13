@@ -296,6 +296,8 @@ describe("provider-specific hosted favicon", () => {
     assert.match(layout, /tenantFaviconPath/);
     assert.match(layout, /icons:/);
     assert.doesNotMatch(rootLayout, /nz-enrolment\/oli\/favicon/);
+    assert.doesNotMatch(rootLayout, /next\/font\/google/);
+    assert.match(rootLayout, /next\/font\/local/);
     assert.ok(rootFavicon.byteLength > 0);
     assert.ok(oliFavicon.byteLength > 0);
     assert.notEqual(oliFavicon.equals(rootFavicon), true);
