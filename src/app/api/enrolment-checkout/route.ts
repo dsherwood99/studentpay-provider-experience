@@ -20,6 +20,7 @@ import {
 import {
   claimPreparationRevision,
   directDebitPreparationKey,
+  hostedCheckoutAttemptOrderId,
   preparationPlanFromSelection,
   preparationRevisionIsCurrent,
   shouldWritePreparedSession,
@@ -189,6 +190,7 @@ type CreateBody = {
   providerOrderId?: string;
   preparationRevision?: number;
   preparationBrowserId?: string;
+  checkoutAttemptId?: string;
 };
 
 export async function POST(request: Request) {
@@ -356,12 +358,18 @@ export async function POST(request: Request) {
     student,
     plan: preparationPlanFromSelection(plan),
   });
-  const paymentPlanOrderId = resolveHostedCreateProviderOrderId({
-    session: sessionKey && sessionKey !== requestKey ? null : reusable,
-    providerSlug: tenant.slug,
-    courseSlug: course.slug,
-    fallbackOrderId: sessionKey && sessionKey !== requestKey ? hostedOrderId(tenant) : providerOrderId,
+  const attemptOrderId = hostedCheckoutAttemptOrderId({
+    attemptId: body.checkoutAttemptId,
+    providerCode: tenant.providerCode,
   });
+  const paymentPlanOrderId =
+    attemptOrderId ||
+    resolveHostedCreateProviderOrderId({
+      session: sessionKey && sessionKey !== requestKey ? null : reusable,
+      providerSlug: tenant.slug,
+      courseSlug: course.slug,
+      fallbackOrderId: sessionKey && sessionKey !== requestKey ? hostedOrderId(tenant) : providerOrderId,
+    });
   const requestRevision = Number.isInteger(body.preparationRevision)
     ? body.preparationRevision
     : null;

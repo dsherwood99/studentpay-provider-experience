@@ -35,8 +35,8 @@ import {
   shouldConfirmCheckout,
   shouldCreateCheckout,
   shouldPollDirectDebitStatus,
+  NZ_STUDENT_PRIVACY_LINK_LABEL,
   studentDetailsAreValid,
-  studentDetailsPreparationNotice,
   studentDetailsStarted,
 } from "@/lib/nz-enrolment/checkout-ui";
 import {
@@ -326,6 +326,38 @@ export function NzEnrolmentCheckout({
     typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "",
   );
   const preparationRevisionRef = useRef(0);
+  const checkoutAttemptRef = useRef<string | null>(null);
+  function checkoutAttemptId(): string {
+    if (checkoutAttemptRef.current) {
+      return checkoutAttemptRef.current;
+    }
+    const storageKey = `sp_nz_checkout_attempt:${tenant.slug}:${course.slug}`;
+    const minted = crypto.randomUUID();
+    let accepted: string | null = null;
+    try {
+      const stored = window.sessionStorage.getItem(storageKey);
+      accepted = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        stored || "",
+      )
+        ? stored
+        : null;
+      if (!accepted) {
+        window.sessionStorage.setItem(storageKey, minted);
+      }
+    } catch {
+      accepted = null;
+    }
+    checkoutAttemptRef.current = accepted || minted;
+    return checkoutAttemptRef.current;
+  }
+  function clearCheckoutAttempt(): void {
+    checkoutAttemptRef.current = null;
+    try {
+      window.sessionStorage.removeItem(`sp_nz_checkout_attempt:${tenant.slug}:${course.slug}`);
+    } catch {
+      // Storage may be unavailable.
+    }
+  }
   const preparationKeyRef = useRef<string | null>(null);
   const preparationContextRef = useRef({
     student: emptyStudent,
@@ -631,6 +663,7 @@ export function NzEnrolmentCheckout({
       if (isConfirmedCheckoutStatus(json.checkout.status)) {
         setConfirmed(true);
         clearStoredDraft(tenant.slug, course.slug);
+        clearCheckoutAttempt();
       }
     }
     if (json.agreement?.number) {
@@ -955,6 +988,9 @@ export function NzEnrolmentCheckout({
           courseSlug: course.slug,
           student: resolvedStudent,
           plan: createPlan,
+          ...(createPlan.paymentOption === "interest_free_payment_plan"
+            ? { checkoutAttemptId: checkoutAttemptId() }
+            : {}),
         }),
       });
       const json = (await response.json().catch(() => ({}))) as StatusPayload & {
@@ -1022,6 +1058,7 @@ export function NzEnrolmentCheckout({
           plan: createPlan,
           preparationRevision: revision,
           preparationBrowserId: preparationBrowserIdRef.current,
+          checkoutAttemptId: checkoutAttemptId(),
         }),
       });
       const json = (await response.json().catch(() => ({}))) as StatusPayload & {
@@ -1225,6 +1262,7 @@ export function NzEnrolmentCheckout({
       setConfirmed(true);
       setCheckoutStatus(json.checkout?.status || "confirmed");
       clearStoredDraft(tenant.slug, course.slug);
+      clearCheckoutAttempt();
       return json;
     }
     if (!response.ok || json.success === false) {
@@ -1238,6 +1276,7 @@ export function NzEnrolmentCheckout({
     setCheckoutStatus(json.checkout?.status || "confirmed");
     setConfirmed(true);
     clearStoredDraft(tenant.slug, course.slug);
+    clearCheckoutAttempt();
     return json;
   }
 
@@ -1426,6 +1465,7 @@ export function NzEnrolmentCheckout({
       setCheckoutStatus(json.checkout?.status || "confirmed");
       setConfirmed(true);
       clearStoredDraft(tenant.slug, course.slug);
+      clearCheckoutAttempt();
     } catch (caught) {
       const message =
         caught instanceof Error ? caught.message : "Unable to confirm this enrolment.";
@@ -1915,17 +1955,15 @@ export function NzEnrolmentCheckout({
             sectionRef={studentSectionRef}
           >
             <p className={styles.lead}>
-              {copy.studentLead}
+              {copy.studentLead}{" "}
+              <a
+                className={styles.privacyLink}
+                data-testid="nz-student-privacy-link"
+                href={tenant.privacyUrl}
+              >
+                {NZ_STUDENT_PRIVACY_LINK_LABEL}
+              </a>
             </p>
-            {!isPayInFull && !reviewMode ? (
-              <p className={styles.note} data-testid="nz-details-preparation-notice">
-                {studentDetailsPreparationNotice(tenant.legalName).beforeLink}
-                <a href={tenant.privacyUrl} target="_blank" rel="noreferrer">
-                  {studentDetailsPreparationNotice(tenant.legalName).linkLabel}
-                </a>
-                {studentDetailsPreparationNotice(tenant.legalName).afterLink}
-              </p>
-            ) : null}
             {sectionErrors.student ? (
               <p className={styles.error} role="alert">
                 {sectionErrors.student}

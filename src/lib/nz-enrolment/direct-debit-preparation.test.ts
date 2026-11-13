@@ -8,6 +8,7 @@ import {
   DirectDebitPreparationQueue,
   directDebitPreparationKey,
   claimPreparationRevision,
+  hostedCheckoutAttemptOrderId,
   preparationRevisionIsCurrent,
   shouldPrepareDirectDebit,
   shouldWritePreparedSession,
@@ -270,11 +271,34 @@ describe("direct debit preparation", () => {
     assert.match(route, /idempotencyKey: paymentPlanOrderId/);
     assert.match(route, /requireTenantKey\(tenant\)/);
     assert.doesNotMatch(route, /PROVIDER_API_KEY_OLI_NZ/);
-    assert.match(checkout, /nz-details-preparation-notice/);
+    assert.match(checkout, /nz-student-privacy-link/);
+    assert.doesNotMatch(checkout, /nz-details-preparation-notice/);
+    assert.doesNotMatch(checkout, /Completing these details sends them/);
+    assert.match(route, /hostedCheckoutAttemptOrderId/);
+    assert.match(checkout, /checkoutAttemptId: checkoutAttemptId\(\)/);
     assert.match(route, /shouldWritePreparedSession/);
     assert.match(route, /session_superseded/);
     assert.match(route, /sessionKey !== requestKey/);
     assert.doesNotMatch(confirm, /directDebitPreparationKey/);
     assert.doesNotMatch(confirm, /preparationRevision/);
+  });
+
+  it("builds the order id from a browser UUID and this provider", () => {
+    const attempt = "585db66c-6eaf-49f0-a30b-9447a8d5731c";
+    assert.equal(
+      hostedCheckoutAttemptOrderId({ attemptId: attempt, providerCode: "OLI_NZ" }),
+      `HOSTED-OLI_NZ-${attempt}`,
+    );
+    assert.equal(
+      hostedCheckoutAttemptOrderId({ attemptId: attempt, providerCode: "BELA_NZ" }),
+      `HOSTED-BELA_NZ-${attempt}`,
+    );
+    assert.equal(
+      hostedCheckoutAttemptOrderId({
+        attemptId: `HOSTED-OLI_NZ-${attempt}`,
+        providerCode: "OLI_NZ",
+      }),
+      null,
+    );
   });
 });

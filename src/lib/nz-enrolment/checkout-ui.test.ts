@@ -15,7 +15,7 @@ import {
   isGoCardlessHostedAuthorisationUrl,
   NZ_REMOVED_STEPPER_LABELS,
   NZ_STUDENT_DETAILS_COPY,
-  studentDetailsPreparationNotice,
+  NZ_STUDENT_PRIVACY_LINK_LABEL,
   combinedDetailsPrivacyAccepted,
   confirmEnabled,
   declarationsAccepted,
@@ -68,10 +68,7 @@ describe("single-page checkout presentation helpers", () => {
       "Complete",
     ]);
     assert.match(NZ_STUDENT_DETAILS_COPY.lead, /enrolment and StudentPay payment plan/);
-    const notice = studentDetailsPreparationNotice("Bela Beauty College");
-    assert.match(notice.beforeLink, /sends them to Bela Beauty College and StudentPay NZ/);
-    assert.equal(notice.linkLabel, "privacy information");
-    assert.match(notice.afterLink, /accept the payment plan separately/);
+    assert.equal(NZ_STUDENT_PRIVACY_LINK_LABEL, "Privacy information");
     assert.equal(NZ_DIRECT_DEBIT_CTA, "Set up Direct Debit");
     assert.equal(NZ_CONFIRM_CTA, "Confirm enrolment & activate payment plan");
     assert.equal(
