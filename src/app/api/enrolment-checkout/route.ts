@@ -18,8 +18,10 @@ import {
   resolveHostedPayInFullEligibility,
 } from "@/lib/nz-enrolment/pay-in-full";
 import {
+  claimPreparationRevision,
   directDebitPreparationKey,
   preparationPlanFromSelection,
+  preparationRevisionIsCurrent,
   shouldWritePreparedSession,
 } from "@/lib/nz-enrolment/direct-debit-preparation";
 import { isPayInFullOption, resolveHostedCreateProviderOrderId } from "@/lib/nz-enrolment/pay-in-full-flow";
@@ -186,6 +188,7 @@ type CreateBody = {
   plan?: Partial<NzPlanSelection>;
   providerOrderId?: string;
   preparationRevision?: number;
+  preparationBrowserId?: string;
 };
 
 export async function POST(request: Request) {
@@ -359,6 +362,25 @@ export async function POST(request: Request) {
     courseSlug: course.slug,
     fallbackOrderId: sessionKey && sessionKey !== requestKey ? hostedOrderId(tenant) : providerOrderId,
   });
+  const requestRevision = Number.isInteger(body.preparationRevision)
+    ? body.preparationRevision
+    : null;
+  const preparationBrowserId =
+    typeof body.preparationBrowserId === "string" ? body.preparationBrowserId : null;
+  if (
+    !claimPreparationRevision({
+      browserId: preparationBrowserId,
+      revision: requestRevision,
+    })
+  ) {
+    return Response.json({
+      success: true,
+      session_superseded: true,
+      payment_option: "interest_free_payment_plan",
+      direct_debit: { setup_url: null, setup_complete: false },
+      checkout: { checkout_id: null, status: null },
+    });
+  }
 
   const payload = buildCanonicalCreatePayload({
     tenant,
@@ -385,7 +407,7 @@ export async function POST(request: Request) {
     apiBaseUrl: apiBase.url,
     apiKey: key.apiKey,
     payload,
-    idempotencyKey: providerOrderId,
+    idempotencyKey: paymentPlanOrderId,
   });
 
   if (!upstream.body.success) {
@@ -410,11 +432,12 @@ export async function POST(request: Request) {
   const setupUrl = extractSetupUrl(upstream.body);
   const checkoutId = upstream.body.checkout?.checkout_id || "";
 
-  const requestRevision = Number.isInteger(body.preparationRevision)
-    ? body.preparationRevision
-    : null;
   const latestSession = await readNzSession();
   if (
+    !preparationRevisionIsCurrent({
+      browserId: preparationBrowserId,
+      revision: requestRevision,
+    }) ||
     !shouldWritePreparedSession({
       existingRevision: latestSession?.preparationRevision,
       requestRevision,

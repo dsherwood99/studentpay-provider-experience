@@ -36,6 +36,7 @@ import {
   shouldCreateCheckout,
   shouldPollDirectDebitStatus,
   studentDetailsAreValid,
+  studentDetailsPreparationNotice,
   studentDetailsStarted,
 } from "@/lib/nz-enrolment/checkout-ui";
 import {
@@ -321,6 +322,9 @@ export function NzEnrolmentCheckout({
   const [confirmCode, setConfirmCode] = useState<string | null>(null);
   const creatingRef = useRef(false);
   const preparationQueueRef = useRef(new DirectDebitPreparationQueue());
+  const preparationBrowserIdRef = useRef(
+    typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "",
+  );
   const preparationRevisionRef = useRef(0);
   const preparationKeyRef = useRef<string | null>(null);
   const preparationContextRef = useRef({
@@ -1017,6 +1021,7 @@ export function NzEnrolmentCheckout({
           student: context.student,
           plan: createPlan,
           preparationRevision: revision,
+          preparationBrowserId: preparationBrowserIdRef.current,
         }),
       });
       const json = (await response.json().catch(() => ({}))) as StatusPayload & {
@@ -1912,6 +1917,15 @@ export function NzEnrolmentCheckout({
             <p className={styles.lead}>
               {copy.studentLead}
             </p>
+            {!isPayInFull && !reviewMode ? (
+              <p className={styles.note} data-testid="nz-details-preparation-notice">
+                {studentDetailsPreparationNotice(tenant.legalName).beforeLink}
+                <a href={tenant.privacyUrl} target="_blank" rel="noreferrer">
+                  {studentDetailsPreparationNotice(tenant.legalName).linkLabel}
+                </a>
+                {studentDetailsPreparationNotice(tenant.legalName).afterLink}
+              </p>
+            ) : null}
             {sectionErrors.student ? (
               <p className={styles.error} role="alert">
                 {sectionErrors.student}

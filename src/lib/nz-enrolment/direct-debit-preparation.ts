@@ -49,6 +49,51 @@ export function directDebitPreparationKey(input: {
   });
 }
 
+const claimedPreparationRevision = new Map<string, number>();
+const MAX_PREPARATION_CLAIMS = 500;
+
+/**
+ * Same-process guard for overlapping checkout creates.
+ * A newer revision claims the browser tab. An older in-flight request
+ * must not replace that tab's session cookie when it finishes.
+ * Requests without a revision stay eligible so an ordinary click still saves.
+ */
+export function claimPreparationRevision(input: {
+  browserId?: string | null;
+  revision?: number | null;
+}): boolean {
+  const browserId = input.browserId?.trim() || "";
+  const revision = input.revision;
+  if (!browserId || revision == null || !Number.isInteger(revision)) {
+    return true;
+  }
+  const current = claimedPreparationRevision.get(browserId);
+  if (current != null && revision < current) {
+    return false;
+  }
+  if (current == null || revision > current) {
+    claimedPreparationRevision.set(browserId, revision);
+    if (claimedPreparationRevision.size > MAX_PREPARATION_CLAIMS) {
+      const oldest = claimedPreparationRevision.keys().next().value;
+      if (oldest) claimedPreparationRevision.delete(oldest);
+    }
+  }
+  return true;
+}
+
+export function preparationRevisionIsCurrent(input: {
+  browserId?: string | null;
+  revision?: number | null;
+}): boolean {
+  const browserId = input.browserId?.trim() || "";
+  const revision = input.revision;
+  if (!browserId || revision == null || !Number.isInteger(revision)) {
+    return true;
+  }
+  const current = claimedPreparationRevision.get(browserId);
+  return current == null || revision >= current;
+}
+
 export function shouldWritePreparedSession(input: {
   existingRevision?: number | null;
   requestRevision?: number | null;

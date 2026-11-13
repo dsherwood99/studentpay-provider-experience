@@ -7,6 +7,8 @@ import {
   DIRECT_DEBIT_PREPARATION_DEBOUNCE_MS,
   DirectDebitPreparationQueue,
   directDebitPreparationKey,
+  claimPreparationRevision,
+  preparationRevisionIsCurrent,
   shouldPrepareDirectDebit,
   shouldWritePreparedSession,
 } from "./direct-debit-preparation.ts";
@@ -100,6 +102,16 @@ describe("direct debit preparation", () => {
       }),
       original,
     );
+  });
+
+  it("keeps the newest overlapping preparation for one browser tab", () => {
+    const browserId = `tab-${Date.now()}`;
+    assert.equal(claimPreparationRevision({ browserId, revision: 1 }), true);
+    assert.equal(claimPreparationRevision({ browserId, revision: 2 }), true);
+    assert.equal(claimPreparationRevision({ browserId, revision: 1 }), false);
+    assert.equal(preparationRevisionIsCurrent({ browserId, revision: 1 }), false);
+    assert.equal(preparationRevisionIsCurrent({ browserId, revision: 2 }), true);
+    assert.equal(claimPreparationRevision({ browserId: null, revision: 1 }), true);
   });
 
   it("does not let an older preparation replace a newer session", () => {
@@ -254,6 +266,11 @@ describe("direct debit preparation", () => {
     assert.match(effect, /preparationQueueRef\.current/);
     assert.doesNotMatch(effect, /window\.open/);
     assert.match(checkout, /onClick=\{\(\) => void startDirectDebitSetup\(\)\}/);
+    assert.match(route, /claimPreparationRevision/);
+    assert.match(route, /idempotencyKey: paymentPlanOrderId/);
+    assert.match(route, /requireTenantKey\(tenant\)/);
+    assert.doesNotMatch(route, /PROVIDER_API_KEY_OLI_NZ/);
+    assert.match(checkout, /nz-details-preparation-notice/);
     assert.match(route, /shouldWritePreparedSession/);
     assert.match(route, /session_superseded/);
     assert.match(route, /sessionKey !== requestKey/);
