@@ -333,3 +333,10 @@ Pay in full is modelled as **Payment in Full of Course Fees** (`comingSoon`) and
 must not block launch. It is not a payment-plan upfront payment. No Stripe or
 other pay-in-full processor is included.
 
+---
+
+## OLI Phase 2 (November 2026)
+
+C1/C2/C3 are complete. Student-facing application recovery is not planned.
+See [`oli-phase-2-enrolment-closeout.md`](./oli-phase-2-enrolment-closeout.md).
+
