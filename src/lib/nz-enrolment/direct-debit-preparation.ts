@@ -4,6 +4,22 @@ import { sanitiseStudent } from "./validation.ts";
 /** Wait after details become valid before the existing checkout create runs. */
 export const DIRECT_DEBIT_PREPARATION_DEBOUNCE_MS = 650;
 
+const ATTEMPT_UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** The browser sends a UUID. This server adds the provider, so the order id cannot be chosen for another provider. */
+export function hostedCheckoutAttemptOrderId(input: {
+  attemptId?: string | null;
+  providerCode: string;
+}): string | null {
+  const attemptId = input.attemptId?.trim() || "";
+  const providerCode = input.providerCode.trim();
+  if (!ATTEMPT_UUID.test(attemptId) || !/^[A-Z0-9_]+$/.test(providerCode)) {
+    return null;
+  }
+  return `HOSTED-${providerCode}-${attemptId.toLowerCase()}`;
+}
+
 export function shouldPrepareDirectDebit(input: {
   studentValid: boolean;
   alreadyCreated: boolean;

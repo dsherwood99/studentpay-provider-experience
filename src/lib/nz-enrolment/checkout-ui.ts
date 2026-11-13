@@ -25,18 +25,8 @@ export const NZ_STUDENT_DETAILS_COPY = {
   lead: "We'll use these details to set up your enrolment and StudentPay payment plan.",
 } as const;
 
-/** Shown before the fields. Preparation sends these details once they are valid. */
-export function studentDetailsPreparationNotice(legalName: string): {
-  beforeLink: string;
-  linkLabel: string;
-  afterLink: string;
-} {
-  return {
-    beforeLink: `Completing these details sends them to ${legalName} and StudentPay NZ to prepare your enrolment. Read the `,
-    linkLabel: "privacy information",
-    afterLink: ". You accept the payment plan separately before it is final.",
-  };
-}
+export const NZ_STUDENT_PRIVACY_LINK_LABEL = "Privacy information";
+export const STUDENTPAY_NZ_URL = "https://www.studentpay.co.nz/";
 
 export const NZ_PAYMENT_PLAN_COPY = {
   heading: "Your payment plan",

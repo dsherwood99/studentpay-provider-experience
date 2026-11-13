@@ -11,6 +11,7 @@ import {
 import {
   POWERED_BY_LABEL,
   STANDALONE_DETAILS_CONFIRMATION_COPY,
+  STUDENTPAY_NZ_URL,
   STUDENTPAY_POWERED_BY_LOGO_ALT,
   STUDENTPAY_POWERED_BY_LOGO_SRC,
   combinedDetailsPrivacyAccepted,
@@ -107,6 +108,9 @@ describe("OLI Hosted checkout UX polish", () => {
       STUDENTPAY_POWERED_BY_LOGO_SRC.replace(/^\//, ""),
     );
     assert.equal(fs.existsSync(logoPath), true);
+    assert.equal(STUDENTPAY_NZ_URL, "https://www.studentpay.co.nz/");
+    assert.match(attributionSource, /href=\{STUDENTPAY_NZ_URL\}/);
+    assert.doesNotMatch(attributionSource, /studentpay\.com\.au/);
     assert.match(attributionSource, /data-testid="nz-studentpay-attribution"/);
     assert.equal(POWERED_BY_LABEL, "Powered by");
     assert.equal(STUDENTPAY_POWERED_BY_LOGO_SRC, "/nz-enrolment/studentpay-powered-by.png");
