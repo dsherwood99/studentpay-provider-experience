@@ -14,7 +14,10 @@ import {
   formatCurrency,
   formatPaymentFrequency,
 } from "@/lib/format";
-import { getAuPaymentPlanCourseForProvider } from "@/lib/au-enrolment/courses";
+import {
+  getAuPaymentPlanCourseForProvider,
+  isAuPaymentPlanRouteEnabled,
+} from "@/lib/au-enrolment/courses";
 import { isCatalogueProvider } from "@/lib/provider-experience/catalogue";
 import { getCatalogueCourse } from "@/lib/provider-experience/catalogue-server";
 import { getProviderExperienceConfig } from "@/lib/provider-experience/checkout";
@@ -71,6 +74,10 @@ export default async function CourseDetailPage({
   );
 
   if (auPaymentPlanCourse) {
+    if (!isAuPaymentPlanRouteEnabled(provider.slug)) {
+      notFound();
+    }
+
     return (
       <AuPaymentPlanCoursePage
         provider={provider}

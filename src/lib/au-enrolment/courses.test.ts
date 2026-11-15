@@ -11,6 +11,7 @@ import {
   getAuPaymentPlanCourse,
   getAuPaymentPlanCourseForProvider,
   isAuPaymentPlanCheckoutBlocked,
+  isAuPaymentPlanRouteEnabled,
   KIT_NOT_INCLUDED,
   upfrontCollectionNote,
 } from "./courses.ts";
@@ -121,6 +122,46 @@ describe("Australian payment-plan demonstrations", () => {
       AU_PAYMENT_PLAN_DIRECTORY_PATH,
       "/providers/academy-australia/courses/au-payment-plans",
     );
+  });
+
+  it("hides the demonstration on NZ enrolment and Bela hosts", () => {
+    const previous = {
+      HOSTED_PRODUCT_MODE: process.env.HOSTED_PRODUCT_MODE,
+      STUDENTPAY_PROVIDER_CODE: process.env.STUDENTPAY_PROVIDER_CODE,
+      ACADEMY_PROVIDER_CODE: process.env.ACADEMY_PROVIDER_CODE,
+    };
+
+    try {
+      delete process.env.STUDENTPAY_PROVIDER_CODE;
+      delete process.env.ACADEMY_PROVIDER_CODE;
+      delete process.env.HOSTED_PRODUCT_MODE;
+      assert.equal(isAuPaymentPlanRouteEnabled("academy-australia"), true);
+      assert.equal(isAuPaymentPlanRouteEnabled("bela-beauty-college"), false);
+
+      process.env.HOSTED_PRODUCT_MODE = "nz_enrolment";
+      assert.equal(isAuPaymentPlanRouteEnabled("academy-australia"), false);
+
+      process.env.HOSTED_PRODUCT_MODE = "bela";
+      assert.equal(isAuPaymentPlanRouteEnabled("academy-australia"), false);
+
+      process.env.HOSTED_PRODUCT_MODE = "academy";
+      assert.equal(isAuPaymentPlanRouteEnabled("academy-australia"), true);
+
+      delete process.env.HOSTED_PRODUCT_MODE;
+      process.env.STUDENTPAY_PROVIDER_CODE = "BELA";
+      assert.equal(isAuPaymentPlanRouteEnabled("academy-australia"), false);
+
+      process.env.STUDENTPAY_PROVIDER_CODE = "ACADEMYAU";
+      assert.equal(isAuPaymentPlanRouteEnabled("academy-australia"), true);
+    } finally {
+      for (const [name, value] of Object.entries(previous)) {
+        if (value === undefined) {
+          delete process.env[name];
+        } else {
+          process.env[name] = value;
+        }
+      }
+    }
   });
 
   it("reproduces other verified weekly remainders without publishing them", () => {

@@ -1,3 +1,5 @@
+import { getHostedProductMode } from "../nz-enrolment/environment.ts";
+import { isProviderSlugBlockedByDeployment } from "../provider-experience/provider-bindings.ts";
 import {
   calculateAuWeeklySchedule,
   type AuWeeklySchedule,
@@ -107,6 +109,22 @@ export function isAuPaymentPlanCheckoutBlocked(
   courseSlug: string,
 ): boolean {
   return getAuPaymentPlanCourseForProvider(providerSlug, courseSlug) !== undefined;
+}
+
+/**
+ * The demonstration is for Academy Australia and the generic provider demo.
+ * NZ enrolment hosts and the Bela production host do not render it.
+ */
+export function isAuPaymentPlanRouteEnabled(providerSlug: string): boolean {
+  if (providerSlug !== ACADEMY_AUSTRALIA_PROVIDER_SLUG) {
+    return false;
+  }
+  if (isProviderSlugBlockedByDeployment(providerSlug)) {
+    return false;
+  }
+
+  const mode = getHostedProductMode();
+  return mode === "academy" || mode === "generic";
 }
 
 export function auPaymentPlanCoursePath(courseSlug: string): string {

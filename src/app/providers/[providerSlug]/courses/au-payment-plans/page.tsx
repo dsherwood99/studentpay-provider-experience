@@ -2,11 +2,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AuPaymentPlanDirectory } from "@/components/au-enrolment/AuPaymentPlanDirectory";
 import {
-  ACADEMY_AUSTRALIA_PROVIDER_SLUG,
   auPaymentPlanCourses,
+  isAuPaymentPlanRouteEnabled,
 } from "@/lib/au-enrolment/courses";
 import { getProviderBySlug } from "@/config/providers";
-import { isProviderSlugBlockedByDeployment } from "@/lib/provider-experience/provider-bindings";
 
 type AuPaymentPlanDirectoryPageProps = {
   params: Promise<{
@@ -26,10 +25,7 @@ export default async function AuPaymentPlanDirectoryPage({
 }: AuPaymentPlanDirectoryPageProps) {
   const { providerSlug } = await params;
 
-  if (
-    providerSlug !== ACADEMY_AUSTRALIA_PROVIDER_SLUG ||
-    isProviderSlugBlockedByDeployment(providerSlug)
-  ) {
+  if (!isAuPaymentPlanRouteEnabled(providerSlug)) {
     notFound();
   }
 
