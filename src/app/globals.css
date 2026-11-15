@@ -5091,3 +5091,255 @@ select {
     grid-template-columns: 1fr;
   }
 }
+
+/* Close the .harness-px-card h2 rule left open above, so the styles below stay global. */
+}
+
+.aa-au-demo {
+  padding: 8px 0 36px;
+}
+
+.aa-au-demo__panel {
+  display: grid;
+  gap: 12px;
+  max-width: 760px;
+  padding: 28px 32px;
+  border: 1.5px dashed rgba(239, 88, 101, 0.45);
+  border-radius: var(--radius-large);
+  background: var(--colour-white);
+}
+
+.aa-au-demo__panel h2 {
+  margin: 0;
+  color: var(--colour-charcoal-900);
+  font-size: clamp(1.7rem, 3vw, 2.2rem);
+  line-height: 1.1;
+}
+
+.aa-au-demo__panel p:not(.aa-script) {
+  margin: 0;
+  color: var(--colour-grey-500);
+}
+
+.au-plan-notice {
+  margin: 0 0 28px;
+  padding: 14px 16px;
+  border: 1px solid rgba(197, 123, 22, 0.35);
+  border-radius: var(--radius-medium);
+  background: #fff8ee;
+  color: var(--colour-charcoal-900);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.au-plan-notice strong {
+  font-weight: 800;
+}
+
+.au-plan-catalogue-link {
+  margin-bottom: 28px;
+}
+
+.au-plan-catalogue-link .au-plan-notice {
+  margin-bottom: 12px;
+}
+
+.au-plan-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.au-plan-card {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  border: 1px solid rgba(67, 70, 75, 0.1);
+  border-radius: var(--radius-large);
+  background: var(--colour-white);
+  box-shadow: var(--shadow-small);
+}
+
+.au-plan-card__kicker {
+  margin: 0 0 8px;
+  color: var(--colour-coral-500);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.au-plan-card h2 {
+  margin: 0 0 8px;
+  color: var(--colour-charcoal-900);
+  font-size: 1.55rem;
+  line-height: 1.15;
+}
+
+.au-plan-card h2 a:hover {
+  color: var(--colour-coral-500);
+}
+
+.au-plan-card__exclusion,
+.au-plan-card__inclusion,
+.au-plan-card__summary {
+  margin: 0 0 8px;
+  color: var(--colour-grey-500);
+  font-size: 0.92rem;
+}
+
+.au-plan-card__summary {
+  color: var(--colour-charcoal-900);
+  font-weight: 700;
+}
+
+.au-plan-facts dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+  margin: 16px 0 8px;
+}
+
+.au-plan-facts dt {
+  color: var(--colour-grey-500);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.au-plan-facts dd {
+  margin: 2px 0 0;
+  color: var(--colour-charcoal-900);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.au-plan-facts p {
+  margin: 8px 0 0;
+  color: var(--colour-grey-500);
+  font-size: 0.86rem;
+}
+
+.au-plan-card__actions {
+  display: grid;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+.au-plan-card__view {
+  color: var(--colour-charcoal-900);
+  font-size: 0.88rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.au-plan-card__view:hover {
+  color: var(--colour-coral-500);
+}
+
+.simple-course-visual--beauty {
+  background:
+    linear-gradient(135deg, rgba(239, 88, 101, 0.2), rgba(247, 160, 75, 0.15)),
+    #3d3d3d;
+}
+
+.au-plan-summary .button {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.au-plan-summary__note {
+  margin: 12px 0 0;
+  color: var(--colour-grey-500);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.au-plan-enrol__layout {
+  display: grid;
+  gap: 20px;
+  max-width: 820px;
+}
+
+.au-plan-status {
+  padding: 18px 20px;
+  border-radius: var(--radius-medium);
+  background: #fff4ef;
+  border: 1px solid rgba(239, 88, 101, 0.28);
+}
+
+.au-plan-status strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--colour-charcoal-900);
+}
+
+.au-plan-status p,
+.au-plan-enrol__back {
+  margin: 0;
+  color: var(--colour-grey-500);
+}
+
+.au-plan-pending {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.au-plan-pending li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid #ece5de;
+  color: var(--colour-charcoal-900);
+  font-weight: 700;
+}
+
+.au-plan-pending strong {
+  color: var(--colour-warning);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.au-plan-card__actions .button,
+.au-plan-summary .button,
+.au-plan-enrol .button {
+  width: 100%;
+  background: var(--colour-coral-500);
+  color: var(--colour-white);
+}
+
+.au-plan-enrol .button.au-plan-disabled,
+.au-plan-enrol .button.au-plan-disabled:hover {
+  transform: none;
+  cursor: not-allowed;
+  background: #efeae6;
+  color: var(--colour-charcoal-700);
+  border-color: var(--colour-grey-300);
+  box-shadow: none;
+  opacity: 1;
+}
+
+@media (max-width: 760px) {
+  .aa-au-demo__panel {
+    padding: 22px;
+  }
+
+  .au-plan-list,
+  .au-plan-facts dl {
+    grid-template-columns: 1fr;
+  }
+
+  .au-plan-pending li {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 4px;
+  }
+}

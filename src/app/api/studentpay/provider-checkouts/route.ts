@@ -1,3 +1,4 @@
+import { isAuPaymentPlanCheckoutBlocked } from "@/lib/au-enrolment/courses";
 import { reviewModeMutationResponse } from "@/lib/nz-enrolment/review-mode";
 import {
   academyAustralia,
@@ -335,6 +336,14 @@ export async function POST(request: Request) {
 
   if (!provider) {
     return jsonError(404, "PROVIDER_NOT_FOUND", "Provider not found.");
+  }
+
+  if (isAuPaymentPlanCheckoutBlocked(provider.slug, courseSlug)) {
+    return jsonError(
+      403,
+      "AU_PREVIEW_NOT_SUBMITTABLE",
+      "This Australian payment-plan demonstration is not connected to checkout.",
+    );
   }
 
   if (isCatalogueProvider(provider)) {
