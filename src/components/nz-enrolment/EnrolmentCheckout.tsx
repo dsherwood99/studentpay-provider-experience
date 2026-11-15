@@ -359,6 +359,7 @@ export function NzEnrolmentCheckout({
     }
   }
   const preparationKeyRef = useRef<string | null>(null);
+  const preparedDetailKeyRef = useRef<string | null>(null);
   const preparationContextRef = useRef({
     student: emptyStudent,
     plan: {
@@ -651,6 +652,9 @@ export function NzEnrolmentCheckout({
     }
     if (json.direct_debit?.setup_url) {
       setSetupUrl(json.direct_debit.setup_url);
+      if (!preparedDetailKeyRef.current && preparationKeyRef.current) {
+        preparedDetailKeyRef.current = preparationKeyRef.current;
+      }
     }
     if (json.direct_debit?.setup_complete) {
       setSetupComplete(true);
@@ -875,6 +879,9 @@ export function NzEnrolmentCheckout({
   }, [ddaReturn, setupComplete]);
 
   useEffect(() => {
+    if (preparedDetailKeyRef.current) {
+      return;
+    }
     if (!preparationKey) {
       setPreparationState("idle");
       return;
@@ -883,7 +890,7 @@ export function NzEnrolmentCheckout({
     setPreparationState("idle");
     setPrepareMs(null);
     const timer = window.setTimeout(() => {
-      if (preparationKeyRef.current !== key) {
+      if (preparationKeyRef.current !== key || preparedDetailKeyRef.current) {
         return;
       }
       setPreparationState("preparing");
@@ -893,13 +900,18 @@ export function NzEnrolmentCheckout({
           if (preparationKeyRef.current !== key) {
             return;
           }
-          if (result.ok) {
-            setPreparationState("ready");
+          if (!result.ok) {
+            if (!result.superseded && result.message) {
+              setPreparationState("failed");
+            }
             return;
           }
-          if (!result.superseded && result.message) {
-            setPreparationState("failed");
+          preparedDetailKeyRef.current = key;
+          setSetupUrl(result.setupUrl);
+          if (result.checkoutId) {
+            setCheckoutId(result.checkoutId);
           }
+          setPreparationState("ready");
         });
     }, DIRECT_DEBIT_PREPARATION_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
@@ -1139,11 +1151,18 @@ export function NzEnrolmentCheckout({
     setAwaitingDirectDebit(true);
     const openedAt = performance.now();
     let sameTabUrl: string | null = null;
+    const detailKey = directDebitPreparationKey({
+      student: resolvedStudent,
+      plan: preparationPlan,
+    });
+    const detailsChanged =
+      Boolean(preparedDetailKeyRef.current) && preparedDetailKeyRef.current !== detailKey;
+    const reusableSetupUrl = detailsChanged ? "" : setupUrl;
     try {
       const result = await runDdaSetupClick({
         popupOpen: false,
-        alreadyCreated,
-        setupUrl,
+        alreadyCreated: Boolean(reusableSetupUrl),
+        setupUrl: reusableSetupUrl,
         setupComplete,
         canCreate: canCreate || Boolean(alreadyCreated && setupUrl),
         preferDesktopPopup: shouldUseDesktopDdaPopup({
@@ -1180,26 +1199,18 @@ export function NzEnrolmentCheckout({
           };
         },
         async createOrLoad() {
-          if (alreadyCreated && setupUrl) {
+          const key = directDebitPreparationKey({
+            student: resolvedStudent,
+            plan: preparationPlan,
+          });
+          if (setupUrl && preparedDetailKeyRef.current === key) {
             setOpenMs(Math.round(performance.now() - openedAt));
             return { setupUrl };
-          }
-          const key = preparationKeyRef.current;
-          if (!key) {
-            const url = await createCheckout();
-            if (!url) {
-              throw new Error("Unable to start Direct Debit setup.");
-            }
-            setOpenMs(Math.round(performance.now() - openedAt));
-            return { setupUrl: url };
           }
           const prepared = await preparationQueueRef.current.request(key, () =>
             postPreparationRef.current(key),
           );
           setOpenMs(Math.round(performance.now() - openedAt));
-          if (preparationKeyRef.current !== key) {
-            throw new Error("Your details changed. Set up Direct Debit again.");
-          }
           if (!prepared.ok || !prepared.setupUrl) {
             const message =
               !prepared.ok && prepared.message
@@ -1209,6 +1220,7 @@ export function NzEnrolmentCheckout({
             setSectionErrors((current) => ({ ...current, dda: message }));
             throw new Error(message);
           }
+          preparedDetailKeyRef.current = key;
           setSetupUrl(prepared.setupUrl);
           if (prepared.checkoutId) {
             setCheckoutId(prepared.checkoutId);
