@@ -76,6 +76,12 @@ import {
   authoritativePayInFullPriceCents,
 } from "@/lib/nz-enrolment/pay-in-full";
 import {
+  entryClickDelta,
+  navigationTiming,
+  numericJourneyTimings,
+  recordJourneyMark,
+} from "@/lib/nz-enrolment/journey-timings";
+import {
   enrolmentCompleteFromBrowser,
   isPayInFullOption,
   payInFullDeclarationsAccepted,
@@ -875,17 +881,30 @@ export function NzEnrolmentCheckout({
   }, [ddaReturn, setupComplete]);
 
   useEffect(() => {
+    recordJourneyMark("checkout_hydrated", {
+      ...navigationTiming(),
+      ...entryClickDelta(),
+    });
+    const frame = window.requestAnimationFrame(() => {
+      recordJourneyMark("checkout_usable", entryClickDelta());
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
     if (!preparationKey) {
       setPreparationState("idle");
       return;
     }
     const key = preparationKey;
+    recordJourneyMark("student_details_valid");
     setPreparationState("idle");
     setPrepareMs(null);
     const timer = window.setTimeout(() => {
       if (preparationKeyRef.current !== key) {
         return;
       }
+      recordJourneyMark("preparation_request_start");
       setPreparationState("preparing");
       void preparationQueueRef.current
         .request(key, () => postPreparationRef.current(key))
@@ -1064,6 +1083,7 @@ export function NzEnrolmentCheckout({
       const json = (await response.json().catch(() => ({}))) as StatusPayload & {
         success?: boolean;
         session_superseded?: boolean;
+        timings?: Record<string, unknown>;
         direct_debit?: { setup_url?: string | null; setup_complete?: boolean };
         error?: { message?: string; invalid_fields?: Record<string, string> };
       };
@@ -1081,7 +1101,12 @@ export function NzEnrolmentCheckout({
         return { ok: false, message: "Unable to start Direct Debit setup." };
       }
       if (preparationKeyRef.current === key) {
-        setPrepareMs(Math.round(performance.now() - started));
+        const browserMs = Math.round(performance.now() - started);
+        setPrepareMs(browserMs);
+        recordJourneyMark("preparation_completed", {
+          browser_ms: browserMs,
+          ...numericJourneyTimings(json.timings),
+        });
       }
       return {
         ok: true,
@@ -1137,6 +1162,10 @@ export function NzEnrolmentCheckout({
 
     ddaOpeningRef.current = true;
     setAwaitingDirectDebit(true);
+    recordJourneyMark("direct_debit_clicked", {
+      preparation: preparationState,
+      had_setup_url: setupUrl ? 1 : 0,
+    });
     const openedAt = performance.now();
     let sameTabUrl: string | null = null;
     try {
@@ -1181,7 +1210,9 @@ export function NzEnrolmentCheckout({
         },
         async createOrLoad() {
           if (alreadyCreated && setupUrl) {
-            setOpenMs(Math.round(performance.now() - openedAt));
+            const openMs = Math.round(performance.now() - openedAt);
+            setOpenMs(openMs);
+            recordJourneyMark("gocardless_url_applied", { browser_ms: openMs, ready: 1 });
             return { setupUrl };
           }
           const key = preparationKeyRef.current;
@@ -1190,13 +1221,20 @@ export function NzEnrolmentCheckout({
             if (!url) {
               throw new Error("Unable to start Direct Debit setup.");
             }
-            setOpenMs(Math.round(performance.now() - openedAt));
+            const openMs = Math.round(performance.now() - openedAt);
+            setOpenMs(openMs);
+            recordJourneyMark("gocardless_url_applied", { browser_ms: openMs, ready: 0 });
             return { setupUrl: url };
           }
           const prepared = await preparationQueueRef.current.request(key, () =>
             postPreparationRef.current(key),
           );
-          setOpenMs(Math.round(performance.now() - openedAt));
+          const openMs = Math.round(performance.now() - openedAt);
+          setOpenMs(openMs);
+          recordJourneyMark("gocardless_url_applied", {
+            browser_ms: openMs,
+            ready: prepared.ok ? 1 : 0,
+          });
           if (preparationKeyRef.current !== key) {
             throw new Error("Your details changed. Set up Direct Debit again.");
           }
@@ -1454,10 +1492,19 @@ export function NzEnrolmentCheckout({
         already_confirmed?: boolean;
         timings?: Record<string, unknown>;
       };
-      setConfirmBrowserMs(Math.round(performance.now() - confirmStarted));
+      const confirmBrowserMs = Math.round(performance.now() - confirmStarted);
+      setConfirmBrowserMs(confirmBrowserMs);
       if (json.timings && typeof json.timings === "object") {
         setConfirmServerTimings(json.timings);
       }
+      recordJourneyMark("confirm_response", {
+        browser_ms: confirmBrowserMs,
+        http_ok: response.ok ? 1 : 0,
+        ...numericJourneyTimings(json.timings),
+      });
+      window.requestAnimationFrame(() => {
+        recordJourneyMark("confirm_rendered");
+      });
       if (!response.ok || json.success === false) {
         throw new Error(json.error?.message || "Unable to confirm this enrolment.");
       }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { headers } from "next/headers";
 import { PlatformFooter } from "@/components/layout/PlatformFooter";
 import { PlatformHeader } from "@/components/layout/PlatformHeader";
 import { isNzEnrolmentProductAvailable } from "@/lib/nz-enrolment/environment";
@@ -57,10 +58,11 @@ const dmSans = localFont({
   display: "swap",
 });
 
-export function generateMetadata(): Metadata {
-  const brand = getPlatformBrand();
+export async function generateMetadata(): Promise<Metadata> {
+  const academyTestPage = (await headers()).get("x-academy-nz-test-page") === "1";
+  const brand = academyTestPage ? "academy-australia" : getPlatformBrand();
 
-  if (isNzEnrolmentProductAvailable()) {
+  if (!academyTestPage && isNzEnrolmentProductAvailable()) {
     const tenants = listActiveNzTenants();
     const defaultSlug = getDefaultProductionNzTenantSlug(tenants);
     const tenant = tenants.find((item) => item.slug === defaultSlug);
@@ -107,13 +109,14 @@ export function generateMetadata(): Metadata {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const brand = getPlatformBrand();
-  const nzEnrolment = isNzEnrolmentProductAvailable();
+  const academyTestPage = (await headers()).get("x-academy-nz-test-page") === "1";
+  const brand = academyTestPage ? "academy-australia" : getPlatformBrand();
+  const nzEnrolment = isNzEnrolmentProductAvailable() && !academyTestPage;
   const bodyClassName =
     brand === "academy-australia"
       ? `${plusJakarta.variable} ${caveat.variable} platform--academy-australia`

@@ -68,6 +68,9 @@ export async function generateMetadata({ params }: EnrolmentPageProps) {
   return {
     title: `${course.name} | ${titleTenant?.displayName || tenant.displayName}`,
     description: `Enrol in ${course.name} with ${paymentLabel} from ${titleTenant?.displayName || tenant.displayName}.`,
+    ...(tenant.sandboxCheckoutOnly
+      ? { robots: { index: false, follow: false } }
+      : {}),
   };
 }
 

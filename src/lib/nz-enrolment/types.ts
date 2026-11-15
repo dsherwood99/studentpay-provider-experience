@@ -165,6 +165,11 @@ export type NzTenant = {
   apiKeyEnv: string;
   active: boolean;
   sandboxOnly?: boolean;
+  /**
+   * Sandbox comparison tenant. Hidden on every production host, including a
+   * deployment that binds this slug. Never a live provider.
+   */
+  sandboxCheckoutOnly?: boolean;
   /** Hidden unless E13_INTERNAL_CANARY_HOSTED_ENABLED=true in Production. */
   internalCanary?: boolean;
 };
@@ -224,6 +229,8 @@ export type NzCourse = {
   showWhenEnrolmentClosed?: boolean;
   websiteUrl?: string;
   sandboxOnly?: boolean;
+  /** Visible only when STUDENTPAY_ENV=sandbox. A bound production host cannot reveal it. */
+  sandboxCheckoutOnly?: boolean;
   internalCanary?: boolean;
   duration?: string;
   planPolicy: NzPlanPolicy;
@@ -403,6 +410,7 @@ export type CanonicalCheckoutResult = {
     processor_status?: string;
     authorisation_ready?: boolean;
     processing_state?: string | null;
+    timings?: Record<string, unknown>;
   };
   agreement?: {
     id?: string;
