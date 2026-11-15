@@ -198,6 +198,26 @@ export function AcademyAustraliaHomePage() {
         </div>
       </section>
 
+      <section className="aa-au-demo" id="au-payment-plans">
+        <div className="page-shell">
+          <div className="aa-au-demo__panel">
+            <p className="aa-script">Test environment</p>
+            <h2>Australian payment-plan demonstrations</h2>
+            <p>
+              A separate area for reviewing the Australian weekly enrolment
+              journey. These examples are not accredited Academy Australia
+              offerings.
+            </p>
+            <Link
+              href="/providers/academy-australia/courses/au-payment-plans"
+              className="button button--secondary"
+            >
+              View Australian plan demos
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <section className="aa-payment-banner" id="payment-options">
         <div className="page-shell aa-payment-banner__inner">
           <div className="aa-payment-banner__copy">

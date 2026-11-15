@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AuDemoNotice } from "@/components/au-enrolment/AuDemoNotice";
 import { CatalogueCourseCard } from "@/components/courses/CatalogueCourseCard";
 import { CatalogueUnavailable } from "@/components/courses/CatalogueUnavailable";
 import { CourseCard } from "@/components/courses/CourseCard";
 import { ProviderIdentity } from "@/components/providers/ProviderIdentity";
 import { getCoursesByProvider } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
+import { AU_PAYMENT_PLAN_DIRECTORY_PATH } from "@/lib/au-enrolment/courses";
 import { isCatalogueProvider } from "@/lib/provider-experience/catalogue";
 import { listCatalogueCourses } from "@/lib/provider-experience/catalogue-server";
 import { isProviderSlugBlockedByDeployment } from "@/lib/provider-experience/provider-bindings";
@@ -80,6 +82,16 @@ export default async function CourseCataloguePage({
 
       <section className="course-catalogue-content">
         <div className="page-shell">
+          {provider.slug === "academy-australia" && !catalogueMode ? (
+            <div className="au-plan-catalogue-link">
+              <AuDemoNotice />
+              <Link href={AU_PAYMENT_PLAN_DIRECTORY_PATH} className="provider-text-link">
+                View Australian plan demos
+                <span aria-hidden="true">→</span>
+              </Link>
+            </div>
+          ) : null}
+
           <div className="course-catalogue-toolbar">
             <div>
               <strong>

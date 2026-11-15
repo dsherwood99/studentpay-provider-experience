@@ -31,6 +31,9 @@ export function AcademyAustraliaFooter() {
           <div>
             <p className="platform-footer__heading">Explore</p>
             <Link href="/providers/academy-australia/courses">Courses</Link>
+            <Link href="/providers/academy-australia/courses/au-payment-plans">
+              AU plan demos
+            </Link>
             <Link href="/#payment-options">Payment options</Link>
             <Link href="/providers/academy-australia/courses/criminal-psychology/enrol">
               Enrol now

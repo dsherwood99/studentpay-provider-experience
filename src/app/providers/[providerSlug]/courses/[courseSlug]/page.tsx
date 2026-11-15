@@ -1,6 +1,8 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AuPaymentPlanCoursePage } from "@/components/au-enrolment/AuPaymentPlanCoursePage";
 import { CatalogueCoursePage } from "@/components/courses/CatalogueCoursePage";
 import { CatalogueUnavailable } from "@/components/courses/CatalogueUnavailable";
 import { FullStackCoursePage } from "@/components/courses/FullStackCoursePage";
@@ -12,6 +14,7 @@ import {
   formatCurrency,
   formatPaymentFrequency,
 } from "@/lib/format";
+import { getAuPaymentPlanCourseForProvider } from "@/lib/au-enrolment/courses";
 import { isCatalogueProvider } from "@/lib/provider-experience/catalogue";
 import { getCatalogueCourse } from "@/lib/provider-experience/catalogue-server";
 import { getProviderExperienceConfig } from "@/lib/provider-experience/checkout";
@@ -28,6 +31,23 @@ type CourseDetailPageProps = {
   }>;
 };
 
+export async function generateMetadata({
+  params,
+}: CourseDetailPageProps): Promise<Metadata> {
+  const { providerSlug, courseSlug } = await params;
+  const course = getAuPaymentPlanCourseForProvider(providerSlug, courseSlug);
+
+  if (!course) {
+    return {};
+  }
+
+  return {
+    title: `${course.title} | Australian payment-plan demonstration`,
+    description: `Academy Australia demonstration of the verified Australian weekly plan for ${course.title}.`,
+    robots: { index: false, follow: false },
+  };
+}
+
 export default async function CourseDetailPage({
   params,
   searchParams,
@@ -43,6 +63,20 @@ export default async function CourseDetailPage({
 
   if (!provider) {
     notFound();
+  }
+
+  const auPaymentPlanCourse = getAuPaymentPlanCourseForProvider(
+    provider.slug,
+    courseSlug,
+  );
+
+  if (auPaymentPlanCourse) {
+    return (
+      <AuPaymentPlanCoursePage
+        provider={provider}
+        course={auPaymentPlanCourse}
+      />
+    );
   }
 
   if (isCatalogueProvider(provider)) {

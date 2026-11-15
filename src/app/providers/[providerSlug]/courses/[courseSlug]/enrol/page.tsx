@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { AuPaymentPlanEnrolPreview } from "@/components/au-enrolment/AuPaymentPlanEnrolPreview";
 import { CatalogueUnavailable } from "@/components/courses/CatalogueUnavailable";
 import { CatalogueEnrolmentForm } from "@/components/enrolment/CatalogueEnrolmentForm";
 import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
+import { getAuPaymentPlanCourseForProvider } from "@/lib/au-enrolment/courses";
 import { isCatalogueProvider } from "@/lib/provider-experience/catalogue";
 import { getCatalogueCourse } from "@/lib/provider-experience/catalogue-server";
 import { isAcademyProductionDemo } from "@/lib/provider-experience/checkout";
@@ -17,6 +20,24 @@ type SandboxEnrolPageProps = {
     payment?: string;
   }>;
 };
+
+export async function generateMetadata({
+  params,
+}: SandboxEnrolPageProps): Promise<Metadata> {
+  const { providerSlug, courseSlug } = await params;
+  const course = getAuPaymentPlanCourseForProvider(providerSlug, courseSlug);
+
+  if (!course) {
+    return {};
+  }
+
+  return {
+    title: `${course.title} enrolment preview`,
+    description:
+      "Non-submittable Academy Australia preview of the Australian enrolment journey.",
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function SandboxEnrolPage({
   params,
@@ -34,6 +55,18 @@ export default async function SandboxEnrolPage({
   }
 
   const provider = getProviderBySlug(providerSlug);
+  const auPaymentPlanCourse = provider
+    ? getAuPaymentPlanCourseForProvider(provider.slug, courseSlug)
+    : undefined;
+
+  if (provider && auPaymentPlanCourse) {
+    return (
+      <AuPaymentPlanEnrolPreview
+        provider={provider}
+        course={auPaymentPlanCourse}
+      />
+    );
+  }
 
   if (isCatalogueProvider(provider)) {
     const catalogueCourse = await getCatalogueCourse(provider, courseSlug);
