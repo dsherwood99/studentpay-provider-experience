@@ -5,7 +5,10 @@ import { CatalogueUnavailable } from "@/components/courses/CatalogueUnavailable"
 import { CatalogueEnrolmentForm } from "@/components/enrolment/CatalogueEnrolmentForm";
 import { getCourseBySlug } from "@/config/courses";
 import { getProviderBySlug } from "@/config/providers";
-import { getAuPaymentPlanCourseForProvider } from "@/lib/au-enrolment/courses";
+import {
+  getAuPaymentPlanCourseForProvider,
+  isAuPaymentPlanRouteEnabled,
+} from "@/lib/au-enrolment/courses";
 import { isCatalogueProvider } from "@/lib/provider-experience/catalogue";
 import { getCatalogueCourse } from "@/lib/provider-experience/catalogue-server";
 import { isAcademyProductionDemo } from "@/lib/provider-experience/checkout";
@@ -60,6 +63,10 @@ export default async function SandboxEnrolPage({
     : undefined;
 
   if (provider && auPaymentPlanCourse) {
+    if (!isAuPaymentPlanRouteEnabled(provider.slug)) {
+      notFound();
+    }
+
     return (
       <AuPaymentPlanEnrolPreview
         provider={provider}
