@@ -95,6 +95,27 @@ const SANDBOX_FIXTURE_COURSES: readonly NzCourse[] = [
     },
   },
   {
+    courseCode: "ACADEMY_NZ_PHOTO_TEST",
+    slug: "professional-photography-nz-test",
+    providerSlug: "academy-nz-test",
+    name: "Professional Photography — NZ Test",
+    category: "Photography",
+    description:
+      "Illustrative New Zealand checkout test. This price and repayment schedule are for performance comparison with the OLI payment plan. They are not Academy Australia's commercial offering.",
+    paymentPlanCourseFeeCents: 183_425,
+    paymentInFullCourseFeeCents: 183_425,
+    enrolmentPaymentOptions: ["payment_plan"],
+    status: "active",
+    sandboxCheckoutOnly: true,
+    duration: "Test only",
+    planPolicy: {
+      mode: "derived_regular",
+      frequency: "Weekly",
+      regularInstalmentCents: 2500,
+      upfrontAmountCents: 0,
+    },
+  },
+  {
     courseCode: "E13_PROD_CANARY_001",
     slug: "e13-prod-canary-001",
     providerSlug: "studentpay-internal-e13",
@@ -133,6 +154,7 @@ function asCourse(row: {
   sortOrder?: number;
   sandboxOnly?: boolean;
   internalCanary?: boolean;
+  sandboxCheckoutOnly?: boolean;
   sourceRow?: number;
   planPolicy: NzPlanPolicy;
 }): NzCourse {
@@ -154,6 +176,7 @@ function asCourse(row: {
     websiteUrl: row.websiteUrl,
     sortOrder: row.sortOrder,
     sandboxOnly: row.sandboxOnly,
+    sandboxCheckoutOnly: row.sandboxCheckoutOnly,
     internalCanary: row.internalCanary,
     sourceRow: row.sourceRow,
     planPolicy: row.planPolicy,
@@ -233,6 +256,9 @@ function courseVisible(course: NzCourse): boolean {
     return isInternalE13CanaryHostedEnabled();
   }
   const boundSlug = configuredNzHostedTenantSlug();
+  if (course.sandboxCheckoutOnly) {
+    return allowSandboxFixtures() && (!boundSlug || course.providerSlug === boundSlug);
+  }
   if (boundSlug && course.providerSlug !== boundSlug) {
     return false;
   }

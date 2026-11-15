@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { SimpleEnrolmentCheckout } from "@/components/enrolment/SimpleEnrolmentCheckout";
 import type { Course } from "@/types/course";
 import type { EnrolmentPaymentOption } from "@/types/enrolment";
@@ -34,6 +35,7 @@ type SimpleEnrolmentCoursePageProps = {
   initialPaymentOption: EnrolmentPaymentOption;
   studentPayProviderCode?: string;
   legalApiBaseUrl?: string;
+  enrolment?: ReactNode;
 };
 
 export function SimpleEnrolmentCoursePage({
@@ -43,6 +45,7 @@ export function SimpleEnrolmentCoursePage({
   initialPaymentOption,
   studentPayProviderCode,
   legalApiBaseUrl,
+  enrolment,
 }: SimpleEnrolmentCoursePageProps) {
   return (
     <div className="simple-course-page">
@@ -153,13 +156,15 @@ export function SimpleEnrolmentCoursePage({
             </article>
           </div>
 
-          <SimpleEnrolmentCheckout
-            provider={provider}
-            course={course}
-            initialPaymentOption={initialPaymentOption}
-            studentPayProviderCode={studentPayProviderCode}
-            legalApiBaseUrl={legalApiBaseUrl}
-          />
+          {enrolment ?? (
+            <SimpleEnrolmentCheckout
+              provider={provider}
+              course={course}
+              initialPaymentOption={initialPaymentOption}
+              studentPayProviderCode={studentPayProviderCode}
+              legalApiBaseUrl={legalApiBaseUrl}
+            />
+          )}
         </div>
       </section>
     </div>

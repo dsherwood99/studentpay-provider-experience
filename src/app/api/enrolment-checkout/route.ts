@@ -9,7 +9,7 @@ import {
 } from "@/lib/nz-enrolment/canonical";
 import { isGoCardlessHostedAuthorisationUrl } from "@/lib/nz-enrolment/checkout-ui";
 import { jsonError } from "@/lib/nz-enrolment/errors";
-import { GENERIC_MAX_RECURRING_INSTALMENTS } from "@/lib/nz-enrolment/environment";
+import { GENERIC_MAX_RECURRING_INSTALMENTS, getStudentpayEnv } from "@/lib/nz-enrolment/environment";
 import { logNzEnrolmentEvent } from "@/lib/nz-enrolment/observability";
 import {
   authoritativePayInFullPriceCents,
@@ -194,6 +194,7 @@ type CreateBody = {
 };
 
 export async function POST(request: Request) {
+  const requestStarted = Date.now();
   const reviewBlocked = reviewModeMutationResponse();
   if (reviewBlocked) {
     return reviewBlocked;
@@ -411,12 +412,14 @@ export async function POST(request: Request) {
     residual: preview.hasResidualFinal,
   });
 
+  const apiStarted = Date.now();
   const upstream = await canonicalCreate({
     apiBaseUrl: apiBase.url,
     apiKey: key.apiKey,
     payload,
     idempotencyKey: paymentPlanOrderId,
   });
+  const apiMs = Date.now() - apiStarted;
 
   if (!upstream.body.success) {
     logNzEnrolmentEvent("checkout_failed", {
@@ -529,7 +532,30 @@ export async function POST(request: Request) {
       setupUrl,
       paymentOption: "interest_free_payment_plan",
     }),
+    ...(getStudentpayEnv() === "sandbox"
+      ? {
+          timings: {
+            bff_ms: Date.now() - requestStarted,
+            api_ms: apiMs,
+            ...numericTimings(upstream.body.direct_debit?.timings),
+          },
+        }
+      : {}),
   });
+}
+
+function numericTimings(value: unknown): Record<string, number> {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+  const timings: Record<string, number> = {};
+  for (const [key, item] of Object.entries(value)) {
+    if (!/^[a-z0-9_]+$/i.test(key) || typeof item !== "number" || !Number.isFinite(item)) {
+      continue;
+    }
+    timings[key] = Math.round(item);
+  }
+  return timings;
 }
 
 async function createPayInFullCheckout(input: {

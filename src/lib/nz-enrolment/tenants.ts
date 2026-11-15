@@ -280,6 +280,65 @@ export const NZ_TENANTS: readonly NzTenant[] = [
     sandboxOnly: true,
   },
   {
+    slug: "academy-nz-test",
+    providerCode: "ACADEMY_NZ_TEST",
+    displayName: "Academy Australia",
+    legalName: "Academy Australia (New Zealand checkout test — not a live provider)",
+    supportEmail: "enrolments@academyaustralia.com",
+    privacyUrl: "https://www.academyaustralia.com/",
+    termsUrl: "https://www.academyaustralia.com/",
+    websiteUrl: "https://www.academyaustralia.com/",
+    branding: {
+      logoPath: "/providers/academy-australia/academy-australia-logo.png",
+      primaryColour: "#EF5865",
+      secondaryColour: "#F7A04B",
+      accentColour: "#FFD8BD",
+      backgroundColour: "#FEF8F4",
+      surfaceColour: "#ffffff",
+      headingColour: "#3D3D3D",
+      mutedTextColour: "#6B6B6B",
+      textColour: "#3D3D3D",
+      fontFamily: 'var(--font-academy-sans), "Plus Jakarta Sans", sans-serif',
+      headingFontFamily: 'var(--font-academy-sans), "Plus Jakarta Sans", sans-serif',
+      ctaColour: "#EF5865",
+      ctaTextColour: "#ffffff",
+      buttonRadius: "medium",
+      headerStyle: "provider-native",
+      footerStyle: "provider-native",
+    },
+    presentation: defaultPresentation({
+      allowedHosts: ["academyaustralia.com", "www.academyaustralia.com"],
+      returnToProviderUrl:
+        "https://www.academyaustralia.com/providers/academy-australia/courses/professional-photography-nz-test",
+      returnToProviderLabel: "Return to the Academy Australia NZ test page",
+      knownCourseWebsiteSlugs: ["professional-photography-nz-test"],
+      headerLayout: "logo",
+      headerContextLabel: "New Zealand checkout test",
+      headerLinks: [
+        { label: "Academy Australia", href: "https://www.academyaustralia.com/" },
+      ],
+      attributionLabel: "Payments powered by StudentPay NZ",
+    }),
+    checkout: {
+      paymentOptions: {
+        interest_free_payment_plan: { enabled: true },
+        pay_in_full: { enabled: false, comingSoon: false },
+      },
+      availableFrequencies: ["Weekly"],
+      defaultFrequency: "Weekly",
+      maxFirstPaymentDelayDays: 7,
+      wording: {
+        ddaLead:
+          "You are setting up a Direct Debit authority with StudentPay NZ so instalments can be collected under this test payment plan. This is not a card payment and not an Australian enrolment.",
+        supportNote:
+          "New Zealand sandbox checkout test for Academy Australia. The price is illustrative and is not a live course fee.",
+      },
+    },
+    apiKeyEnv: "PROVIDER_API_KEY_ACADEMY_NZ_TEST",
+    active: true,
+    sandboxCheckoutOnly: true,
+  },
+  {
     slug: "studentpay-internal-e13",
     providerCode: "STUDENTPAY_INTERNAL_E13_CANARY",
     displayName: "StudentPay Internal E13 Canary",
@@ -330,6 +389,12 @@ function tenantVisible(tenant: NzTenant): boolean {
     return false;
   }
   const boundSlug = configuredNzHostedTenantSlug();
+  if (tenant.sandboxCheckoutOnly) {
+    return (
+      process.env.STUDENTPAY_ENV?.trim().toLowerCase() === "sandbox" &&
+      (!boundSlug || tenant.slug === boundSlug)
+    );
+  }
   if (boundSlug) {
     if (tenant.slug !== boundSlug) {
       return false;
@@ -374,7 +439,11 @@ export function getDefaultProductionNzTenantSlug(
     return tenants.find((tenant) => tenant.slug === boundSlug)?.slug;
   }
   return tenants.find(
-    (tenant) => tenant.active && !tenant.sandboxOnly && !tenant.internalCanary,
+    (tenant) =>
+      tenant.active &&
+      !tenant.sandboxOnly &&
+      !tenant.sandboxCheckoutOnly &&
+      !tenant.internalCanary,
   )?.slug;
 }
 
