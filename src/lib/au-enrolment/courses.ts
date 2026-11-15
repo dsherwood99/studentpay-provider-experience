@@ -1,5 +1,6 @@
 import { getHostedProductMode } from "../nz-enrolment/environment.ts";
 import { isProviderSlugBlockedByDeployment } from "../provider-experience/provider-bindings.ts";
+import { academyAuEnrolmentReady } from "./readiness.ts";
 import {
   calculateAuWeeklySchedule,
   type AuWeeklySchedule,
@@ -108,7 +109,10 @@ export function isAuPaymentPlanCheckoutBlocked(
   providerSlug: string,
   courseSlug: string,
 ): boolean {
-  return getAuPaymentPlanCourseForProvider(providerSlug, courseSlug) !== undefined;
+  return (
+    getAuPaymentPlanCourseForProvider(providerSlug, courseSlug) !== undefined &&
+    academyAuEnrolmentReady() === false
+  );
 }
 
 /**

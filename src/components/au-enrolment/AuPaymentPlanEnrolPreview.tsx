@@ -7,18 +7,8 @@ import {
   formatAuInstalmentSummary,
   type AuPaymentPlanCourse,
 } from "@/lib/au-enrolment/courses";
+import { academyAuEnrolmentBlockers } from "@/lib/au-enrolment/readiness";
 import type { Provider } from "@/types/provider";
-
-const previewSections = [
-  "Student details",
-  "Agreement display and acceptance",
-  "Payment-plan schedule",
-  "Pinch bank authorisation",
-  "Duplicate prevention",
-  "Incomplete enrolment recovery",
-  "Salesforce Enrolment Application",
-  "Processing and confirmation",
-] as const;
 
 type AuPaymentPlanEnrolPreviewProps = {
   provider: Provider;
@@ -73,12 +63,12 @@ export function AuPaymentPlanEnrolPreview({
           </article>
 
           <article className="simple-course-card">
-            <h2>Sandbox checkout still to connect</h2>
+            <h2>Live submission is held</h2>
             <ul className="au-plan-pending">
-              {previewSections.map((section) => (
-                <li key={section}>
-                  <span>{section}</span>
-                  <strong>Not connected</strong>
+              {academyAuEnrolmentBlockers.map((blocker) => (
+                <li key={blocker.code}>
+                  <span>{blocker.summary}</span>
+                  <strong>Held</strong>
                 </li>
               ))}
             </ul>
