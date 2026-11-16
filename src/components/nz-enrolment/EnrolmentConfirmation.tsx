@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import { Check } from "lucide-react";
 import {
   NZ_CONFIRMATION_COPY,
@@ -28,14 +31,40 @@ export function EnrolmentConfirmation({
 }) {
   const courseRows = rows.filter((row) => row.group === "course" || row.group === "payments");
   const referenceRows = rows.filter((row) => row.group === "references");
+  const sectionRef = useRef<HTMLElement>(null);
+  const scrolledRef = useRef(false);
+
+  useEffect(() => {
+    if (scrolledRef.current) {
+      return;
+    }
+    const section = sectionRef.current;
+    if (!section) {
+      return;
+    }
+    scrolledRef.current = true;
+    const header = document.querySelector<HTMLElement>('[data-testid="nz-provider-header"]');
+    const offset = header ? Math.ceil(header.getBoundingClientRect().height) : 0;
+    section.style.scrollMarginTop = `${offset}px`;
+    section.scrollIntoView({ block: "start", behavior: "auto" });
+    section.querySelector<HTMLElement>("#nz-enrolment-confirmed-heading")?.focus({
+      preventScroll: true,
+    });
+  }, []);
 
   return (
-    <section className={styles.confirmation} aria-labelledby="nz-enrolment-confirmed-heading">
+    <section
+      ref={sectionRef}
+      className={styles.confirmation}
+      aria-labelledby="nz-enrolment-confirmed-heading"
+    >
       <div className={styles.confirmationHero}>
         <span className={styles.successMark} aria-hidden="true">
           <Check strokeWidth={2.75} />
         </span>
-        <h1 id="nz-enrolment-confirmed-heading">{heading}</h1>
+        <h1 id="nz-enrolment-confirmed-heading" tabIndex={-1}>
+          {heading}
+        </h1>
         <p className={styles.lead}>{lead}</p>
       </div>
       {schedule ? (

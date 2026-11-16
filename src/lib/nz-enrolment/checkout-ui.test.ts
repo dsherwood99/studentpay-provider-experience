@@ -206,6 +206,14 @@ describe("single-page checkout presentation helpers", () => {
       }),
       true,
     );
+    assert.equal(
+      shouldPollDirectDebitStatus({
+        hasCheckoutSession: true,
+        ddaReturn: "return",
+        alreadyConfirmed: true,
+      }),
+      false,
+    );
   });
 
   it("marks sections without forcing a wizard", () => {
@@ -492,6 +500,11 @@ describe("confirmation summary presentation", () => {
     assert.match(confirmation, /data-testid="nz-confirmation-next-steps"/);
     assert.match(confirmation, /data-testid="nz-confirmation-repayment"/);
     assert.match(confirmation, /styles\.successMark/);
+    assert.match(confirmation, /scrollIntoView\(\{ block: "start", behavior: "auto" \}\)/);
+    assert.match(confirmation, /data-testid="nz-provider-header"/);
+    assert.match(confirmation, /scrolledRef/);
+    assert.match(confirmation, /preventScroll: true/);
+    assert.match(checkout, /alreadyConfirmed,/);
     assert.match(checkout, /NZ_CONFIRMATION_COPY\.nextSteps/);
     assert.match(checkout, /onClick=\{\(\) => void startDirectDebitSetup\(\)\}/);
     assert.doesNotMatch(checkout, /<dd>\{preview\.firstPaymentDate\}<\/dd>/);
