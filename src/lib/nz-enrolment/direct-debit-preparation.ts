@@ -169,6 +169,11 @@ export class DirectDebitPreparationQueue {
     return this.begin(key, start);
   }
 
+  /** The checkout create that already succeeded for this page. */
+  successfulResult(): (DirectDebitPreparationResult & { ok: true }) | null {
+    return this.ready?.value ?? null;
+  }
+
   private begin(
     key: string,
     start: () => Promise<DirectDebitPreparationResult>,

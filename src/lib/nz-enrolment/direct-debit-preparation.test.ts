@@ -255,6 +255,29 @@ describe("direct debit preparation", () => {
     assert.equal(clicked.ok && clicked.setupUrl, "https://pay.gocardless.com/billing/BRQ_SAM");
   });
 
+  it("keeps the successful setup URL after a later request is superseded", async () => {
+    const queue = new DirectDebitPreparationQueue();
+    let release: (value: { ok: true; setupUrl: string; checkoutId: string }) => void = () => {};
+    const first = queue.request("first", () => new Promise((resolve) => {
+      release = resolve;
+    }));
+    const second = queue.request("second", () =>
+      Promise.resolve({
+        ok: true,
+        setupUrl: "https://pay.gocardless.com/billing/BRQ_SECOND",
+        checkoutId: "chk_second",
+      }),
+    );
+    release({
+      ok: true,
+      setupUrl: "https://pay.gocardless.com/billing/BRQ_FIRST",
+      checkoutId: "chk_first",
+    });
+    assert.equal((await first).ok && (await first).setupUrl, "https://pay.gocardless.com/billing/BRQ_FIRST");
+    assert.equal((await second).ok, false);
+    assert.equal(queue.successfulResult()?.setupUrl, "https://pay.gocardless.com/billing/BRQ_FIRST");
+  });
+
   it("starts the existing checkout create from the eligible form and opens GoCardless only on click", () => {
     const root = fileURLToPath(new URL("../../", import.meta.url));
     const checkout = fs.readFileSync(

@@ -251,6 +251,15 @@
   opacity: 0.72;
 }
 
+.finalButton {
+  margin-top: 8px;
+}
+
+.finalButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .spinner {
   width: 14px;
   height: 14px;
