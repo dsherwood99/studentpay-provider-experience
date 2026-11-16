@@ -44,6 +44,8 @@ function offer(input: {
     regular_instalment_cents: 1250,
     number_of_instalments: input.count,
     upfront_amount_cents: 0,
+    description:
+      "Kit not included. Course access is 2 years and is separate from the repayment term. The first weekly payment of NZD 12.50 is 7 days after enrolment.",
     provider_student_agreement: agreement,
   };
 }
@@ -126,6 +128,9 @@ describe("Bela NZ Black Friday offers", { concurrency: false }, () => {
     assert.equal(lashOffer?.legalGateClosed, undefined);
     assert.equal(nail?.paymentPlanCourseFeeCents, 385_000);
     assert.equal(lashOffer?.paymentPlanCourseFeeCents, 280_000);
+    assert.match(nail?.description || "", /Course access is 2 years/);
+    assert.match(nail?.description || "", /separate from the repayment term/);
+    assert.match(lashOffer?.description || "", /separate from the repayment term/);
     for (const course of [nail, lashOffer]) {
       assert.equal(course?.planPolicy.mode, "derived_regular");
       if (course?.planPolicy.mode !== "derived_regular") continue;

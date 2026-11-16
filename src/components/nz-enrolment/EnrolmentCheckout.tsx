@@ -1725,6 +1725,12 @@ export function NzEnrolmentCheckout({
                 {kitDisclosureForPolicy(tenant.kitPolicy)}
               </p>
             ) : null}
+            {course.description.includes("Course access is 2 years") &&
+            course.description.includes("separate from the repayment term") ? (
+              <p className={styles.note} data-testid="nz-course-access">
+                Course access is 2 years. The repayment schedule is separate and continues for the full payment plan.
+              </p>
+            ) : null}
             {renderFlags.showPaymentMethodRadios ? null : (
             <dl className={styles.review}>
               <dt>Course</dt>
