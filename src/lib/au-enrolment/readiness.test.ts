@@ -14,8 +14,8 @@ describe("Academy Australia enrolment readiness", () => {
     assert.deepEqual(
       academyAuEnrolmentBlockers.map((blocker) => blocker.code),
       [
-        "agreement_not_approved",
-        "settlement_not_verified",
+        "agreement_not_activated",
+        "provider_config_not_linked",
         "provider_not_allowlisted",
         "submission_not_approved",
       ],

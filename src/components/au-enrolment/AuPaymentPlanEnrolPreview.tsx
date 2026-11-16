@@ -8,7 +8,7 @@ import {
   type AuPaymentPlanCourse,
 } from "@/lib/au-enrolment/courses";
 import {
-  ACADEMYAU_AGREEMENT_DRAFT_VERSION,
+  ACADEMYAU_AGREEMENT_PRODUCTION_VERSION,
   academyAuEnrolmentBlockers,
 } from "@/lib/au-enrolment/readiness";
 import type { Provider } from "@/types/provider";
@@ -115,11 +115,10 @@ export function AuPaymentPlanEnrolPreview({
             <span className="simple-course-card__label">Agreement</span>
             <h2>Academy Australia Student Agreement</h2>
             <p>
-              Version {ACADEMYAU_AGREEMENT_DRAFT_VERSION} is an inactive draft.
-              It is not the demo agreement and it cannot be accepted. The
-              StudentPay Payment Plan Agreement and Direct Debit Service
-              Agreement stay part of the enrolment journey once this draft is
-              approved.
+              Version {ACADEMYAU_AGREEMENT_PRODUCTION_VERSION} is prepared from
+              the approved Academy Australia terms and is not activated.
+              Acceptance stays off. The StudentPay Payment Plan Agreement and
+              Direct Debit Service Agreement remain part of the journey.
             </p>
             <ul className="au-plan-pending">
               <li>
