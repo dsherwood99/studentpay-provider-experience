@@ -28,7 +28,9 @@ import {
   payNowChoiceBody,
   payNowSavingFromCatalogue,
   paymentPlanChoiceCopy,
+  checkoutDetailsRecoveryNotice,
   checkoutStudentForDisplay,
+  restoredCheckoutStudent,
   isBelaBlackFridayCourse,
   planDisplay,
   planSectionLead,
@@ -237,6 +239,10 @@ type StatusPayload = {
     paymentOption?: NzPaymentOptionId | null;
   };
   agreement?: { number?: string | null };
+  recovery?: {
+    student?: NzStudentDetails | null;
+    firstPaymentDate?: string | null;
+  } | null;
   error?: { message?: string; code?: string; invalid_fields?: Record<string, string> };
 };
 
@@ -377,6 +383,12 @@ export function NzEnrolmentCheckout({
     (key: string) => Promise<DirectDebitPreparationResult>
   >(async () => ({ ok: false, message: "Unable to start Direct Debit setup." }));
   const payingRef = useRef(false);
+  const studentRef = useRef(student);
+  studentRef.current = student;
+  const firstPaymentDateRef = useRef(firstPaymentDate);
+  firstPaymentDateRef.current = firstPaymentDate;
+  const paymentDateTouchedRef = useRef(false);
+  const [detailsUnrecoverable, setDetailsUnrecoverable] = useState(false);
   const stripeApiRef = useRef<{ stripe: Stripe; elements: StripeElements } | null>(null);
   const cardSectionRef = useRef<HTMLElement | null>(null);
 
@@ -651,6 +663,36 @@ export function NzEnrolmentCheckout({
     if (json.session?.courseSlug && json.session.courseSlug !== course.slug) {
       return;
     }
+    const recoveredStudent = restoredCheckoutStudent(
+      studentRef.current,
+      json.recovery?.student || null,
+    );
+    if (recoveredStudent !== studentRef.current) {
+      studentRef.current = recoveredStudent;
+      setStudent(recoveredStudent);
+      writeStoredDraft(tenant.slug, course.slug, {
+        student: recoveredStudent,
+        upfrontAmountCents: resolvedUpfront,
+        frequency: resolvedFrequency,
+        numberOfInstalments: resolvedInstalments,
+        firstPaymentDate:
+          json.recovery?.firstPaymentDate || firstPaymentDateRef.current,
+        paymentOption: resolvedPaymentOption,
+      });
+    }
+    if (!paymentDateTouchedRef.current && json.recovery?.firstPaymentDate) {
+      paymentDateTouchedRef.current = true;
+      if (json.recovery.firstPaymentDate !== firstPaymentDateRef.current) {
+        firstPaymentDateRef.current = json.recovery.firstPaymentDate;
+        setFirstPaymentDate(json.recovery.firstPaymentDate);
+      }
+    }
+    const setupNow = Boolean(json.direct_debit?.setup_complete);
+    setDetailsUnrecoverable(
+      setupNow &&
+        !studentDetailsStarted(recoveredStudent) &&
+        !json.recovery?.student,
+    );
     if (json.payment_option === "pay_in_full" || json.session?.paymentOption === "pay_in_full") {
       setPaymentOption("pay_in_full");
       setPaymentChoiceTouched(true);
@@ -1702,14 +1744,16 @@ export function NzEnrolmentCheckout({
         onFieldErrors={setFieldErrors}
         firstPaymentDate={resolvedFirstPaymentDate}
         paymentWindow={paymentDateWindow}
-        onFirstPaymentDate={setFirstPaymentDate}
+        onFirstPaymentDate={(value) => {
+          paymentDateTouchedRef.current = true;
+          setFirstPaymentDate(value);
+        }}
         preview={preview}
         plan={display}
         offerLabel={blackFridayOffer ? "Black Friday offer" : null}
         kitLabel={kitDisclosure}
         declarations={declarations}
         onDeclarations={setDeclarations}
-        providerAgreement={providerAgreement}
         bankPhase={belaBankPhase}
         bankError={sectionErrors.dda || error || null}
         onStartBank={() => {
@@ -1726,6 +1770,15 @@ export function NzEnrolmentCheckout({
         }
         enrolBusy={busy}
         enrolError={sectionErrors.review || null}
+        detailsNotice={
+          detailsUnrecoverable
+            ? checkoutDetailsRecoveryNotice({
+                setupComplete: true,
+                studentStarted: false,
+                recovered: false,
+              })
+            : null
+        }
         onEnrol={() => {
           void confirmCheckout();
         }}

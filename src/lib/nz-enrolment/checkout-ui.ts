@@ -169,6 +169,100 @@ export function studentDetailsStarted(student: Partial<NzStudentDetails>): boole
   );
 }
 
+const CHECKOUT_STUDENT_FIELDS = [
+  "firstName",
+  "lastName",
+  "email",
+  "mobile",
+  "dateOfBirth",
+  "streetAddress",
+  "suburb",
+  "city",
+  "postcode",
+  "region",
+  "country",
+] as const satisfies readonly (keyof NzStudentDetails)[];
+
+export type CheckoutFormRecovery = {
+  student: NzStudentDetails;
+  firstPaymentDate: string | null;
+};
+
+/**
+ * Student details already stored on the signed checkout session.
+ * A mismatched provider or course returns nothing.
+ */
+export function checkoutFormRecovery(input: {
+  providerSlug?: string | null;
+  courseSlug?: string | null;
+  expectedProviderSlug: string;
+  expectedCourseSlug: string;
+  student?: Partial<NzStudentDetails> | null;
+  firstPaymentDate?: string | null;
+}): CheckoutFormRecovery | null {
+  if (
+    input.providerSlug !== input.expectedProviderSlug ||
+    input.courseSlug !== input.expectedCourseSlug
+  ) {
+    return null;
+  }
+  const source = input.student;
+  if (!source) {
+    return null;
+  }
+  const student = {
+    firstName: "",
+    lastName: "",
+    email: "",
+    mobile: "",
+    dateOfBirth: "",
+    streetAddress: "",
+    suburb: "",
+    city: "",
+    postcode: "",
+    region: "",
+    country: "New Zealand",
+  } as NzStudentDetails;
+  for (const field of CHECKOUT_STUDENT_FIELDS) {
+    const value = source[field];
+    student[field] = typeof value === "string" ? value : "";
+  }
+  student.country = checkoutCountryOrDefault(student.country);
+  if (!studentDetailsStarted(student)) {
+    return null;
+  }
+  const date = String(input.firstPaymentDate || "").trim();
+  return {
+    student,
+    firstPaymentDate: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null,
+  };
+}
+
+/** Keep details the student is already editing. Fill a blank form from the session. */
+export function restoredCheckoutStudent<T extends NzStudentDetails>(
+  current: T,
+  recovered: T | null | undefined,
+): T {
+  if (studentDetailsStarted(current) || !recovered || !studentDetailsStarted(recovered)) {
+    return current;
+  }
+  return {
+    ...recovered,
+    country: checkoutCountryOrDefault(recovered.country),
+  };
+}
+
+export function checkoutDetailsRecoveryNotice(input: {
+  setupComplete: boolean;
+  studentStarted: boolean;
+  recovered: boolean;
+}): string | null {
+  if (!input.setupComplete || input.studentStarted || input.recovered) {
+    return null;
+  }
+  return "Bank authorisation is already complete for this checkout, but the student details are not in this browser session. Reopen the checkout in the browser where you started the application. A new application has not been created.";
+}
+
 export function isPayInFullChoiceVisible(payInFull: {
   enabled: boolean;
   comingSoon: boolean;

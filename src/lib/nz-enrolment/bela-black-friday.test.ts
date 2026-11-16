@@ -262,6 +262,13 @@ describe("Bela NZ Black Friday offers", { concurrency: false }, () => {
     assert.match(bela, /Enrol Now/);
     assert.match(bela, /Authorise bank account/);
     assert.ok(bela.indexOf('id="bank-authorisation"') < bela.indexOf('id="agreements"'));
+    assert.doesNotMatch(bela, /href \|\| "#agreements"/);
+    assert.doesNotMatch(bela, /window\.open\(tenant\.termsUrl/);
+    assert.match(bela, /hostedLegalDocumentHref\("payment-plan"\)/);
+    assert.match(bela, /hostedLegalDocumentHref\("direct-debit", \{ providerSlug: tenant\.slug \}\)/);
+    assert.match(bela, /hostedLegalDocumentHref\("student-agreement"/);
+    assert.match(bela, /href=\{tenant\.privacyUrl\}/);
+    assert.match(bela, /target="_blank"/);
     assert.match(bela, /onEnrol/);
     assert.match(bela, /Ready to authorise/);
     assert.match(bela, /Awaiting bank authorisation/);

@@ -4,13 +4,21 @@ export const LEGAL_POPUP_HEIGHT = 800;
 
 const MOBILE_UA = /iphone|ipad|ipod|android|mobile/i;
 
-export type HostedLegalKind = "payment-plan" | "direct-debit";
+export type HostedLegalKind = "payment-plan" | "direct-debit" | "student-agreement";
 
 export function hostedLegalDocumentHref(
   kind: HostedLegalKind,
-  options?: { popup?: boolean },
+  options?: { popup?: boolean; providerSlug?: string; courseSlug?: string },
 ): string {
   const params = new URLSearchParams({ kind });
+  const provider = String(options?.providerSlug || "").trim();
+  const course = String(options?.courseSlug || "").trim();
+  if (provider) {
+    params.set("provider", provider);
+  }
+  if (course) {
+    params.set("course", course);
+  }
   if (options?.popup) {
     params.set("view", "popup");
   }
