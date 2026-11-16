@@ -2015,7 +2015,12 @@ export function NzEnrolmentCheckout({
                 type="tel"
                 autoComplete="tel"
                 value={resolvedStudent.mobile}
-                error={fieldErrors.mobile}
+                error={
+                  fieldErrors.mobile ||
+                  (resolvedStudent.mobile.trim()
+                    ? validateStudentDetails({ mobile: resolvedStudent.mobile }).mobile
+                    : undefined)
+                }
                 onChange={(value) => updateStudent("mobile", value)}
               />
               <TextField

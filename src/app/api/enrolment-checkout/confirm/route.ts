@@ -165,6 +165,7 @@ export async function POST(request: Request) {
     apiBaseUrl: apiBase.url,
     apiKey: key.apiKey,
     checkoutId: session.checkoutId,
+    userAgent: request.headers.get("user-agent") || undefined,
     payload,
   });
   const bffMs = Date.now() - bffTimerStarted;

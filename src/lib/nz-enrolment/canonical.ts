@@ -2,6 +2,7 @@ import {
   centsToApiAmount,
   previewPlan,
 } from "./plan-math.ts";
+import { approvedCheckoutSourceUrl } from "./validation.ts";
 import type {
   CanonicalCheckoutResult,
   NzCourse,
@@ -18,6 +19,11 @@ export type CanonicalCreatePayload = {
     provider_name: string;
     success_url: string;
     cancel_url: string;
+    enrolment_channel: "website";
+    source: "Website";
+  };
+  checkout?: {
+    source_url: string;
   };
   student: {
     first_name: string;
@@ -63,6 +69,11 @@ export type CanonicalPayInFullCreatePayload = {
     provider_name: string;
     success_url: string;
     cancel_url: string;
+    enrolment_channel: "website";
+    source: "Website";
+  };
+  checkout?: {
+    source_url: string;
   };
   student: CanonicalCreatePayload["student"];
   course: {
@@ -176,6 +187,7 @@ export function buildCanonicalCreatePayload(input: {
     );
   }
 
+  const checkoutSourceUrl = approvedCheckoutSourceUrl(input.successUrl);
   return {
     provider: {
       provider_code: input.tenant.providerCode,
@@ -183,7 +195,10 @@ export function buildCanonicalCreatePayload(input: {
       provider_name: input.tenant.displayName,
       success_url: input.successUrl,
       cancel_url: input.cancelUrl,
+      enrolment_channel: "website",
+      source: "Website",
     },
+    ...(checkoutSourceUrl ? { checkout: { source_url: checkoutSourceUrl } } : {}),
     student: canonicalStudent(input.student),
     course: {
       course_code: input.course.courseCode,
@@ -237,6 +252,7 @@ export function buildPayInFullCreatePayload(input: {
   successUrl: string;
   cancelUrl: string;
 }): CanonicalPayInFullCreatePayload {
+  const checkoutSourceUrl = approvedCheckoutSourceUrl(input.successUrl);
   return {
     payment_option: "pay_in_full",
     provider: {
@@ -245,7 +261,10 @@ export function buildPayInFullCreatePayload(input: {
       provider_name: input.tenant.displayName,
       success_url: input.successUrl,
       cancel_url: input.cancelUrl,
+      enrolment_channel: "website",
+      source: "Website",
     },
+    ...(checkoutSourceUrl ? { checkout: { source_url: checkoutSourceUrl } } : {}),
     student: canonicalStudent(input.student),
     course: {
       course_code: input.course.courseCode,
@@ -338,6 +357,7 @@ export async function canonicalConfirm(input: {
   apiBaseUrl: string;
   apiKey: string;
   checkoutId: string;
+  userAgent?: string;
   payload:
     | ReturnType<typeof buildCanonicalConfirmPayload>
     | CanonicalPayInFullConfirmPayload;
@@ -350,6 +370,9 @@ export async function canonicalConfirm(input: {
         "Content-Type": "application/json",
         Accept: "application/json",
         Authorization: `Bearer ${input.apiKey}`,
+        ...(input.userAgent
+          ? { "x-original-user-agent": input.userAgent }
+          : {}),
       },
       body: JSON.stringify(input.payload),
       cache: "no-store",

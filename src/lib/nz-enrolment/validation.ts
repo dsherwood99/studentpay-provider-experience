@@ -1,6 +1,54 @@
 import type { NzStudentDetails } from "./types.ts";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const E164 = /^\+[1-9]\d{7,14}$/;
+const NZ_MOBILE = /^\+642\d{7,9}$/;
+const APPROVED_CHECKOUT_HOSTS = new Set([
+  "enrol.studentpay.co.nz",
+  "enrol.onlinelearninginstitute.co.nz",
+]);
+
+/**
+ * New Zealand mobiles (02…) and any other valid E.164 number.
+ * A leading 0 is read as a New Zealand number. Numbers outside New Zealand need + and a country code.
+ */
+export function normaliseServicingMobile(value: string | undefined | null): {
+  ok: boolean;
+  e164: string;
+} {
+  const compact = String(value || "")
+    .trim()
+    .replace(/[\s().-]/g, "");
+  if (!compact) return { ok: false, e164: "" };
+
+  let digits = compact;
+  if (digits.startsWith("+")) digits = digits.slice(1);
+  else if (digits.startsWith("00")) digits = digits.slice(2);
+  else if (digits.startsWith("0")) digits = `64${digits.slice(1)}`;
+  else if (!digits.startsWith("64")) return { ok: false, e164: "" };
+
+  if (!/^\d+$/.test(digits)) return { ok: false, e164: "" };
+  const e164 = `+${digits}`;
+  if (!E164.test(e164)) return { ok: false, e164: "" };
+  if (e164.startsWith("+64") && !NZ_MOBILE.test(e164)) return { ok: false, e164: "" };
+  return { ok: true, e164 };
+}
+
+export function approvedCheckoutSourceUrl(value: string | undefined | null): string | null {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== "https:" || parsed.username || parsed.password) return null;
+  const host = parsed.hostname.toLowerCase();
+  if (!APPROVED_CHECKOUT_HOSTS.has(host)) return null;
+  if (!/^\/enrol\/[a-z0-9-]+\/[a-z0-9-]+\/?$/i.test(parsed.pathname)) return null;
+  return `https://${host}${parsed.pathname.replace(/\/$/, "")}`;
+}
 
 export function validateStudentDetails(
   student: Partial<NzStudentDetails>,
@@ -12,7 +60,10 @@ export function validateStudentDetails(
   if (!student.email?.trim() || !EMAIL_RE.test(student.email.trim())) {
     errors.email = "Enter a valid email address.";
   }
-  if (!student.mobile?.trim()) errors.mobile = "Enter a mobile number.";
+  if (!student.mobile?.trim() || !normaliseServicingMobile(student.mobile).ok) {
+    errors.mobile =
+      "Enter a valid mobile number. Use + and the country code outside New Zealand.";
+  }
   if (!student.dateOfBirth?.trim()) {
     errors.dateOfBirth = "Enter your date of birth.";
   }
@@ -34,7 +85,10 @@ export function sanitiseStudent(
     firstName: student.firstName?.trim() || "",
     lastName: student.lastName?.trim() || "",
     email: student.email?.trim() || "",
-    mobile: student.mobile?.trim() || "",
+    mobile: (() => {
+      const mobile = normaliseServicingMobile(student.mobile);
+      return mobile.ok ? mobile.e164 : student.mobile?.trim() || "";
+    })(),
     dateOfBirth: student.dateOfBirth?.trim() || "",
     streetAddress: student.streetAddress?.trim() || "",
     suburb: student.suburb?.trim() || "",
