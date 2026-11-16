@@ -63,7 +63,7 @@ export function NzPaymentCalendar({ value, window, onChange }: Props) {
       )}
       <div className={styles.calendarMonths}>
         {panels.map((panel) => (
-          <div key={panel.month}>
+          <div key={panel.month} className={styles.calendarCard}>
             <p className={styles.calendarMonth}>{panel.label || formatMonthLabel(panel.month)}</p>
             <div className={styles.calendarWeekdays}>
               {WEEKDAYS.map((day) => (
@@ -71,8 +71,11 @@ export function NzPaymentCalendar({ value, window, onChange }: Props) {
               ))}
             </div>
             {panel.weeks.map((week) => (
-              <div key={week[0]?.iso} className={styles.calendarWeek}>
+              <div key={week[0]?.iso} className={styles.calendarWeek} role="row">
                 {week.map((day) => {
+                  if (!day.inMonth) {
+                    return <span key={day.iso} className={styles.calendarDayEmpty} />;
+                  }
                   const selected = day.iso === value;
                   return (
                     <button
@@ -107,7 +110,7 @@ export function NzPaymentCalendar({ value, window, onChange }: Props) {
                         }
                       }}
                     >
-                      {day.inMonth ? Number(day.iso.slice(-2)) : ""}
+                      {Number(day.iso.slice(-2))}
                     </button>
                   );
                 })}

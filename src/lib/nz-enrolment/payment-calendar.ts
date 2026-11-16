@@ -62,7 +62,6 @@ function weeksForMonth(
   const weeks: NzCalendarWeek[] = [];
   for (let week = 0; week < 6; week += 1) {
     const days: NzCalendarDay[] = [];
-    let anySelectable = false;
     for (let index = 0; index < 7; index += 1) {
       const cursor = new Date(start);
       cursor.setUTCDate(start.getUTCDate() + week * 7 + index);
@@ -72,15 +71,13 @@ function weeksForMonth(
         cursor.getUTCDate(),
       );
       const inMonth = cursor.getUTCMonth() === month - 1;
-      const canSelect = inMonth && selectable(iso);
-      if (canSelect) {
-        anySelectable = true;
-      }
-      days.push({ iso, inMonth, selectable: canSelect });
+      days.push({
+        iso,
+        inMonth,
+        selectable: inMonth && selectable(iso),
+      });
     }
-    if (anySelectable) {
-      weeks.push(days);
-    }
+    weeks.push(days);
   }
   return weeks;
 }
@@ -100,9 +97,10 @@ function monthsInWindow(window: FirstPaymentDateWindow): string[] {
 }
 
 /**
- * Two months when that covers the window. Weeks with no selectable day are omitted.
- * An uncapped New Zealand window uses the anchor month and the next month.
- * Weekends stay selectable: New Zealand does not use the Australian weekday rule.
+ * Two conventional month grids. Each grid is six Monday-start weeks.
+ * Days outside the month are empty cells. Days outside the New Zealand
+ * window stay visible and are not selectable. Weekends stay selectable
+ * when the window allows them.
  */
 export function nzPaymentCalendarPanels(input: {
   window: FirstPaymentDateWindow;

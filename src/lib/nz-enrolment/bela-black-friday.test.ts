@@ -253,6 +253,10 @@ describe("Bela NZ Black Friday offers", { concurrency: false }, () => {
       new URL("../../components/nz-enrolment/BelaAuCheckout.tsx", import.meta.url),
       "utf8",
     );
+    assert.match(bela, /First payment date/);
+    assert.match(bela, /Selected date/);
+    assert.match(bela, /Highlighted dates can be selected/);
+    assert.doesNotMatch(bela, /Secure payment setup powered by StudentPay/);
     assert.match(bela, /Agreements & consent/);
     assert.match(bela, /Kit Not Included/);
     assert.match(bela, /Enrol Now/);

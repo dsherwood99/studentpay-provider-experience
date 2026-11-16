@@ -124,7 +124,46 @@
 
 .paymentGrid {
   display: grid;
-  gap: 12px;
+  gap: 16px;
+  align-items: start;
+}
+
+.dateLabel {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.selectedDate {
+  margin: 0;
+  border: 1px solid #e6e6e6;
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 8px 12px;
+}
+
+.selectedDate span {
+  display: block;
+  color: #7a635f;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
+
+.selectedDate strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.dateHelp {
+  margin: 6px 0 0;
+  color: #7a635f;
+  font-size: 12px;
+  line-height: 16px;
 }
 
 .copy,
@@ -294,7 +333,8 @@
 .calendarNav {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 8px;
+  align-items: center;
+  margin: 0 0 8px;
 }
 
 .calendarNavButton {
@@ -302,60 +342,98 @@
   background: transparent;
   color: #503231;
   text-decoration: underline;
+  text-underline-offset: 3px;
   font: inherit;
   font-size: 13px;
+  line-height: 1;
   cursor: pointer;
-  padding: 0;
+  padding: 4px 0;
 }
 
 .calendarMonths {
   display: grid;
-  gap: 12px;
+  gap: 8px;
+  align-items: start;
+}
+
+.calendarCard {
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 8px;
 }
 
 .calendarMonth {
-  margin: 0 0 6px;
+  margin: 0 0 4px;
+  text-align: center;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
+  line-height: 1.3;
 }
 
 .calendarWeekdays,
 .calendarWeek {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.calendarWeekdays {
+  margin-bottom: 4px;
 }
 
 .calendarWeekdays span {
   text-align: center;
   color: #7a635f;
   font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.calendarDay,
+.calendarDaySelected,
+.calendarDayQuiet,
+.calendarDayEmpty {
+  height: 44px;
+  min-width: 0;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 0;
+}
+
+.calendarDayEmpty {
+  display: block;
 }
 
 .calendarDay,
 .calendarDaySelected,
 .calendarDayQuiet {
-  height: 32px;
-  border: 0;
-  border-radius: 6px;
+  border: 1px solid transparent;
   background: transparent;
-  color: #c8b8b4;
-  font: inherit;
-  font-size: 13px;
-  padding: 0;
+  color: #7a635f;
 }
 
 .calendarDay {
   color: #503231;
-  background: color-mix(in srgb, #503231 16%, #ffffff);
+  background: color-mix(in srgb, #503231 24%, #ffffff);
+  border-color: #503231;
   cursor: pointer;
 }
 
 .calendarDaySelected {
   color: #ffffff;
   background: #503231;
-  box-shadow: inset 0 0 0 1px #503231;
+  border-color: #503231;
+  box-shadow: inset 0 0 0 2px #ffffff;
   cursor: pointer;
+}
+
+.calendarDayQuiet {
+  border-color: transparent;
+  font-weight: 400;
+  cursor: not-allowed;
 }
 
 .dialogBackdrop {
@@ -420,6 +498,14 @@
     min-height: 38px;
   }
 
+  .calendarDay,
+  .calendarDaySelected,
+  .calendarDayQuiet,
+  .calendarDayEmpty {
+    height: 36px;
+    font-size: 13px;
+  }
+
   .button {
     min-width: 12rem;
   }
@@ -432,8 +518,14 @@
   }
 
   .pair,
-  .paymentGrid,
-  .documents,
+  .documents {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .paymentGrid {
+    grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
+  }
+
   .calendarMonths {
     grid-template-columns: 1fr 1fr;
   }

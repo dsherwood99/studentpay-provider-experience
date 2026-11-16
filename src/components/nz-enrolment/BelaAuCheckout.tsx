@@ -276,9 +276,18 @@ export function BelaAuCheckout({
             <h2>Payment details</h2>
             <div className={styles.paymentGrid}>
               <div>
+                <p className={styles.dateLabel}>
+                  First payment date <span aria-hidden="true">*</span>
+                </p>
                 <p className={styles.copy}>
-                  Choose the date of the first weekly payment. The selected date is{" "}
-                  {formatDdMmYyyy(firstPaymentDate)}. You can choose another valid date.
+                  Choose the date the first weekly direct debit is taken.
+                </p>
+                <p className={styles.selectedDate} aria-live="polite">
+                  <span>Selected date</span>
+                  <strong>{formatDdMmYyyy(firstPaymentDate)}</strong>
+                </p>
+                <p className={styles.dateHelp}>
+                  Highlighted dates can be selected. Choose another to change this date.
                 </p>
               </div>
               <NzPaymentCalendar
