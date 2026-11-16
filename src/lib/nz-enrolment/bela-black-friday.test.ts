@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, test } from "node:test";
 import { listAuthoritativeHostedCourses } from "./api-catalogue-overlay.ts";
 import { getNzCourse } from "./courses.ts";
@@ -224,5 +225,17 @@ describe("Bela NZ Black Friday offers", { concurrency: false }, () => {
     assert.equal(getNzCourse("bela-nz", "nail-bundle")?.catalogueOnly, true);
     assert.equal(getNzCourse("bela-nz", "nail-bundle-black-friday"), undefined);
     assert.equal(getNzCourse("bela-nz", "lash-bundle-black-friday"), undefined);
+    assert.equal(getNzTenantBySlug("bela-nz")?.checkout.summaryPresentation, "course_card");
+    assert.equal(getNzTenantBySlug("oli")?.checkout.summaryPresentation, undefined);
+    const checkout = readFileSync(
+      new URL("../../components/nz-enrolment/EnrolmentCheckout.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(checkout, /summaryPresentation === "course_card"/);
+    assert.match(checkout, /Enrolment summary/);
+    assert.match(checkout, /data-testid="nz-bela-plan-card"/);
+    assert.match(checkout, /kitDisclosureForPolicy\(tenant\.kitPolicy\)/);
+    assert.doesNotMatch(checkout, /280000|385000|224 payments|308 payments/);
+    assert.doesNotMatch(checkout, /providerSlug === "bela-nz"|slug === "bela-nz"/);
   });
 });

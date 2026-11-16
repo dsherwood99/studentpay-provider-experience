@@ -139,6 +139,8 @@ export type NzTenantCheckoutConfig = {
   paymentChoicePresentation?: "savings_hierarchy";
   /** Opt-in: hide instalment-count copy from choice cards and the pre-confirm summary. */
   hidePlanScheduleDetails?: boolean;
+  /** Opt-in Bela course-card layout. Other tenants keep the shared checkout presentation. */
+  summaryPresentation?: "course_card";
 };
 
 export type NzTenant = {
@@ -312,6 +314,7 @@ export type NzPublicTenant = {
     coursePageLinkStyle?: NzTenantCheckoutConfig["coursePageLinkStyle"];
     paymentChoicePresentation?: NzTenantCheckoutConfig["paymentChoicePresentation"];
     hidePlanScheduleDetails?: boolean;
+    summaryPresentation?: NzTenantCheckoutConfig["summaryPresentation"];
   };
 };
 
