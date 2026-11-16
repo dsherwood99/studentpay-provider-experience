@@ -137,8 +137,9 @@ type PendingPreparation = {
 
 /**
  * One checkout create at a time for the current validated details.
- * A successful result is reused for that same key. A changed key waits
- * for the in-flight create, then starts the next one. Failures are not cached.
+ * A successful result is reused for that same key. A changed key does not
+ * start another create after that success. A failed create still continues
+ * with the latest details. Failures are not cached.
  */
 export class DirectDebitPreparationQueue {
   private flight: { key: string; promise: Promise<DirectDebitPreparationResult> } | null =
@@ -190,6 +191,8 @@ export class DirectDebitPreparationQueue {
       if (pending) {
         if (pending.key === key && value.ok) {
           pending.resolve(value);
+        } else if (value.ok) {
+          pending.resolve({ ok: false, message: "", superseded: true });
         } else {
           pending.resolve(this.begin(pending.key, pending.start));
         }

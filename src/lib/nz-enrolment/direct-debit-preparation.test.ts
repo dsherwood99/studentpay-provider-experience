@@ -242,8 +242,17 @@ describe("direct debit preparation", () => {
     const dropped = await jamie;
     assert.equal(dropped.ok, false);
     assert.equal(dropped.ok === false && dropped.superseded, true);
-    const kept = await sam;
-    assert.equal(kept.ok && kept.setupUrl, "https://pay.gocardless.com/billing/BRQ_SAM");
+    const held = await sam;
+    assert.equal(held.ok, false);
+    assert.equal(held.ok === false && held.superseded, true);
+    const clicked = await queue.request("sam", () =>
+      Promise.resolve({
+        ok: true,
+        setupUrl: "https://pay.gocardless.com/billing/BRQ_SAM",
+        checkoutId: "chk_sam",
+      }),
+    );
+    assert.equal(clicked.ok && clicked.setupUrl, "https://pay.gocardless.com/billing/BRQ_SAM");
   });
 
   it("starts the existing checkout create from the eligible form and opens GoCardless only on click", () => {
