@@ -42,7 +42,7 @@ export function AuPaymentPlanCoursePage({
           <h1>{course.title}</h1>
           <p>
             {provider.name} publishes this course as {course.code}. The weekly
-            plan is the approved AUD $3,500 schedule. Enrolment stays held.
+            plan is the approved AUD $3,500 schedule.
           </p>
           <div className="simple-course-hero__badges">
             <span>{course.checkoutPrefix}</span>
@@ -116,9 +116,8 @@ export function AuPaymentPlanCoursePage({
             </Link>
 
             <p className="au-plan-summary__note">
-              Enrol Now opens the held checkout. It does not create an
-              enrolment, send an agreement, authorise a bank account, or start
-              a payment plan.
+              Enrol Now opens the Academy Australia checkout. It does not
+              enrol a student with Bela Beauty College.
             </p>
           </aside>
         </div>

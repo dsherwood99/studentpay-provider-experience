@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { AuPaymentPlanDirectory } from "@/components/au-enrolment/AuPaymentPlanDirectory";
 import {
@@ -16,7 +17,7 @@ type AuPaymentPlanDirectoryPageProps = {
 export const metadata: Metadata = {
   title: "Australian payment plans",
   description:
-    "Academy Australia weekly payment plans. Enrolment submission is held.",
+    "Academy Australia weekly payment plans.",
   robots: { index: false, follow: false },
 };
 
@@ -24,8 +25,10 @@ export default async function AuPaymentPlanDirectoryPage({
   params,
 }: AuPaymentPlanDirectoryPageProps) {
   const { providerSlug } = await params;
+  const headerStore = await headers();
+  const requestHost = headerStore.get("x-forwarded-host") || headerStore.get("host") || "";
 
-  if (!isAuPaymentPlanRouteEnabled(providerSlug)) {
+  if (!isAuPaymentPlanRouteEnabled(providerSlug, requestHost)) {
     notFound();
   }
 

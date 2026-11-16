@@ -138,7 +138,11 @@ describe("Australian payment-plan demonstrations", () => {
       delete process.env.STUDENTPAY_PROVIDER_CODE;
       delete process.env.ACADEMY_PROVIDER_CODE;
       delete process.env.HOSTED_PRODUCT_MODE;
-      assert.equal(isAuPaymentPlanRouteEnabled("academy-australia"), true);
+      assert.equal(isAuPaymentPlanRouteEnabled("academy-australia"), false);
+      assert.equal(
+        isAuPaymentPlanRouteEnabled("academy-australia", "www.academyaustralia.com"),
+        true,
+      );
       assert.equal(isAuPaymentPlanRouteEnabled("bela-beauty-college"), false);
 
       process.env.HOSTED_PRODUCT_MODE = "nz_enrolment";
