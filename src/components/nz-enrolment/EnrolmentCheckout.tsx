@@ -29,6 +29,7 @@ import {
   payNowSavingFromCatalogue,
   paymentPlanChoiceCopy,
   checkoutStudentForDisplay,
+  isBelaBlackFridayCourse,
   planDisplay,
   planSectionLead,
   sectionStatus,
@@ -93,6 +94,7 @@ import { PayInFullCardForm } from "@/components/nz-enrolment/PayInFullCardForm";
 import { NzCourseConfigurationUnavailable } from "@/components/nz-enrolment/CourseConfigurationUnavailable";
 import { EnrolmentConfirmation } from "@/components/nz-enrolment/EnrolmentConfirmation";
 import { ProviderNativeHeader } from "@/components/nz-enrolment/ProviderNativeHeader";
+import { BelaAuCheckout } from "@/components/nz-enrolment/BelaAuCheckout";
 import { StudentPayAttribution } from "@/components/nz-enrolment/StudentPayAttribution";
 import type { Stripe, StripeElements } from "@stripe/stripe-js";
 import {
@@ -278,6 +280,7 @@ export function NzEnrolmentCheckout({
   const [preparationState, setPreparationState] = useState<
     "idle" | "preparing" | "ready" | "failed"
   >("idle");
+  const [bankStarted, setBankStarted] = useState(false);
   const [prepareMs, setPrepareMs] = useState<number | null>(null);
   const [openMs, setOpenMs] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -543,6 +546,9 @@ export function NzEnrolmentCheckout({
     paymentChoiceLead: NZ_PAYMENT_CHOICE_LEAD,
     paymentSectionLead: copy.paymentSectionLead,
   });
+  const courseSummary = tenant.checkout.summaryPresentation === "course_card";
+  const kitDisclosure = kitDisclosureForPolicy(tenant.kitPolicy);
+  const blackFridayOffer = isBelaBlackFridayCourse(course.courseCode);
   const pifDeclarationsOk =
     payInFullDeclarationsAccepted(declarations) && psaAccepted;
   const pifPhase = payInFullPhase({
@@ -1654,6 +1660,47 @@ export function NzEnrolmentCheckout({
     );
   }
 
+  if (courseSummary) {
+    const belaBankPhase =
+      !bankStarted && !setupComplete
+        ? "idle"
+        : setupComplete
+          ? "complete"
+          : sectionErrors.dda || preparationState === "failed"
+            ? "failed"
+            : awaitingDirectDebit || preparationState === "preparing"
+              ? "preparing"
+              : setupUrl
+                ? "ready"
+                : "preparing";
+    return (
+      <BelaAuCheckout
+        tenant={tenant}
+        course={course}
+        student={resolvedStudent}
+        fieldErrors={fieldErrors}
+        onStudentChange={updateStudent}
+        onFieldErrors={setFieldErrors}
+        firstPaymentDate={resolvedFirstPaymentDate}
+        paymentWindow={paymentDateWindow}
+        onFirstPaymentDate={setFirstPaymentDate}
+        preview={preview}
+        plan={display}
+        offerLabel={blackFridayOffer ? "Black Friday offer" : null}
+        kitLabel={kitDisclosure}
+        declarations={declarations}
+        onDeclarations={setDeclarations}
+        providerAgreement={providerAgreement}
+        bankPhase={belaBankPhase}
+        bankError={sectionErrors.dda || error || null}
+        onStartBank={() => {
+          setBankStarted(true);
+          void startDirectDebitSetup();
+        }}
+      />
+    );
+  }
+
   return (
     <>
     <ProviderNativeHeader tenant={tenant} course={course} />
@@ -1663,9 +1710,12 @@ export function NzEnrolmentCheckout({
       data-review-mode={reviewMode ? "true" : "false"}
       data-payment-mode={paymentMode}
       data-selected-option={resolvedPaymentOption}
+      data-summary={courseSummary ? "course_card" : undefined}
       style={tenantCssVars(tenant) as CSSProperties}
     >
       <div className={styles.shell}>
+        <div className={courseSummary ? styles.courseLayout : undefined}>
+        <div className={courseSummary ? styles.courseMain : undefined}>
         <header className={styles.hero}>
           <div className={styles.heroCopy}>
             <p className={styles.kicker}>{tenant.displayName}</p>
@@ -1686,6 +1736,7 @@ export function NzEnrolmentCheckout({
               </p>
             ) : null}
           </div>
+          {courseSummary ? null : (
           <aside className={styles.heroCard} aria-label="Course fee">
             <p className={styles.fee}>
               {formatNzdFromCents(
@@ -1704,6 +1755,7 @@ export function NzEnrolmentCheckout({
               {isPayInFull ? "Pay in full today" : "StudentPay payment plan"}
             </p>
           </aside>
+          )}
         </header>
 
         {error && !sectionErrors.dda && !sectionErrors.review && !sectionErrors.student ? (
@@ -1720,12 +1772,54 @@ export function NzEnrolmentCheckout({
             testId="nz-section-plan"
           >
             {planLead ? <p className={styles.lead}>{planLead}</p> : null}
-            {kitDisclosureForPolicy(tenant.kitPolicy) ? (
+            {(!courseSummary || !display || !preview || renderFlags.showPayInFullSummary) && kitDisclosure ? (
               <p className={styles.note} data-testid="nz-kit-disclosure">
-                {kitDisclosureForPolicy(tenant.kitPolicy)}
+                {kitDisclosure}
               </p>
             ) : null}
-            {renderFlags.showPaymentMethodRadios ? null : (
+            {courseSummary && display && preview && !renderFlags.showPaymentMethodRadios && !renderFlags.showPayInFullSummary ? (
+              <div className={styles.planCard} data-testid="nz-bela-plan-card">
+                <div className={styles.planCardHead}>
+                  <h3>{course.name}</h3>
+                  {blackFridayOffer ? <p className={styles.offerBadge}>Black Friday offer</p> : null}
+                </div>
+                <div className={styles.planHighlight}>
+                  <p className={styles.planWeekly}>
+                    {formatNzdFromCents(preview.regularInstalmentAmountCents)}
+                    <span>/{preview.frequency === "Weekly" ? "week" : preview.frequency.toLowerCase()}</span>
+                  </p>
+                  <p>{display.upfrontLabel}</p>
+                </div>
+                <dl className={styles.planStats}>
+                  <div>
+                    <dt>Course price</dt>
+                    <dd data-testid="nz-authoritative-price">
+                      {formatNzdFromCents(course.paymentPlanCourseFeeCents)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Upfront</dt>
+                    <dd>{formatNzdFromCents(preview.upfrontAmountCents)}</dd>
+                  </div>
+                  <div>
+                    <dt>Payments</dt>
+                    <dd>{preview.numberOfInstalments}</dd>
+                  </div>
+                  <div>
+                    <dt>Total</dt>
+                    <dd>{display.totalLabel}</dd>
+                  </div>
+                </dl>
+                {display.finalPaymentLabel ? (
+                  <p className={styles.planResidual}>{display.finalPaymentLabel}</p>
+                ) : null}
+                {kitDisclosure ? (
+                  <p className={styles.kitPanel} data-testid="nz-kit-disclosure">
+                    {kitDisclosure}
+                  </p>
+                ) : null}
+              </div>
+            ) : renderFlags.showPaymentMethodRadios ? null : (
             <dl className={`${styles.review} ${styles.planFacts}`}>
               <dt>Course</dt>
               <dd>{course.name}</dd>
@@ -2007,7 +2101,7 @@ export function NzEnrolmentCheckout({
                 autoComplete="bday"
                 value={resolvedStudent.dateOfBirth}
                 error={fieldErrors.dateOfBirth}
-                span
+                span={!courseSummary}
                 onChange={(value) => updateStudent("dateOfBirth", value)}
               />
               <TextField
@@ -2017,7 +2111,7 @@ export function NzEnrolmentCheckout({
                 autoComplete="email"
                 value={resolvedStudent.email}
                 error={fieldErrors.email}
-                span
+                span={!courseSummary}
                 onChange={(value) => updateStudent("email", value)}
               />
               <TextField
@@ -2032,7 +2126,7 @@ export function NzEnrolmentCheckout({
                     ? validateStudentDetails({ mobile: resolvedStudent.mobile }).mobile
                     : undefined)
                 }
-                span
+                span={!courseSummary}
                 onChange={(value) => updateStudent("mobile", value)}
               />
               <TextField
@@ -2041,7 +2135,7 @@ export function NzEnrolmentCheckout({
                 autoComplete="country-name"
                 value={resolvedStudent.country}
                 error={fieldErrors.country}
-                span
+                span={!courseSummary}
                 onChange={(value) => updateStudent("country", value)}
               />
               <TextField
@@ -2162,7 +2256,7 @@ export function NzEnrolmentCheckout({
             </p>
             <div className={styles.ddaLayout}>
               {renderFlags.showFirstPaymentDate ? (
-                <div className={styles.ddaDateCol}>
+                <div className={courseSummary ? `${styles.ddaDateCol} ${styles.dateFrame}` : styles.ddaDateCol}>
                   <TextField
                     label="First payment date"
                     name="first-payment-date"
@@ -2276,6 +2370,7 @@ export function NzEnrolmentCheckout({
             sectionRef={reviewSectionRef}
           >
             <div className={styles.reviewSplit}>
+            {courseSummary ? null : (
             <aside
               className={styles.summaryCard}
               aria-label="Enrolment summary"
@@ -2380,6 +2475,7 @@ export function NzEnrolmentCheckout({
               </dd>
             </dl>
             </aside>
+            )}
             <div className={styles.reviewConfirm}>
             <fieldset className={styles.checks}>
               <legend>Agreements</legend>
@@ -2556,6 +2652,47 @@ export function NzEnrolmentCheckout({
             </div>
             </div>
           </CheckoutSection>
+        </div>
+        </div>
+        {courseSummary && display && preview ? (
+          <aside className={styles.courseRail} aria-label="Enrolment summary" data-testid="nz-enrolment-summary">
+            <h2 className={styles.courseRailHeading}>Enrolment summary</h2>
+            <p className={styles.courseRailKicker}>{tenant.displayName}</p>
+            <h2 className={styles.courseRailName}>{course.name}</h2>
+            {blackFridayOffer ? <p className={styles.offerBadge}>Black Friday offer</p> : null}
+            <p className={styles.courseRailWeekly}>
+              {formatNzdFromCents(preview.regularInstalmentAmountCents)}
+              <span>/{preview.frequency === "Weekly" ? "week" : preview.frequency.toLowerCase()}</span>
+            </p>
+            <dl className={styles.courseRailRows}>
+              <div>
+                <dt>Course price</dt>
+                <dd>{formatNzdFromCents(course.paymentPlanCourseFeeCents)}</dd>
+              </div>
+              <div>
+                <dt>Upfront</dt>
+                <dd>{formatNzdFromCents(preview.upfrontAmountCents)}</dd>
+              </div>
+              <div>
+                <dt>{preview.frequency} payments</dt>
+                <dd>{preview.numberOfInstalments}</dd>
+              </div>
+              <div className={styles.courseRailTotal}>
+                <dt>Total</dt>
+                <dd>{display.totalLabel}</dd>
+              </div>
+            </dl>
+            {kitDisclosure ? <p className={styles.kitPanel}>{kitDisclosure}</p> : null}
+            {tenant.supportPhone || tenant.supportEmail ? (
+              <p className={styles.courseContact}>
+                {tenant.supportPhone ? <span>{tenant.supportPhone}</span> : null}
+                {tenant.supportEmail ? (
+                  <a href={`mailto:${tenant.supportEmail}`}>{tenant.supportEmail}</a>
+                ) : null}
+              </p>
+            ) : null}
+          </aside>
+        ) : null}
         </div>
         <StudentPayAttribution />
       </div>

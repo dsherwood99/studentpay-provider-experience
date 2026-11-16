@@ -1,4 +1,5 @@
 import { jsonError } from "./errors.ts";
+import { configuredNzHostedTenantSlug, getHostedProductMode } from "./environment.ts";
 import { resolveHostedPayInFullEligibility } from "./pay-in-full.ts";
 import type { NzCourse, NzTenant } from "./types.ts";
 
@@ -19,7 +20,7 @@ function reviewModeFlag(): "on" | "off" | "unset" {
 }
 
 export function isNzHostedReviewMode(): boolean {
-  if (process.env.HOSTED_PRODUCT_MODE?.trim().toLowerCase() !== "nz_enrolment") {
+  if (getHostedProductMode() !== "nz_enrolment") {
     return false;
   }
   // Production customer deployments always use the real enrolment path.
@@ -38,7 +39,7 @@ export function isNzHostedReviewMode(): boolean {
   // leave the flag unset and stay on the normal agreement gate.
   return (
     process.env.VERCEL_ENV === "preview" &&
-    process.env.NZ_HOSTED_TENANT_SLUG?.trim().toLowerCase() === "bela-nz"
+    configuredNzHostedTenantSlug() === "bela-nz"
   );
 }
 

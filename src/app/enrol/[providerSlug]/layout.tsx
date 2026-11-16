@@ -64,7 +64,13 @@ export default async function NzEnrolProviderLayout({
   }
 
   return (
-    <div className={styles.frame} style={tenantCssVars(publicTenant) as CSSProperties}>
+      <div
+        className={styles.frame}
+        data-au-checkout={
+          publicTenant.checkout.summaryPresentation === "course_card" ? "true" : undefined
+        }
+        style={tenantCssVars(publicTenant) as CSSProperties}
+      >
       {reviewBanner}
       <div className={styles.main}>{children}</div>
       <ProviderNativeFooter tenant={publicTenant} />

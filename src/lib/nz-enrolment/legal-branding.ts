@@ -142,6 +142,11 @@ export function brandingOverlayCss(tenant: LegalTenant): string {
       font-weight: 700;
       cursor: pointer;
     }
+    ${
+      String(branding.logoPath || "").includes("/bela/")
+        ? `main, .page-shell, .document-shell { max-width: 1024px; margin: 0 auto; padding: 24px 20px 48px; font-size: 13px; line-height: 1.65; }`
+        : ""
+    }
     @media print {
       .hosted-legal-chrome {
         display: none !important;

@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, test } from "node:test";
-import { listAuthoritativeHostedCourses } from "./api-catalogue-overlay.ts";
+import {
+  listAuthoritativeHostedCourses,
+  resolveAuthoritativeHostedCourseBySlug,
+} from "./api-catalogue-overlay.ts";
 import { getNzCourse } from "./courses.ts";
 import {
   NZ_PAYMENT_PLAN_COPY,
@@ -8,7 +12,9 @@ import {
   planSectionLead,
 } from "./checkout-ui.ts";
 import { kitDisclosureForPolicy } from "./kit-policy.ts";
+import { getHostedProductMode } from "./environment.ts";
 import { derivePlanFromRegularInstalment } from "./plan-math.ts";
+import { isNzHostedReviewMode } from "./review-mode.ts";
 import { getNzTenantBySlug } from "./tenants.ts";
 
 const managed = [
@@ -18,6 +24,11 @@ const managed = [
   "NZ_CATALOGUE_AUTHORITY_BELA_NZ",
   "PROVIDER_API_KEY_BELA_NZ",
   "NZ_HOSTED_TENANT_SLUG",
+  "NZ_HOSTED_REVIEW_MODE",
+  "VERCEL_ENV",
+  "VERCEL_URL",
+  "VERCEL_BRANCH_URL",
+  "VERCEL_PROJECT_PRODUCTION_URL",
 ];
 const previous: Record<string, string | undefined> = {};
 
@@ -224,5 +235,153 @@ describe("Bela NZ Black Friday offers", { concurrency: false }, () => {
     assert.equal(getNzCourse("bela-nz", "nail-bundle")?.catalogueOnly, true);
     assert.equal(getNzCourse("bela-nz", "nail-bundle-black-friday"), undefined);
     assert.equal(getNzCourse("bela-nz", "lash-bundle-black-friday"), undefined);
+    assert.equal(getNzTenantBySlug("bela-nz")?.checkout.summaryPresentation, "course_card");
+    assert.equal(getNzTenantBySlug("oli")?.checkout.summaryPresentation, undefined);
+    const checkout = readFileSync(
+      new URL("../../components/nz-enrolment/EnrolmentCheckout.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(checkout, /summaryPresentation === "course_card"/);
+    assert.match(checkout, /Enrolment summary/);
+    assert.match(checkout, /data-testid="nz-bela-plan-card"/);
+    assert.match(checkout, /kitDisclosureForPolicy\(tenant\.kitPolicy\)/);
+    assert.doesNotMatch(checkout, /280000|385000|224 payments|308 payments/);
+    assert.doesNotMatch(checkout, /providerSlug === "bela-nz"|slug === "bela-nz"/);
+    assert.match(checkout, /if \(courseSummary\)/);
+    assert.match(checkout, /<BelaAuCheckout/);
+    const bela = readFileSync(
+      new URL("../../components/nz-enrolment/BelaAuCheckout.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(bela, /First payment date/);
+    assert.match(bela, /Selected date/);
+    assert.match(bela, /Highlighted dates can be selected/);
+    assert.doesNotMatch(bela, /Secure payment setup powered by StudentPay/);
+    assert.match(bela, /Agreements & consent/);
+    assert.match(bela, /Kit Not Included/);
+    assert.match(bela, /Enrol Now/);
+    assert.match(bela, /Authorise bank account/);
+    assert.match(bela, /NZ_REGIONS/);
+    assert.match(bela, /readOnly/);
+    assert.doesNotMatch(bela, /GoCardless|Australia\/Sydney|BELA-AU|Address line 2|AUD/);
+    assert.doesNotMatch(bela, /address-line2/);
+  });
+
+  test("preview review serves the Black Friday plans when the provider key is absent", async () => {
+    process.env.VERCEL_ENV = "preview";
+    process.env.VERCEL_URL = "studentpay-nz-bela-enrolment-git-review.vercel.app";
+    assert.equal(getHostedProductMode(), "nz_enrolment");
+    assert.equal(isNzHostedReviewMode(), true);
+    const tenant = getNzTenantBySlug("bela-nz");
+    assert.ok(tenant);
+    assert.equal(getNzTenantBySlug("oli"), undefined);
+    let called = false;
+    const lash = await resolveAuthoritativeHostedCourseBySlug(
+      tenant!,
+      "lash-bundle-black-friday",
+      async () => {
+        called = true;
+        throw new Error("review preview must not call the provider API");
+      },
+    );
+    const nail = await resolveAuthoritativeHostedCourseBySlug(
+      tenant!,
+      "nail-bundle-black-friday",
+      async () => {
+        called = true;
+        throw new Error("review preview must not call the provider API");
+      },
+    );
+    assert.equal(called, false);
+    assert.equal(lash.status, "ok");
+    assert.equal(nail.status, "ok");
+    if (lash.status !== "ok" || nail.status !== "ok") return;
+    assert.equal(lash.source, "local");
+    assert.equal(lash.course.paymentPlanCourseFeeCents, 280_000);
+    assert.equal(nail.course.paymentPlanCourseFeeCents, 385_000);
+    assert.equal(lash.course.legalGateClosed, true);
+    assert.equal(lash.course.providerStudentAgreement, undefined);
+    for (const course of [lash.course, nail.course]) {
+      assert.equal(course.planPolicy.mode, "derived_regular");
+      if (course.planPolicy.mode !== "derived_regular") continue;
+      const preview = derivePlanFromRegularInstalment({
+        coursePriceCents: course.paymentPlanCourseFeeCents,
+        upfrontAmountCents: course.planPolicy.upfrontAmountCents,
+        regularInstalmentCents: course.planPolicy.regularInstalmentCents,
+        frequency: "Weekly",
+        firstPaymentDate: "2026-11-23",
+      });
+      assert.equal(preview.regularInstalmentAmountCents, 1_250);
+      assert.equal(preview.upfrontAmountCents, 0);
+      assert.equal(
+        preview.numberOfInstalments,
+        course.courseCode === "BELA_LASH_BUNDLE_BLACK_FRIDAY" ? 224 : 308,
+      );
+    }
+    process.env.VERCEL_ENV = "production";
+    assert.equal(isNzHostedReviewMode(), false);
+    const production = await resolveAuthoritativeHostedCourseBySlug(
+      tenant!,
+      "lash-bundle-black-friday",
+      async () => {
+        throw new Error("production must not use the review fixture");
+      },
+    );
+    assert.equal(production.status, "not_found");
+  });
+
+  test("an authorised catalogue still wins over the review fixture", async () => {
+    process.env.HOSTED_PRODUCT_MODE = "nz_enrolment";
+    process.env.STUDENTPAY_ENV = "sandbox";
+    process.env.NZ_STUDENTPAY_API_BASE_URL = "https://sandbox-api.studentpay.co.nz";
+    process.env.NZ_CATALOGUE_AUTHORITY_BELA_NZ = "salesforce";
+    process.env.PROVIDER_API_KEY_BELA_NZ = "test-key";
+    process.env.NZ_HOSTED_TENANT_SLUG = "bela-nz";
+    process.env.NZ_HOSTED_REVIEW_MODE = "true";
+    process.env.VERCEL_ENV = "preview";
+    const tenant = getNzTenantBySlug("bela-nz")!;
+    let called = false;
+    const resolved = await resolveAuthoritativeHostedCourseBySlug(
+      tenant,
+      "lash-bundle-black-friday",
+      async () => {
+        called = true;
+        return new Response(
+          JSON.stringify({
+            courses: [
+              offer({
+                code: "BELA_LASH_BUNDLE_BLACK_FRIDAY",
+                slug: "lash-bundle-black-friday",
+                name: "Lash Bundle — Black Friday",
+                price: 280_000,
+                count: 224,
+              }),
+            ],
+            provider_config: {
+              provider_code: "BELA_NZ",
+              brand_name: "Bela Beauty College",
+              support_email: "support@belabeautycollege.com",
+              support_phone: "+64 9 888 6459",
+              privacy_url: "https://belabeautycollege.com/policies/privacy-policy",
+              pay_in_full_enabled: false,
+            },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      },
+    );
+    assert.equal(called, true);
+    assert.equal(resolved.status, "ok");
+    if (resolved.status !== "ok") return;
+    assert.equal(resolved.source, "api");
+    const denied = await resolveAuthoritativeHostedCourseBySlug(
+      tenant,
+      "nail-bundle-black-friday",
+      async () => new Response("unauthorized", { status: 401 }),
+    );
+    assert.equal(denied.status, "ok");
+    if (denied.status !== "ok") return;
+    assert.equal(denied.source, "local");
+    assert.equal(denied.course.paymentPlanCourseFeeCents, 385_000);
   });
 });

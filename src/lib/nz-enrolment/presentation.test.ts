@@ -124,9 +124,9 @@ describe("generic provider branding and presentation", () => {
     assert.equal(pub.checkout.maxFirstPaymentDelayDays, undefined);
     assert.equal(pub.checkout.paymentChoicePresentation, undefined);
     assert.equal(pub.branding.logoPath, "/nz-enrolment/bela/logo.png");
-    assert.equal(pub.branding.backgroundColour, "#ffffff");
-    assert.equal(pub.branding.ctaColour, "#FFBA92");
-    assert.equal(pub.branding.ctaTextColour, "#5A332B");
+    assert.equal(pub.branding.backgroundColour, "#faf7f4");
+    assert.equal(pub.branding.ctaColour, "#503231");
+    assert.equal(pub.branding.ctaTextColour, "#ffffff");
     assert.equal(pub.presentation.showCourseCategory, undefined);
     assert.equal(showsCourseCategory(pub), true);
     assert.equal(pub.presentation.faviconPath, undefined);

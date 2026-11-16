@@ -1569,3 +1569,309 @@
     width: 100%;
   }
 }
+
+.courseLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 22rem);
+  gap: 18px 28px;
+  align-items: start;
+}
+
+.courseMain {
+  min-width: 0;
+}
+
+.courseRail {
+  position: sticky;
+  top: 16px;
+  border: 1px solid #eadfd8;
+  border-radius: 18px;
+  background: #fff;
+  padding: 22px 22px 18px;
+  box-shadow: 0 12px 32px rgba(80, 50, 49, 0.06);
+}
+
+.courseRailHeading {
+  margin: 0 0 14px;
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--nz-muted);
+}
+
+.courseRailKicker {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--nz-muted);
+}
+
+.courseRailName {
+  margin: 8px 0 0;
+  font-family: var(--nz-heading-font, inherit);
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--nz-heading);
+}
+
+.courseRailWeekly {
+  margin: 14px 0 0;
+  font-family: var(--nz-heading-font, inherit);
+  font-size: 2rem;
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--nz-heading);
+}
+
+.courseRailWeekly span {
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.courseRailRows {
+  display: grid;
+  gap: 0;
+  margin: 16px 0 0;
+}
+
+.courseRailRows div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: baseline;
+  padding: 8px 0;
+}
+
+.courseRailRows dt {
+  color: var(--nz-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.courseRailRows dd {
+  margin: 0;
+  font-weight: 650;
+  text-align: right;
+}
+
+.courseRailTotal dt,
+.courseRailTotal dd {
+  font-weight: 800;
+  color: var(--nz-heading);
+  font-size: 1.02rem;
+}
+
+.offerBadge {
+  display: inline-flex;
+  margin: 10px 0 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #ffe8da;
+  color: #5a332b;
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+}
+
+.planCard {
+  display: grid;
+  gap: 14px;
+}
+
+.planCardHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.planCardHead h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.planHighlight {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: #fff1e8;
+  color: #5a332b;
+}
+
+.planWeekly {
+  margin: 0;
+  font-family: var(--nz-heading-font, inherit);
+  font-size: 2rem;
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.planWeekly span {
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.planHighlight p:last-child {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.planStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.planStats div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.planStats dt {
+  color: var(--nz-muted);
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.planStats dd {
+  margin: 0;
+  font-weight: 750;
+  font-size: 1rem;
+}
+
+.planResidual {
+  margin: 0;
+  color: var(--nz-muted);
+  font-size: 0.875rem;
+}
+
+.kitPanel {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff1e8;
+  color: #5a332b;
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.courseContact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 14px 0 0;
+  color: var(--nz-muted);
+  font-size: 0.85rem;
+}
+
+.courseContact a {
+  color: var(--nz-heading);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.dateFrame {
+  background: #fff7f2;
+  border-color: #f0d2c2;
+}
+
+.dateFrame .ddaDateHint strong {
+  background: #ffba92;
+  color: #5a332b;
+}
+
+.page[data-summary="course_card"] {
+  background: #f6f3ee;
+}
+
+.page[data-summary="course_card"] .shell {
+  width: min(1120px, 100%);
+}
+
+.page[data-summary="course_card"] .hero {
+  grid-template-columns: 1fr;
+  margin-bottom: 4px;
+}
+
+.page[data-summary="course_card"] .section {
+  border-color: #eadfd8;
+  box-shadow: 0 8px 24px rgba(80, 50, 49, 0.04);
+}
+
+.page[data-summary="course_card"] .checks {
+  border-color: #eadfd8;
+  background: #fffdfb;
+}
+
+.page[data-summary="course_card"] .reviewSplit {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 721px) {
+  .page[data-summary="course_card"] .studentGrid > .field:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .page[data-summary="course_card"] .studentGrid > .field:nth-child(2) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .page[data-summary="course_card"] .studentGrid > .field:nth-child(4) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .page[data-summary="course_card"] .studentGrid > .field:nth-child(5) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .page[data-summary="course_card"] .studentGrid > .field:nth-child(3) {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .page[data-summary="course_card"] .studentGrid > .field:nth-child(6) {
+    grid-column: 2;
+    grid-row: 3;
+  }
+}
+
+@media (max-width: 860px) {
+  .courseLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .courseRail {
+    position: static;
+    order: -1;
+  }
+
+  .planStats {
+    grid-template-columns: 1fr 1fr;
+  }
+}

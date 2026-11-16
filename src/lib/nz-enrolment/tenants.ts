@@ -223,17 +223,17 @@ export const NZ_TENANTS: readonly NzTenant[] = [
     kitPolicy: "KIT_NOT_INCLUDED",
     branding: {
       logoPath: "/nz-enrolment/bela/logo.png",
-      primaryColour: "#5A332B",
-      accentColour: "#5A332B",
-      backgroundColour: "#ffffff",
+      primaryColour: "#503231",
+      accentColour: "#503231",
+      backgroundColour: "#faf7f4",
       surfaceColour: "#ffffff",
       headingColour: "#503231",
-      mutedTextColour: "#7A564E",
+      mutedTextColour: "#7a635f",
       textColour: "#503231",
       fontFamily: 'var(--font-nz-body), "DM Sans", Arial, sans-serif',
       headingFontFamily: "var(--font-nz-heading), Montserrat, sans-serif",
-      ctaColour: "#FFBA92",
-      ctaTextColour: "#5A332B",
+      ctaColour: "#503231",
+      ctaTextColour: "#ffffff",
       buttonRadius: "medium",
       headerStyle: "provider-native",
       footerStyle: "provider-native",
@@ -274,6 +274,7 @@ export const NZ_TENANTS: readonly NzTenant[] = [
         supportNote:
           "Questions about this enrolment can be sent to Bela Beauty College or StudentPay NZ support.",
       },
+      summaryPresentation: "course_card",
     },
     apiKeyEnv: "PROVIDER_API_KEY_BELA_NZ",
     active: true,
@@ -412,6 +413,9 @@ export function toPublicTenant(tenant: NzTenant): NzPublicTenant {
         : {}),
       ...(tenant.checkout.hidePlanScheduleDetails
         ? { hidePlanScheduleDetails: true }
+        : {}),
+      ...(tenant.checkout.summaryPresentation
+        ? { summaryPresentation: tenant.checkout.summaryPresentation }
         : {}),
     },
   };

@@ -40,13 +40,28 @@ export function getStudentpayEnv(): StudentpayEnv | null {
  */
 const BELA_HOSTED_PROJECT_HOST = "studentpay-nz-bela-enrolment";
 
+/**
+ * True on the dedicated Bela NZ Vercel project. Preview deployments often
+ * expose the project name on VERCEL_URL while the production domain is custom.
+ */
+export function isBelaHostedProjectDeployment(): boolean {
+  const signal = [
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    process.env.VERCEL_URL,
+    process.env.VERCEL_BRANCH_URL,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return signal.includes(BELA_HOSTED_PROJECT_HOST);
+}
+
 export function configuredNzHostedTenantSlug(): string | null {
   const value = process.env.NZ_HOSTED_TENANT_SLUG?.trim().toLowerCase() || "";
   if (value) {
     return value;
   }
-  const projectHost = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim().toLowerCase() || "";
-  if (projectHost.includes(BELA_HOSTED_PROJECT_HOST)) {
+  if (isBelaHostedProjectDeployment()) {
     return "bela-nz";
   }
   return null;
@@ -94,6 +109,18 @@ export function getHostedProductMode(): HostedProductMode {
   }
   if (configured === "academy") {
     return "academy";
+  }
+
+  // Preview on the Bela NZ project does not receive the Production-only
+  // hosted env vars. Recognise that project without copying any secret.
+  // An explicit mode, including on Production, is left untouched.
+  if (
+    !configured &&
+    process.env.VERCEL_ENV === "preview" &&
+    isBelaHostedProjectDeployment() &&
+    !configuredDeploymentProviderCode()
+  ) {
+    return "nz_enrolment";
   }
 
   const bound = configuredDeploymentProviderCode();
