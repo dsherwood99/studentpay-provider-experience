@@ -8,6 +8,11 @@
   font-family: var(--nz-font, Inter, "Segoe UI", sans-serif);
 }
 
+.frame[data-au-checkout="true"] .siteFooter,
+.frame[data-au-checkout="true"] .footer {
+  display: none;
+}
+
 .main {
   flex: 1;
   min-width: 0;

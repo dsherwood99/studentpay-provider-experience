@@ -94,6 +94,7 @@ import { PayInFullCardForm } from "@/components/nz-enrolment/PayInFullCardForm";
 import { NzCourseConfigurationUnavailable } from "@/components/nz-enrolment/CourseConfigurationUnavailable";
 import { EnrolmentConfirmation } from "@/components/nz-enrolment/EnrolmentConfirmation";
 import { ProviderNativeHeader } from "@/components/nz-enrolment/ProviderNativeHeader";
+import { BelaAuCheckout } from "@/components/nz-enrolment/BelaAuCheckout";
 import { StudentPayAttribution } from "@/components/nz-enrolment/StudentPayAttribution";
 import type { Stripe, StripeElements } from "@stripe/stripe-js";
 import {
@@ -279,6 +280,7 @@ export function NzEnrolmentCheckout({
   const [preparationState, setPreparationState] = useState<
     "idle" | "preparing" | "ready" | "failed"
   >("idle");
+  const [bankStarted, setBankStarted] = useState(false);
   const [prepareMs, setPrepareMs] = useState<number | null>(null);
   const [openMs, setOpenMs] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -1655,6 +1657,47 @@ export function NzEnrolmentCheckout({
         </div>
       </div>
       </>
+    );
+  }
+
+  if (courseSummary) {
+    const belaBankPhase =
+      !bankStarted && !setupComplete
+        ? "idle"
+        : setupComplete
+          ? "complete"
+          : sectionErrors.dda || preparationState === "failed"
+            ? "failed"
+            : awaitingDirectDebit || preparationState === "preparing"
+              ? "preparing"
+              : setupUrl
+                ? "ready"
+                : "preparing";
+    return (
+      <BelaAuCheckout
+        tenant={tenant}
+        course={course}
+        student={resolvedStudent}
+        fieldErrors={fieldErrors}
+        onStudentChange={updateStudent}
+        onFieldErrors={setFieldErrors}
+        firstPaymentDate={resolvedFirstPaymentDate}
+        paymentWindow={paymentDateWindow}
+        onFirstPaymentDate={setFirstPaymentDate}
+        preview={preview}
+        plan={display}
+        offerLabel={blackFridayOffer ? "Black Friday offer" : null}
+        kitLabel={kitDisclosure}
+        declarations={declarations}
+        onDeclarations={setDeclarations}
+        providerAgreement={providerAgreement}
+        bankPhase={belaBankPhase}
+        bankError={sectionErrors.dda || error || null}
+        onStartBank={() => {
+          setBankStarted(true);
+          void startDirectDebitSetup();
+        }}
+      />
     );
   }
 

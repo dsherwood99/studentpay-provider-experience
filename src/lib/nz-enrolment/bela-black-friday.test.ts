@@ -247,6 +247,20 @@ describe("Bela NZ Black Friday offers", { concurrency: false }, () => {
     assert.match(checkout, /kitDisclosureForPolicy\(tenant\.kitPolicy\)/);
     assert.doesNotMatch(checkout, /280000|385000|224 payments|308 payments/);
     assert.doesNotMatch(checkout, /providerSlug === "bela-nz"|slug === "bela-nz"/);
+    assert.match(checkout, /if \(courseSummary\)/);
+    assert.match(checkout, /<BelaAuCheckout/);
+    const bela = readFileSync(
+      new URL("../../components/nz-enrolment/BelaAuCheckout.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(bela, /Agreements & consent/);
+    assert.match(bela, /Kit Not Included/);
+    assert.match(bela, /Enrol Now/);
+    assert.match(bela, /Authorise bank account/);
+    assert.match(bela, /NZ_REGIONS/);
+    assert.match(bela, /readOnly/);
+    assert.doesNotMatch(bela, /GoCardless|Australia\/Sydney|BELA-AU|Address line 2|AUD/);
+    assert.doesNotMatch(bela, /address-line2/);
   });
 
   test("preview review serves the Black Friday plans when the provider key is absent", async () => {
