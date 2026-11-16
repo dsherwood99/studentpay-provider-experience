@@ -1,5 +1,8 @@
 import { canonicalGet } from "@/lib/nz-enrolment/canonical";
-import { isGoCardlessHostedAuthorisationUrl } from "@/lib/nz-enrolment/checkout-ui";
+import {
+  checkoutFormRecovery,
+  isGoCardlessHostedAuthorisationUrl,
+} from "@/lib/nz-enrolment/checkout-ui";
 import { jsonError } from "@/lib/nz-enrolment/errors";
 import { logNzEnrolmentEvent } from "@/lib/nz-enrolment/observability";
 import {
@@ -110,6 +113,14 @@ export async function GET() {
         ),
       },
       session: publicSessionView(session),
+      recovery: checkoutFormRecovery({
+        providerSlug: session.providerSlug,
+        courseSlug: session.courseSlug,
+        expectedProviderSlug: session.providerSlug,
+        expectedCourseSlug: session.courseSlug,
+        student: session.student,
+        firstPaymentDate: session.plan?.firstPaymentDate,
+      }),
     });
   }
 

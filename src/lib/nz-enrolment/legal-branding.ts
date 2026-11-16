@@ -208,3 +208,31 @@ export function applyHostedLegalDocumentPresentation(input: {
 export function hostedLegalViewIsPopup(value: string | null): boolean {
   return value === "popup";
 }
+
+/** Full document for the authoritative provider student agreement. No student fields. */
+export function renderStudentAgreementDocument(input: {
+  title: string;
+  version: string;
+  contentHash: string;
+  html: string;
+}): string {
+  const title = escapeHtml(input.title);
+  const version = escapeHtml(input.version);
+  const hash = escapeHtml(input.contentHash);
+  const body = String(input.html || "");
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>${title}</title>
+</head>
+<body>
+<main>
+<p>Version ${version}</p>
+<p>Document hash ${hash}</p>
+${body}
+</main>
+</body>
+</html>`;
+}

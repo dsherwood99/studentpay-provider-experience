@@ -31,13 +31,6 @@ type PlanLabels = {
   totalLabel: string;
 };
 
-type ProviderAgreement = {
-  title: string;
-  html: string;
-  version?: string;
-  reviewOnly?: boolean;
-};
-
 type Props = {
   tenant: NzPublicTenant;
   course: NzPublicCourse;
@@ -59,13 +52,13 @@ type Props = {
     provider_student_agreement_accepted: boolean;
   };
   onDeclarations: (next: Props["declarations"]) => void;
-  providerAgreement: ProviderAgreement | null;
   bankPhase: "ready" | "preparing" | "awaiting" | "failed" | "complete";
   bankError: string | null;
   onStartBank: () => void;
   enrolReady: boolean;
   enrolBusy: boolean;
   enrolError: string | null;
+  detailsNotice?: string | null;
   onEnrol: () => void;
 };
 
@@ -88,17 +81,16 @@ export function BelaAuCheckout({
   kitLabel,
   declarations,
   onDeclarations,
-  providerAgreement,
   bankPhase,
   bankError,
   onStartBank,
   enrolReady,
   enrolBusy,
   enrolError,
+  detailsNotice = null,
   onEnrol,
 }: Props) {
   const [consentMessage, setConsentMessage] = useState("");
-  const [studentAgreementOpen, setStudentAgreementOpen] = useState(false);
   const accepted =
     declarations.payment_plan_accepted &&
     combinedDetailsPrivacyAccepted(declarations) &&
@@ -165,6 +157,7 @@ export function BelaAuCheckout({
 
           <section id="your-details" className={styles.card}>
             <h2>Student details</h2>
+            {detailsNotice ? <p className={styles.error}>{detailsNotice}</p> : null}
             <div className={styles.pair}>
               <Field label="Legal first name" error={fieldErrors.firstName}>
                 <input
@@ -345,21 +338,21 @@ export function BelaAuCheckout({
             <div className={styles.documents}>
               <DocumentLink
                 label="Payment Plan Agreement"
+                href={hostedLegalDocumentHref("payment-plan")}
                 onOpen={(event) => openHostedDocument(event, "payment-plan")}
               />
               <DocumentLink
                 label="Direct Debit Service Agreement"
+                href={hostedLegalDocumentHref("direct-debit", { providerSlug: tenant.slug })}
                 onOpen={(event) => openHostedDocument(event, "direct-debit")}
               />
               <DocumentLink
                 label="Student Agreement"
-                onOpen={() => {
-                  if (providerAgreement?.html) {
-                    setStudentAgreementOpen(true);
-                    return;
-                  }
-                  window.open(tenant.termsUrl, "_blank", "noopener");
-                }}
+                href={hostedLegalDocumentHref("student-agreement", {
+                  providerSlug: tenant.slug,
+                  courseSlug: course.slug,
+                })}
+                onOpen={(event) => openHostedDocument(event, "student-agreement")}
               />
               <DocumentLink
                 label="Privacy Policy"
@@ -448,25 +441,6 @@ export function BelaAuCheckout({
           </p>
         </aside>
       </div>
-      {studentAgreementOpen && providerAgreement ? (
-        <div className={styles.dialogBackdrop} role="presentation" onClick={() => setStudentAgreementOpen(false)}>
-          <div
-            className={styles.dialog}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Student Agreement"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div
-              className={styles.dialogBody}
-              dangerouslySetInnerHTML={{ __html: providerAgreement.html }}
-            />
-            <button type="button" className={styles.dialogClose} onClick={() => setStudentAgreementOpen(false)}>
-              Close
-            </button>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -495,15 +469,15 @@ function DocumentLink({
   onOpen,
 }: {
   label: string;
-  href?: string;
+  href: string;
   onOpen?: (event: { preventDefault: () => void; currentTarget: HTMLAnchorElement }) => void;
 }) {
   return (
     <a
       className={styles.document}
-      href={href || "#agreements"}
-      target={href ? "_blank" : undefined}
-      rel={href ? "noreferrer" : undefined}
+      href={href}
+      target="_blank"
+      rel="noreferrer"
       onClick={(event) => {
         if (onOpen) {
           onOpen(event);
@@ -520,7 +494,7 @@ function openHostedDocument(
   event: { preventDefault: () => void; currentTarget: HTMLAnchorElement },
   kind: HostedLegalKind,
 ) {
-  const href = hostedLegalDocumentHref(kind);
+  const href = event.currentTarget.href || hostedLegalDocumentHref(kind);
   openLegalAgreementDocument({
     href,
     preferDesktopPopup: shouldUseDesktopLegalPopup({
