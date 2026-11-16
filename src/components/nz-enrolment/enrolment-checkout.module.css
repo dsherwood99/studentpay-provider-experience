@@ -110,9 +110,9 @@
 .heroCard {
   background: var(--nz-surface);
   border: 1px solid var(--nz-border);
-  border-radius: 14px;
-  padding: 20px 22px;
-  box-shadow: 0 10px 28px rgba(28, 28, 28, 0.04);
+  border-radius: 16px;
+  padding: 22px 24px;
+  box-shadow: 0 10px 28px rgba(28, 28, 28, 0.045);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -122,9 +122,9 @@
 .fee {
   margin: 0;
   font-family: var(--nz-heading-font, var(--nz-font, Inter, "Segoe UI", sans-serif));
-  font-size: clamp(1.45rem, 2.4vw, 1.8rem);
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  font-size: clamp(1.85rem, 3vw, 2.35rem);
+  font-weight: 750;
+  letter-spacing: -0.035em;
   color: var(--nz-heading);
 }
 
@@ -142,9 +142,9 @@
   padding-top: 12px;
   border-top: 1px solid var(--nz-border);
   font-family: var(--nz-heading-font, var(--nz-font, Inter, "Segoe UI", sans-serif));
-  font-size: 1.12rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-size: 1.28rem;
+  font-weight: 750;
+  letter-spacing: -0.03em;
   color: var(--nz-heading);
 }
 
@@ -155,11 +155,13 @@
 }
 
 .form {
-  background: var(--nz-surface);
-  border: 1px solid var(--nz-border);
-  border-radius: 12px;
-  box-shadow: 0 6px 18px rgba(28, 28, 28, 0.035);
-  overflow: hidden;
+  display: grid;
+  gap: 16px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
 }
 
 .form h1 {
@@ -169,12 +171,15 @@
 }
 
 .section {
-  padding: 16px 22px 20px;
-  border-bottom: 1px solid var(--nz-border);
+  padding: 22px 24px 24px;
+  border: 1px solid var(--nz-border);
+  border-radius: 16px;
+  background: var(--nz-surface);
+  box-shadow: 0 10px 28px rgba(28, 28, 28, 0.045);
 }
 
 .section:last-child {
-  border-bottom: 0;
+  border-bottom: 1px solid var(--nz-border);
 }
 
 .section:focus {
@@ -192,7 +197,7 @@
   align-items: center;
   column-gap: 12px;
   row-gap: 4px;
-  margin: 0 0 12px;
+  margin: 0 0 16px;
 }
 
 .sectionTitle {
@@ -208,11 +213,11 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.65rem;
+  height: 1.65rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--nz-primary) 12%, white);
-  color: var(--nz-primary);
+  background: var(--nz-heading);
+  color: #fff;
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0;
@@ -223,7 +228,7 @@
   margin: 0;
   flex: 0 1 auto;
   min-width: 0;
-  font-size: 1.05rem;
+  font-size: 1.2rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.25;
@@ -314,7 +319,11 @@
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px 16px;
+  gap: 16px 18px;
+}
+
+.studentGrid {
+  align-items: start;
 }
 
 .addressRow {
@@ -327,7 +336,7 @@
 .field {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
   min-width: 0;
 }
 
@@ -337,22 +346,23 @@
 
 .field > span:first-child,
 .field label {
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 0.8125rem;
+  font-weight: 650;
   line-height: 1.35;
   color: var(--nz-heading);
 }
 
 .field input,
 .field select {
-  min-height: 42px;
-  border: 1px solid var(--nz-border);
-  border-radius: 7px;
-  padding: 8px 12px;
+  min-height: 46px;
+  border: 1px solid #d7d1c8;
+  border-radius: 8px;
+  padding: 10px 12px;
   font: inherit;
   font-size: var(--nz-form-size);
   line-height: var(--nz-form-leading);
   background: #fff;
+  color: var(--nz-heading);
 }
 
 .field input:disabled,
@@ -754,6 +764,26 @@
   align-items: baseline;
 }
 
+.planFacts {
+  gap: 0 16px;
+  margin: 0;
+  padding: 2px 16px;
+  border: 1px solid var(--nz-border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.planFacts dt,
+.planFacts dd {
+  padding: 11px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--nz-border) 85%, transparent);
+}
+
+.planFacts dt:last-of-type,
+.planFacts dd:last-of-type {
+  border-bottom: 0;
+}
+
 .review dd {
   text-align: right;
 }
@@ -773,21 +803,21 @@
 .summaryCard {
   order: 2;
   min-width: 0;
-  background: var(--nz-soft);
+  background: #fff;
   border: 1px solid var(--nz-border);
-  border-radius: 10px;
-  padding: 14px 16px;
-  box-shadow: none;
+  border-radius: 14px;
+  padding: 18px 18px 14px;
+  box-shadow: 0 8px 22px rgba(28, 28, 28, 0.04);
 }
 
 .summaryCard h3 {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   font-family: var(--nz-heading-font, var(--nz-font, Inter, "Segoe UI", sans-serif));
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--nz-muted);
+  font-size: 1rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  text-transform: none;
+  color: var(--nz-heading);
 }
 
 .summaryCard .review {
@@ -799,13 +829,22 @@
 
 .summaryCard .review dt {
   margin-top: 0;
+  padding: 8px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--nz-border) 80%, transparent);
   font-size: 0.72rem;
 }
 
 .summaryCard .review dd {
   text-align: right;
+  padding: 8px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--nz-border) 80%, transparent);
   font-size: 0.875rem;
   overflow-wrap: anywhere;
+}
+
+.summaryCard .review dt:last-of-type,
+.summaryCard .review dd:last-of-type {
+  border-bottom: 0;
 }
 
 .summaryCard .review dt[data-total="true"],
@@ -1078,15 +1117,41 @@
 .ddaDateCol {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
   min-width: 0;
+  padding: 16px;
+  border: 1px solid #d7d1c8;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.ddaDateCol .field input[type="date"] {
+  min-height: 48px;
+  font-variant-numeric: tabular-nums;
 }
 
 .ddaDateHint {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   margin: 0;
   color: var(--nz-muted);
   font-size: 0.8125rem;
   line-height: 1.45;
+}
+
+.ddaDateHint strong {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--nz-soft);
+  color: var(--nz-heading);
+  font-size: 0.95rem;
+  font-weight: 750;
+  letter-spacing: -0.01em;
 }
 
 .ddaActionCol {
@@ -1096,11 +1161,11 @@
 .ddaStatusPanel {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 14px;
+  gap: 10px;
+  padding: 16px;
   border: 1px solid var(--nz-border);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--nz-primary) 7%, white);
+  border-radius: 12px;
+  background: #fff;
 }
 
 .ddaStatusPanel[data-state="blocked"] {
@@ -1134,7 +1199,7 @@
 }
 
 .ddaStatusActions .btnPrimary {
-  min-height: 42px;
+  min-height: 48px;
 }
 
 .ddaRow {
@@ -1174,10 +1239,10 @@
 }
 
 .btn {
-  min-height: 42px;
+  min-height: 48px;
   border: 0;
-  border-radius: 8px;
-  padding: 10px 18px;
+  border-radius: 10px;
+  padding: 12px 20px;
   font: inherit;
   font-size: 0.9375rem;
   font-weight: 700;
@@ -1196,7 +1261,7 @@
 .btnPrimary {
   background: var(--nz-cta, var(--nz-primary));
   color: var(--nz-cta-text, #fff);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--nz-cta, var(--nz-primary)) 18%, transparent);
+  box-shadow: none;
 }
 
 .btnPrimary:hover:not(:disabled) {
@@ -1215,18 +1280,21 @@
 
 .checks {
   display: grid;
-  gap: 12px;
-  margin: 0 0 14px;
-  border: 0;
-  padding: 0;
+  gap: 14px;
+  margin: 0 0 16px;
+  border: 1px solid var(--nz-border);
+  border-radius: 12px;
+  padding: 16px;
+  background: #fff;
   min-inline-size: 0;
 }
 
 .checks legend {
   padding: 0;
-  margin: 0 0 4px;
-  font-size: 0.95rem;
-  font-weight: 700;
+  margin: 0 0 2px;
+  font-size: 1rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
   line-height: 1.35;
   color: var(--nz-heading);
 }
@@ -1241,8 +1309,8 @@
   grid-template-columns: 1.125rem minmax(0, 1fr);
   gap: 10px 12px;
   align-items: flex-start;
-  font-size: 0.875rem;
-  line-height: 1.45;
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
 
 .check a {
@@ -1260,14 +1328,14 @@
 .agreementPanel {
   margin: 0 0 0 30px;
   border: 1px solid var(--nz-border);
-  border-radius: 8px;
-  background: #fff;
-  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--nz-soft);
+  padding: 10px 14px;
 }
 
 .agreementPanel summary {
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 650;
   color: var(--nz-heading);
 }
 
@@ -1299,6 +1367,17 @@
   color: var(--nz-text);
   font-size: var(--nz-form-size);
   line-height: var(--nz-form-leading);
+}
+
+.form .note {
+  margin: 0 0 14px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--nz-muted);
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1.45;
 }
 
 .success {
@@ -1348,9 +1427,11 @@
 }
 
 @media (min-width: 721px) {
-  .ddaSetup .btnBlock {
+  .ddaSetup .btnBlock,
+  .actions .btnBlock,
+  .ddaStatusActions .btnBlock {
     width: auto;
-    min-width: 240px;
+    min-width: 280px;
   }
 }
 
@@ -1431,7 +1512,11 @@
   }
 
   .section {
-    padding: 14px 14px 16px;
+    padding: 16px 14px 18px;
+  }
+
+  .ddaDateCol {
+    padding: 14px;
   }
 
   .field input,
