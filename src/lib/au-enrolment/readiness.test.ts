@@ -15,7 +15,7 @@ describe("Academy Australia enrolment readiness", () => {
       academyAuEnrolmentBlockers.map((blocker) => blocker.code),
       [
         "agreement_not_approved",
-        "course_belongs_to_bela",
+        "settlement_not_verified",
         "provider_not_allowlisted",
         "submission_not_approved",
       ],

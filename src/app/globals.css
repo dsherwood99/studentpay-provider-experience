@@ -5343,3 +5343,41 @@ select {
     gap: 4px;
   }
 }
+
+.au-plan-fields {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.au-plan-fields label,
+.au-plan-check {
+  display: grid;
+  gap: 6px;
+  color: var(--colour-charcoal-900);
+  font-weight: 700;
+}
+
+.au-plan-fields input {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid var(--colour-grey-300);
+  border-radius: var(--radius-small, 8px);
+  background: #f7f4f1;
+  color: var(--colour-charcoal-700);
+  font: inherit;
+  font-weight: 500;
+}
+
+.au-plan-check {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  margin-top: 8px;
+}
+
+.au-plan-check input {
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+}

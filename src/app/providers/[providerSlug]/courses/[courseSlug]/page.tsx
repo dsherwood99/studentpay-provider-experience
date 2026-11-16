@@ -45,8 +45,8 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${course.title} | Australian payment-plan demonstration`,
-    description: `Academy Australia demonstration of the verified Australian weekly plan for ${course.title}.`,
+    title: `${course.title} | Academy Australia`,
+    description: `Academy Australia weekly plan for ${course.title}. Enrolment submission is held.`,
     robots: { index: false, follow: false },
   };
 }

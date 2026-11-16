@@ -30,23 +30,22 @@ export function AuPaymentPlanCoursePage({
             <Link href="/">Home</Link>
             <span>/</span>
             <Link href={AU_PAYMENT_PLAN_DIRECTORY_PATH}>
-              Australian payment-plan demonstrations
+              Australian payment plans
             </Link>
             <span>/</span>
             <span>{course.title}</span>
           </div>
 
           <p className="aa-script aa-script--on-coral">
-            Australian payment-plan demonstration
+            Academy Australia course
           </p>
           <h1>{course.title}</h1>
           <p>
-            {provider.name} is showing the verified Australian weekly plan for
-            this reference course. Use it to review price, upfront payment and
-            instalments before sandbox checkout is connected.
+            {provider.name} publishes this course as {course.code}. The weekly
+            plan is the approved AUD $3,500 schedule. Enrolment stays held.
           </p>
           <div className="simple-course-hero__badges">
-            <span>Demonstration</span>
+            <span>{course.checkoutPrefix}</span>
             {course.exclusions.map((exclusion) => (
               <span key={exclusion}>{exclusion}</span>
             ))}
@@ -61,12 +60,13 @@ export function AuPaymentPlanCoursePage({
             <AuDemoNotice />
 
             <article className="simple-course-card">
-              <span className="simple-course-card__label">Demonstration</span>
+              <span className="simple-course-card__label">Approved terms</span>
               <h2>Australian weekly payment plan</h2>
               <p>
-                The amounts on this page are the catalogue price version 1
-                terms for {course.title}. {provider.name} is using them to
-                demonstrate the Australian enrolment journey.
+                The amounts on this page are the owner-approved terms for{" "}
+                {course.title}. The schedule is calculated with the existing
+                weekly remainder rule. The upfront amount is collected within
+                24 hours of signup.
               </p>
               {course.inclusions.length > 0 ? (
                 <p>Includes {course.inclusions.join(", ")}.</p>
@@ -104,7 +104,7 @@ export function AuPaymentPlanCoursePage({
 
           <aside className="simple-checkout au-plan-summary">
             <div className="simple-checkout__head">
-              <p className="aa-script">Enrolment preview</p>
+              <p className="aa-script">Held enrolment</p>
               <h2>{formatAudCents(course.schedule.coursePriceCents)}</h2>
               <p>{formatAuInstalmentSummary(course)}</p>
             </div>
@@ -116,7 +116,7 @@ export function AuPaymentPlanCoursePage({
             </Link>
 
             <p className="au-plan-summary__note">
-              Enrol Now opens a labelled preview. It does not create an
+              Enrol Now opens the held checkout. It does not create an
               enrolment, send an agreement, authorise a bank account, or start
               a payment plan.
             </p>

@@ -7,16 +7,18 @@
  */
 export const AU_ENROLMENT_SUBMISSIONS_ENABLED = false;
 
+export const ACADEMYAU_AGREEMENT_DRAFT_VERSION = "ACADEMYAU-DRAFT-2026-11-16-v1";
+
 export const academyAuEnrolmentBlockers = [
   {
     code: "agreement_not_approved",
     summary:
-      "The Academy Australia student agreement is the demo wording ACADEMYAU-DEMO-2026-08-22-v3. It is not approved for a binding enrolment.",
+      "The agreement stored for Academy Australia is the demo wording ACADEMYAU-DEMO-2026-08-22-v3. Replacement draft ACADEMYAU-DRAFT-2026-11-16-v1 is inactive and cannot be accepted.",
   },
   {
-    code: "course_belongs_to_bela",
+    code: "settlement_not_verified",
     summary:
-      "Bridal Freelancer Bundle is a verified Bela production course. It is not an Academy Australia course.",
+      "Pinch production settlement for ACADEMYAU has not been confirmed for this offering.",
   },
   {
     code: "provider_not_allowlisted",
@@ -26,7 +28,7 @@ export const academyAuEnrolmentBlockers = [
   {
     code: "submission_not_approved",
     summary:
-      "Live submission stays off until the checks above pass and a separate approval is recorded.",
+      "Live submission stays off until the agreement, settlement and allowlist gates pass and a separate approval is recorded.",
   },
 ] as const;
 

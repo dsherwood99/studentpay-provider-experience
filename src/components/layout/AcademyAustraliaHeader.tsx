@@ -23,7 +23,7 @@ export function AcademyAustraliaHeader() {
         <nav className="platform-nav" aria-label="Main navigation">
           <Link href="/providers/academy-australia/courses">Courses</Link>
           <Link href="/providers/academy-australia/courses/au-payment-plans">
-            AU plan demos
+            AU payment plans
           </Link>
           <Link href="/#payment-options">Payment options</Link>
           <Link

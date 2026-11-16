@@ -22,9 +22,12 @@ describe("Australian payment-plan demonstrations", () => {
     const bridal = getAuPaymentPlanCourse("bridal-freelancer-bundle");
     assert.ok(bridal);
     assert.equal(auPaymentPlanCourses.length, 1);
-    assert.equal(bridal.code, "BRIDAL_FREELANCER_BUNDLE");
+    assert.equal(bridal.code, "ACADEMYAU_BRIDAL_FREELANCER_BUNDLE");
+    assert.notEqual(bridal.code, "BRIDAL_FREELANCER_BUNDLE");
+    assert.equal(bridal.checkoutPrefix, "ACADEMYAU-BFB");
+    assert.notEqual(bridal.checkoutPrefix, "BELA-BFB");
     assert.equal(bridal.title, "Bridal Freelancer Bundle");
-    assert.equal(bridal.source, "catalogue-price-v1");
+    assert.equal(bridal.source, "owner-approved-financial-terms");
     assert.deepEqual(bridal.inclusions, []);
     assert.deepEqual(bridal.exclusions, [KIT_NOT_INCLUDED]);
     assert.equal(bridal.schedule.currency, "AUD");
@@ -79,7 +82,7 @@ describe("Australian payment-plan demonstrations", () => {
         "academy-australia",
         "bridal-freelancer-bundle",
       )?.code,
-      "BRIDAL_FREELANCER_BUNDLE",
+      "ACADEMYAU_BRIDAL_FREELANCER_BUNDLE",
     );
     assert.equal(
       getAuPaymentPlanCourseForProvider(
