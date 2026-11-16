@@ -342,7 +342,7 @@ export async function POST(request: Request) {
     return jsonError(
       403,
       "AU_PREVIEW_NOT_SUBMITTABLE",
-      "This Australian payment-plan demonstration is not connected to checkout.",
+      "This Academy Australia enrolment is held and cannot be submitted.",
     );
   }
 

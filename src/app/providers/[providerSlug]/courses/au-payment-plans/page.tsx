@@ -14,9 +14,9 @@ type AuPaymentPlanDirectoryPageProps = {
 };
 
 export const metadata: Metadata = {
-  title: "Australian payment-plan demonstrations",
+  title: "Australian payment plans",
   description:
-    "Academy Australia test courses for reviewing the Australian weekly payment-plan journey.",
+    "Academy Australia weekly payment plans. Enrolment submission is held.",
   robots: { index: false, follow: false },
 };
 

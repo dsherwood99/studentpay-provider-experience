@@ -201,18 +201,17 @@ export function AcademyAustraliaHomePage() {
       <section className="aa-au-demo" id="au-payment-plans">
         <div className="page-shell">
           <div className="aa-au-demo__panel">
-            <p className="aa-script">Test environment</p>
-            <h2>Australian payment-plan demonstrations</h2>
+            <p className="aa-script">Enrolment held</p>
+            <h2>Australian payment plans</h2>
             <p>
-              A separate area for reviewing the Australian weekly enrolment
-              journey. These examples are not accredited Academy Australia
-              offerings.
+              Bridal Freelancer Bundle is an Academy Australia course with an
+              approved weekly plan. Public enrolment stays held.
             </p>
             <Link
               href="/providers/academy-australia/courses/au-payment-plans"
               className="button button--secondary"
             >
-              View Australian plan demos
+              View Australian payment plans
             </Link>
           </div>
         </div>

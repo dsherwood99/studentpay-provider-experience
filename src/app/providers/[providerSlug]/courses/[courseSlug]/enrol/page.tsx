@@ -35,9 +35,9 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${course.title} enrolment preview`,
+    title: `${course.title} enrolment`,
     description:
-      "Non-submittable Academy Australia preview of the Australian enrolment journey.",
+      "Held Academy Australia enrolment. The approved weekly plan is shown and submission stays off.",
     robots: { index: false, follow: false },
   };
 }

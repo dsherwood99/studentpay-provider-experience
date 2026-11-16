@@ -31,14 +31,14 @@ export function AuPaymentPlanDirectory({
               ← {provider.name}
             </Link>
 
-            <p className="provider-eyebrow">Australian payment-plan demonstrations</p>
+            <p className="provider-eyebrow">Australian payment plans</p>
 
             <h1>Review Australian weekly payment plans.</h1>
 
             <p>
-              These demonstration courses use verified Australian payment terms
-              so the enrolment journey can be reviewed before a sandbox checkout
-              is connected.
+              Bridal Freelancer Bundle is an Academy Australia course. The
+              weekly terms are approved. Enrolment stays held until the Academy
+              agreement and the remaining production gates are approved.
             </p>
           </div>
 
@@ -55,8 +55,8 @@ export function AuPaymentPlanDirectory({
               <strong>
                 {courses.length}{" "}
                 {courses.length === 1
-                  ? "demonstration course"
-                  : "demonstration courses"}
+                  ? "Academy Australia course"
+                  : "Academy Australia courses"}
               </strong>
               <span>
                 Further courses are added through the Australian payment-plan
@@ -68,7 +68,7 @@ export function AuPaymentPlanDirectory({
           <div className="au-plan-list">
             {courses.map((course) => (
               <article key={course.code} className="au-plan-card">
-                <p className="au-plan-card__kicker">Demonstration</p>
+                <p className="au-plan-card__kicker">Academy Australia</p>
                 <h2>
                   <Link href={auPaymentPlanCoursePath(course.slug)}>
                     {course.title}

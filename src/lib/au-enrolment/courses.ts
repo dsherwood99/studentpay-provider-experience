@@ -1,5 +1,6 @@
 import { getHostedProductMode } from "../nz-enrolment/environment.ts";
 import { isProviderSlugBlockedByDeployment } from "../provider-experience/provider-bindings.ts";
+import { academyAuEnrolmentReady } from "./readiness.ts";
 import {
   calculateAuWeeklySchedule,
   type AuWeeklySchedule,
@@ -15,6 +16,7 @@ export const KIT_NOT_INCLUDED = "Kit Not Included";
 
 export type AuPaymentPlanCourse = {
   code: string;
+  checkoutPrefix: string;
   slug: string;
   title: string;
   source: string;
@@ -25,6 +27,7 @@ export type AuPaymentPlanCourse = {
 
 type AuPaymentPlanInput = {
   code: string;
+  checkoutPrefix: string;
   slug: string;
   title: string;
   source: string;
@@ -35,20 +38,20 @@ type AuPaymentPlanInput = {
 };
 
 /**
- * Display-only Australian payment plans for the Academy Australia demo.
+ * Academy Australia Bridal Freelancer Bundle.
  *
- * Inputs are the verified catalogue price version 1 row from
- * studentpay-api `lib/enrolment/course.js`. The instalment count and upfront
- * amount come from `calculateAuWeeklySchedule`. This module does not publish
- * inclusions, a qualification, or agreement text that the source does not
- * already state. Checkout is intentionally not wired from here.
+ * The owner approved the same weekly terms already calculated for the Bela
+ * course: AUD $3,500, AUD $4 upfront within 24 hours, and 152 payments of
+ * AUD $23. This row uses Academy's own course code and checkout prefix.
+ * The public enrolment route stays held in readiness.ts.
  */
 const AU_PAYMENT_PLAN_INPUTS: readonly AuPaymentPlanInput[] = [
   {
-    code: "BRIDAL_FREELANCER_BUNDLE",
+    code: "ACADEMYAU_BRIDAL_FREELANCER_BUNDLE",
+    checkoutPrefix: "ACADEMYAU-BFB",
     slug: "bridal-freelancer-bundle",
     title: "Bridal Freelancer Bundle",
-    source: "catalogue-price-v1",
+    source: "owner-approved-financial-terms",
     coursePriceCents: 350_000,
     weeklyAmountCents: 2_300,
     inclusions: [],
@@ -70,6 +73,7 @@ function publish(input: AuPaymentPlanInput): AuPaymentPlanCourse {
 
   return {
     code: input.code,
+    checkoutPrefix: input.checkoutPrefix,
     slug: input.slug,
     title: input.title,
     source: input.source,
@@ -108,7 +112,10 @@ export function isAuPaymentPlanCheckoutBlocked(
   providerSlug: string,
   courseSlug: string,
 ): boolean {
-  return getAuPaymentPlanCourseForProvider(providerSlug, courseSlug) !== undefined;
+  return (
+    getAuPaymentPlanCourseForProvider(providerSlug, courseSlug) !== undefined &&
+    academyAuEnrolmentReady() === false
+  );
 }
 
 /**
