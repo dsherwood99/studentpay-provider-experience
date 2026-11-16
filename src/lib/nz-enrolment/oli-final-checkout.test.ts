@@ -314,9 +314,9 @@ describe("OLI payment-choice and enrolment-summary presentation", () => {
     assert.match(checkout, /onClick=\{\(\) => void startDirectDebitSetup\(\)\}/);
     assert.match(css, /\.addressRow\s*\{/);
     assert.match(css, /grid-template-columns:\s*minmax\(0, 1\.15fr\) minmax\(0, 1\.15fr\) minmax\(0, 0\.7fr\)/);
-    assert.match(css, /\.section h2\s*\{[\s\S]*font-size:\s*1\.05rem/);
-    assert.match(css, /\.field input,[\s\S]*min-height:\s*42px/);
-    assert.match(css, /\.ddaStatusPanel\s*\{[\s\S]*padding:\s*14px/);
+    assert.match(css, /\.section h2\s*\{[\s\S]*font-size:\s*1\.2rem/);
+    assert.match(css, /\.field input,[\s\S]*min-height:\s*46px/);
+    assert.match(css, /\.ddaStatusPanel\s*\{[\s\S]*padding:\s*16px/);
     assert.match(css, /\.summaryCard \.review\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 1\.1fr\) minmax\(0, 0\.9fr\)/);
     assert.match(
       css,

@@ -1726,7 +1726,7 @@ export function NzEnrolmentCheckout({
               </p>
             ) : null}
             {renderFlags.showPaymentMethodRadios ? null : (
-            <dl className={styles.review}>
+            <dl className={`${styles.review} ${styles.planFacts}`}>
               <dt>Course</dt>
               <dd>{course.name}</dd>
               {selectedGstRows ? (
@@ -1982,7 +1982,7 @@ export function NzEnrolmentCheckout({
                 {sectionErrors.student}
               </p>
             ) : null}
-            <div className={styles.grid}>
+            <div className={`${styles.grid} ${styles.studentGrid}`}>
               <TextField
                 label="First name"
                 name="given-name"
@@ -2001,12 +2001,23 @@ export function NzEnrolmentCheckout({
                 onChange={(value) => updateStudent("lastName", value)}
               />
               <TextField
+                label="Date of birth"
+                name="bday"
+                type="date"
+                autoComplete="bday"
+                value={resolvedStudent.dateOfBirth}
+                error={fieldErrors.dateOfBirth}
+                span
+                onChange={(value) => updateStudent("dateOfBirth", value)}
+              />
+              <TextField
                 label="Email"
                 name="email"
                 type="email"
                 autoComplete="email"
                 value={resolvedStudent.email}
                 error={fieldErrors.email}
+                span
                 onChange={(value) => updateStudent("email", value)}
               />
               <TextField
@@ -2021,16 +2032,8 @@ export function NzEnrolmentCheckout({
                     ? validateStudentDetails({ mobile: resolvedStudent.mobile }).mobile
                     : undefined)
                 }
+                span
                 onChange={(value) => updateStudent("mobile", value)}
-              />
-              <TextField
-                label="Date of birth"
-                name="bday"
-                type="date"
-                autoComplete="bday"
-                value={resolvedStudent.dateOfBirth}
-                error={fieldErrors.dateOfBirth}
-                onChange={(value) => updateStudent("dateOfBirth", value)}
               />
               <TextField
                 label="Country"
@@ -2038,6 +2041,7 @@ export function NzEnrolmentCheckout({
                 autoComplete="country-name"
                 value={resolvedStudent.country}
                 error={fieldErrors.country}
+                span
                 onChange={(value) => updateStudent("country", value)}
               />
               <TextField
@@ -2170,8 +2174,12 @@ export function NzEnrolmentCheckout({
                     onChange={setFirstPaymentDate}
                   />
                   <p className={styles.ddaDateHint}>
-                    Scheduled payments start on{" "}
-                    {formatEnrolmentDisplayDate(resolvedFirstPaymentDate)}.
+                    <span>Selected date</span>
+                    <strong>{formatEnrolmentDisplayDate(resolvedFirstPaymentDate)}</strong>
+                    <span>
+                      Scheduled payments start on{" "}
+                      {formatEnrolmentDisplayDate(resolvedFirstPaymentDate)}.
+                    </span>
                   </p>
                 </div>
               ) : null}
