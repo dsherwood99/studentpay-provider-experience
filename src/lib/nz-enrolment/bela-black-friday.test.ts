@@ -2,6 +2,11 @@ import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, test } from "node:test";
 import { listAuthoritativeHostedCourses } from "./api-catalogue-overlay.ts";
 import { getNzCourse } from "./courses.ts";
+import {
+  NZ_PAYMENT_PLAN_COPY,
+  checkoutStudentForDisplay,
+  planSectionLead,
+} from "./checkout-ui.ts";
 import { kitDisclosureForPolicy } from "./kit-policy.ts";
 import { derivePlanFromRegularInstalment } from "./plan-math.ts";
 import { getNzTenantBySlug } from "./tenants.ts";
@@ -154,6 +159,68 @@ describe("Bela NZ Black Friday offers", { concurrency: false }, () => {
       assert.equal(liveLash.planPolicy.regularInstalmentCents, 1_500);
       assert.equal(liveLash.planPolicy.upfrontAmountCents, 1_000);
     }
+    assert.equal(
+      planSectionLead({
+        courseCode: "BELA_NAIL_BUNDLE_BLACK_FRIDAY",
+        showPaymentMethodRadios: false,
+        paymentChoiceLead: "Choose the payment option that works best for you.",
+        paymentSectionLead: NZ_PAYMENT_PLAN_COPY.intro,
+      }),
+      "",
+    );
+    assert.equal(
+      planSectionLead({
+        courseCode: "BELA_LASH_BUNDLE_BLACK_FRIDAY",
+        showPaymentMethodRadios: false,
+        paymentChoiceLead: "Choose the payment option that works best for you.",
+        paymentSectionLead: NZ_PAYMENT_PLAN_COPY.intro,
+      }),
+      "",
+    );
+    assert.equal(
+      planSectionLead({
+        courseCode: "BELA_LASH_BUSINESS_BUNDLE",
+        showPaymentMethodRadios: false,
+        paymentChoiceLead: "Choose the payment option that works best for you.",
+        paymentSectionLead: NZ_PAYMENT_PLAN_COPY.intro,
+      }),
+      NZ_PAYMENT_PLAN_COPY.intro,
+    );
+    assert.equal(
+      planSectionLead({
+        courseCode: "OLI_TEST_001",
+        showPaymentMethodRadios: true,
+        paymentChoiceLead: "Choose the payment option that works best for you.",
+        paymentSectionLead: NZ_PAYMENT_PLAN_COPY.intro,
+      }),
+      "Choose the payment option that works best for you.",
+    );
+    const fresh = checkoutStudentForDisplay(
+      {
+        firstName: "",
+        lastName: "",
+        email: "",
+        mobile: "",
+        dateOfBirth: "",
+        streetAddress: "",
+        suburb: "",
+        city: "",
+        postcode: "",
+        region: "",
+        country: "New Zealand",
+      },
+      null,
+    );
+    assert.equal(fresh.country, "New Zealand");
+    const blankDraft = checkoutStudentForDisplay(fresh, { ...fresh, country: "" });
+    assert.equal(blankDraft.country, "New Zealand");
+    const international = checkoutStudentForDisplay(fresh, { ...fresh, country: "Japan" });
+    assert.equal(international.country, "Japan");
+    const edited = checkoutStudentForDisplay(
+      { ...fresh, firstName: "Aroha", country: "Fiji" },
+      { ...fresh, country: "New Zealand" },
+    );
+    assert.equal(edited.country, "Fiji");
     assert.equal(getNzCourse("bela-nz", "nail-bundle")?.catalogueOnly, true);
     assert.equal(getNzCourse("bela-nz", "nail-bundle-black-friday"), undefined);
     assert.equal(getNzCourse("bela-nz", "lash-bundle-black-friday"), undefined);

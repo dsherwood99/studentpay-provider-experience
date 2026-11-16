@@ -33,6 +33,54 @@ export const NZ_PAYMENT_PLAN_COPY = {
   intro: "The weekly plan is calculated from the course fee.",
 } as const;
 
+const BELA_BLACK_FRIDAY_COURSE_CODES = new Set([
+  "BELA_NAIL_BUNDLE_BLACK_FRIDAY",
+  "BELA_LASH_BUNDLE_BLACK_FRIDAY",
+]);
+
+export function isBelaBlackFridayCourse(courseCode: string | null | undefined): boolean {
+  return BELA_BLACK_FRIDAY_COURSE_CODES.has(String(courseCode || "").trim());
+}
+
+/** Black Friday pages keep the kit notice and drop the generic plan sentence. */
+export function planSectionLead(input: {
+  courseCode: string | null | undefined;
+  showPaymentMethodRadios: boolean;
+  paymentChoiceLead: string;
+  paymentSectionLead: string;
+}): string {
+  if (input.showPaymentMethodRadios) {
+    return input.paymentChoiceLead;
+  }
+  if (isBelaBlackFridayCourse(input.courseCode)) {
+    return "";
+  }
+  return input.paymentSectionLead;
+}
+
+export function checkoutCountryOrDefault(country: string | null | undefined): string {
+  const value = String(country ?? "").trim();
+  return value || "New Zealand";
+}
+
+/**
+ * A fresh checkout and a draft with a blank country display New Zealand.
+ * A started form, or a draft that already recorded another country, keeps that value.
+ */
+export function checkoutStudentForDisplay<T extends NzStudentDetails>(
+  current: T,
+  stored: T | null | undefined,
+): T {
+  if (studentDetailsStarted(current)) {
+    return current;
+  }
+  const base = stored ?? current;
+  return {
+    ...base,
+    country: checkoutCountryOrDefault(base.country),
+  };
+}
+
 export const NZ_DIRECT_DEBIT_COPY = {
   heading: "Direct debit",
   authorisedTitle: "Direct Debit authorised",
