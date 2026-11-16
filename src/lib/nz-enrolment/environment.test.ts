@@ -26,6 +26,8 @@ const managed = [
   "E13_INTERNAL_CANARY_HOSTED_ENABLED",
   "NZ_HOSTED_TENANT_SLUG",
   "VERCEL_PROJECT_PRODUCTION_URL",
+  "VERCEL_URL",
+  "VERCEL_BRANCH_URL",
   "VERCEL_ENV",
 ];
 
@@ -244,5 +246,22 @@ describe("NZ hosted product and environment isolation", () => {
 
   it("uses a generic Salesforce-aligned instalment ceiling, not an OLI 52-week demo cap", () => {
     assert.equal(GENERIC_MAX_RECURRING_INSTALMENTS, 400);
+  });
+
+  it("recognises the Bela preview project without Production env vars", () => {
+    process.env.VERCEL_ENV = "preview";
+    process.env.VERCEL_URL = "studentpay-nz-bela-enrolment-git-review.vercel.app";
+    assert.equal(getHostedProductMode(), "nz_enrolment");
+    assert.equal(isNzEnrolmentProductAvailable(), true);
+    assert.equal(getNzTenantBySlug("bela-nz")?.providerCode, "BELA_NZ");
+    assert.equal(getNzTenantBySlug("oli"), undefined);
+  });
+
+  it("does not turn Production into the Bela preview when hosted mode is unset", () => {
+    process.env.VERCEL_ENV = "production";
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = "studentpay-nz-bela-enrolment.vercel.app";
+    process.env.VERCEL_URL = "studentpay-nz-bela-enrolment.vercel.app";
+    assert.equal(getHostedProductMode(), "generic");
+    assert.equal(isNzEnrolmentProductAvailable(), false);
   });
 });

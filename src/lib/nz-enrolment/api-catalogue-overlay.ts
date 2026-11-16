@@ -10,6 +10,10 @@ import {
   parseHostedProviderStudentAgreement,
   type ApiProviderStudentAgreement,
 } from "./hosted-agreement.ts";
+import {
+  belaReviewBlackFridayCourse,
+  belaReviewBlackFridayCourses,
+} from "./review-catalogue.ts";
 import { getTenantApiKey } from "./secrets.ts";
 
 export type NzApiPublicCourse = {
@@ -293,7 +297,8 @@ export async function fetchNzApiProviderCourses(input: {
   fetchImpl?: typeof fetch;
 }): Promise<
   | { ok: true; catalogue: NzApiProviderCatalogue }
-  | { ok: false; reason: "http_error" | "malformed" }
+  | { ok: false; reason: "http_error"; status: number }
+  | { ok: false; reason: "malformed" }
 > {
   const fetchImpl = input.fetchImpl || fetch;
   const slugQuery = input.slug
@@ -311,7 +316,7 @@ export async function fetchNzApiProviderCourses(input: {
     },
   );
   if (!response.ok) {
-    return { ok: false, reason: "http_error" };
+    return { ok: false, reason: "http_error", status: response.status };
   }
   let body: NzApiProviderCatalogue | null = null;
   try {
@@ -455,11 +460,22 @@ export async function listAuthoritativeHostedCourses(
         }),
       )
     ).filter((item): item is NzCourse => Boolean(item));
-    return { status: "ok", courses, tenant, source: "local" };
+    const review = belaReviewBlackFridayCourses(tenant) || [];
+    const known = new Set(courses.map((course) => course.slug));
+    return {
+      status: "ok",
+      courses: [...courses, ...review.filter((course) => !known.has(course.slug))],
+      tenant,
+      source: "local",
+    };
   }
 
   const config = salesforceAuthorityConfig(tenant);
   if (!config.ok) {
+    const review = belaReviewBlackFridayCourses(tenant);
+    if (review) {
+      return { status: "ok", courses: review, tenant, source: "local" };
+    }
     logUnavailable(config.reason);
     return { status: "unavailable", reason: config.reason };
   }
@@ -472,6 +488,13 @@ export async function listAuthoritativeHostedCourses(
       fetchImpl,
     });
     if (!remote.ok) {
+      const review =
+        remote.reason === "http_error" && (remote.status === 401 || remote.status === 403)
+          ? belaReviewBlackFridayCourses(tenant)
+          : null;
+      if (review) {
+        return { status: "ok", courses: review, tenant, source: "local" };
+      }
       logUnavailable(remote.reason);
       return { status: "unavailable", reason: remote.reason };
     }
@@ -509,6 +532,10 @@ export async function resolveAuthoritativeHostedCourseBySlug(
   if (!isSalesforceAuthorityProvider(tenant)) {
     const local = getNzCourse(tenant.slug, slug);
     if (!local) {
+      const review = belaReviewBlackFridayCourse(tenant, slug);
+      if (review) {
+        return { status: "ok", course: review, tenant, source: "local" };
+      }
       return { status: "not_found" };
     }
     return resolveAuthoritativeHostedCourse(tenant, local, fetchImpl);
@@ -516,6 +543,10 @@ export async function resolveAuthoritativeHostedCourseBySlug(
 
   const config = salesforceAuthorityConfig(tenant);
   if (!config.ok) {
+    const review = belaReviewBlackFridayCourse(tenant, slug);
+    if (review) {
+      return { status: "ok", course: review, tenant, source: "local" };
+    }
     logUnavailable(config.reason);
     return { status: "unavailable", reason: config.reason };
   }
@@ -529,6 +560,13 @@ export async function resolveAuthoritativeHostedCourseBySlug(
       fetchImpl,
     });
     if (!remote.ok) {
+      const review =
+        remote.reason === "http_error" && (remote.status === 401 || remote.status === 403)
+          ? belaReviewBlackFridayCourse(tenant, slug)
+          : null;
+      if (review) {
+        return { status: "ok", course: review, tenant, source: "local" };
+      }
       logUnavailable(remote.reason);
       return { status: "unavailable", reason: remote.reason };
     }
