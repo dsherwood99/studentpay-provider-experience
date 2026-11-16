@@ -261,6 +261,14 @@ describe("Bela NZ Black Friday offers", { concurrency: false }, () => {
     assert.match(bela, /Kit Not Included/);
     assert.match(bela, /Enrol Now/);
     assert.match(bela, /Authorise bank account/);
+    assert.ok(bela.indexOf('id="bank-authorisation"') < bela.indexOf('id="agreements"'));
+    assert.match(bela, /onEnrol/);
+    assert.match(bela, /Ready to authorise/);
+    assert.match(bela, /Awaiting bank authorisation/);
+    assert.match(bela, /Authorisation complete/);
+    assert.doesNotMatch(bela, /function enrolNow/);
+    assert.match(checkout, /successfulResult/);
+    assert.match(checkout, /onEnrol=/);
     assert.match(bela, /NZ_REGIONS/);
     assert.match(bela, /readOnly/);
     assert.doesNotMatch(bela, /GoCardless|Australia\/Sydney|BELA-AU|Address line 2|AUD/);

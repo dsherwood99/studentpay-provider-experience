@@ -60,9 +60,13 @@ type Props = {
   };
   onDeclarations: (next: Props["declarations"]) => void;
   providerAgreement: ProviderAgreement | null;
-  bankPhase: "idle" | "preparing" | "ready" | "failed" | "complete";
+  bankPhase: "ready" | "preparing" | "awaiting" | "failed" | "complete";
   bankError: string | null;
   onStartBank: () => void;
+  enrolReady: boolean;
+  enrolBusy: boolean;
+  enrolError: string | null;
+  onEnrol: () => void;
 };
 
 const CONSENT =
@@ -88,10 +92,13 @@ export function BelaAuCheckout({
   bankPhase,
   bankError,
   onStartBank,
+  enrolReady,
+  enrolBusy,
+  enrolError,
+  onEnrol,
 }: Props) {
   const [consentMessage, setConsentMessage] = useState("");
   const [studentAgreementOpen, setStudentAgreementOpen] = useState(false);
-  const [enrolStarted, setEnrolStarted] = useState(false);
   const accepted =
     declarations.payment_plan_accepted &&
     combinedDetailsPrivacyAccepted(declarations) &&
@@ -127,27 +134,10 @@ export function BelaAuCheckout({
     }
   }
 
-  function enrolNow() {
-    const errors = validateStudentDetails({ ...student, country: "New Zealand" });
-    onFieldErrors(errors);
-    if (Object.keys(errors).length > 0) {
-      document.getElementById("your-details")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      return;
-    }
-    if (!accepted) {
-      setConsentMessage("Accept the agreement before bank authorisation.");
-      document.getElementById("agreements")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      return;
-    }
-    setConsentMessage("");
-    setEnrolStarted(true);
-    document.getElementById("bank-authorisation")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    onStartBank();
-  }
-
-  const bankVisible = enrolStarted || bankPhase === "complete";
-  const phase: Props["bankPhase"] =
-    enrolStarted && bankPhase === "idle" ? "preparing" : bankPhase;
+  const detailsReady =
+    Object.keys(validateStudentDetails({ ...student, country: "New Zealand" })).length === 0 &&
+    Boolean(firstPaymentDate);
+  const phase = bankPhase;
 
   return (
     <div className={styles.page} data-testid="nz-enrolment-single-page">
@@ -168,9 +158,9 @@ export function BelaAuCheckout({
         <div className={styles.formColumn}>
           <nav className={styles.steps} aria-label="Checkout steps">
             <a href="#your-details">1. Your details</a>
-            <a href="#repayment-date">2. Repayment date</a>
-            <a href="#agreements">3. Agreement</a>
-            <a href="#bank-authorisation">4. Bank authorisation</a>
+            <a href="#repayment-date">2. Payment details</a>
+            <a href="#bank-authorisation">3. Bank authorisation</a>
+            <a href="#agreements">4. Agreements</a>
           </nav>
 
           <section id="your-details" className={styles.card}>
@@ -298,6 +288,57 @@ export function BelaAuCheckout({
             </div>
           </section>
 
+          <section id="bank-authorisation" className={styles.card}>
+            <h2>Bank authorisation</h2>
+            {phase === "complete" ? (
+              <div>
+                <p className={styles.success}>Authorisation complete</p>
+                <p className={styles.complete}>✓ Setup Complete</p>
+              </div>
+            ) : (
+              <>
+                <p className={styles.copy}>
+                  {phase === "failed"
+                    ? bankError || "Authorisation failed. You can try again on this application."
+                    : phase === "preparing"
+                      ? "Preparing bank authorisation."
+                      : phase === "awaiting"
+                        ? "Awaiting bank authorisation."
+                        : detailsReady
+                          ? "Ready to authorise."
+                          : "Enter your details and choose a first payment date before authorising."}
+                </p>
+                <button
+                  type="button"
+                  className={styles.button}
+                  disabled={!detailsReady || phase === "preparing"}
+                  onClick={() => {
+                    const errors = validateStudentDetails({ ...student, country: "New Zealand" });
+                    onFieldErrors(errors);
+                    if (Object.keys(errors).length > 0 || !firstPaymentDate) {
+                      document.getElementById("your-details")?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                      });
+                      return;
+                    }
+                    onStartBank();
+                  }}
+                >
+                  {phase === "preparing" ? (
+                    <>
+                      <Spinner /> Preparing bank authorisation
+                    </>
+                  ) : phase === "failed" ? (
+                    "Try again"
+                  ) : (
+                    "Authorise bank account"
+                  )}
+                </button>
+              </>
+            )}
+          </section>
+
           <section id="agreements" className={styles.card}>
             <h2>Agreements & consent</h2>
             <p className={styles.copy}>Please review the following documents before continuing.</p>
@@ -339,58 +380,25 @@ export function BelaAuCheckout({
             </div>
           </section>
 
-          <section id="bank-authorisation" className={styles.card}>
-            <h2>Bank authorisation</h2>
-            {phase === "complete" ? (
-              <div>
-                <p className={styles.success}>Your payment plan is set up!</p>
-                <p className={styles.complete}>✓ Setup Complete</p>
-              </div>
-            ) : (
+          <button
+            type="button"
+            className={`${styles.button} ${styles.finalButton}`}
+            disabled={!enrolReady || enrolBusy}
+            onClick={onEnrol}
+          >
+            {enrolBusy ? (
               <>
-                <p className={styles.copy}>
-                  {phase === "failed"
-                    ? bankError || "Bank setup did not finish. Try again on this application."
-                    : phase === "preparing"
-                      ? "You can enter bank details while setup finishes."
-                      : phase === "ready"
-                        ? "Continue in the secure bank authorisation window. This page stays open."
-                        : accepted
-                          ? "Bank authorisation starts when you enrol."
-                          : "Accept the agreement before bank authorisation."}
-                </p>
-                {bankVisible ? (
-                  <button
-                    type="button"
-                    className={styles.button}
-                    disabled={phase === "preparing"}
-                    onClick={() => {
-                      if (!accepted) {
-                        setConsentMessage("Accept the agreement before bank authorisation.");
-                        return;
-                      }
-                      onStartBank();
-                    }}
-                  >
-                    {phase === "preparing" ? (
-                      <>
-                        <Spinner /> Preparing secure bank authorisation…
-                      </>
-                    ) : phase === "failed" ? (
-                      "Try again"
-                    ) : (
-                      "Authorise bank account"
-                    )}
-                  </button>
-                ) : null}
+                <Spinner /> Enrol Now
               </>
+            ) : (
+              "Enrol Now"
             )}
-          </section>
-
-          {bankVisible ? null : (
-            <button type="button" className={styles.button} onClick={enrolNow}>
-              Enrol Now
-            </button>
+          </button>
+          {enrolError ? <p className={styles.error}>{enrolError}</p> : null}
+          {enrolReady ? null : (
+            <p className={styles.copy}>
+              Enrol Now is available after bank authorisation is verified and the agreements are accepted.
+            </p>
           )}
         </div>
 

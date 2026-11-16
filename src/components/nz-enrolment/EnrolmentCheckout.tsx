@@ -280,7 +280,6 @@ export function NzEnrolmentCheckout({
   const [preparationState, setPreparationState] = useState<
     "idle" | "preparing" | "ready" | "failed"
   >("idle");
-  const [bankStarted, setBankStarted] = useState(false);
   const [prepareMs, setPrepareMs] = useState<number | null>(null);
   const [openMs, setOpenMs] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -892,6 +891,9 @@ export function NzEnrolmentCheckout({
   }, [ddaReturn, setupComplete]);
 
   useEffect(() => {
+    if (courseSummary) {
+      return;
+    }
     if (preparedDetailKeyRef.current) {
       return;
     }
@@ -928,7 +930,7 @@ export function NzEnrolmentCheckout({
         });
     }, DIRECT_DEBIT_PREPARATION_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [preparationKey]);
+  }, [courseSummary, preparationKey]);
 
   function updateStudent<K extends keyof NzStudentDetails>(
     key: K,
@@ -1087,21 +1089,32 @@ export function NzEnrolmentCheckout({
       const json = (await response.json().catch(() => ({}))) as StatusPayload & {
         success?: boolean;
         session_superseded?: boolean;
-        direct_debit?: { setup_url?: string | null; setup_complete?: boolean };
-        error?: { message?: string; invalid_fields?: Record<string, string> };
+        direct_debit?: {
+          setup_url?: string | null;
+          setup_complete?: boolean;
+          processing_state?: string | null;
+        };
+        error?: { code?: string; message?: string; invalid_fields?: Record<string, string> };
       };
       if (preparationRevisionRef.current !== revision || json.session_superseded) {
         return { ok: false, message: "", superseded: true };
       }
       if (!response.ok || json.success === false) {
+        const code = json.error?.code ? ` (${json.error.code})` : "";
         return {
           ok: false,
-          message: json.error?.message || "Unable to create this enrolment.",
+          message: `${json.error?.message || "Unable to create this enrolment."}${code}`,
         };
       }
       const nextSetupUrl = json.direct_debit?.setup_url || "";
       if (!nextSetupUrl) {
-        return { ok: false, message: "Unable to start Direct Debit setup." };
+        const state = json.direct_debit?.processing_state;
+        return {
+          ok: false,
+          message: state
+            ? `Unable to start Direct Debit setup. (${state})`
+            : "Unable to start Direct Debit setup.",
+        };
       }
       if (preparationKeyRef.current === key) {
         setPrepareMs(Math.round(performance.now() - started));
@@ -1218,11 +1231,20 @@ export function NzEnrolmentCheckout({
             setOpenMs(Math.round(performance.now() - openedAt));
             return { setupUrl };
           }
-          const prepared = await preparationQueueRef.current.request(key, () =>
+          let prepared = await preparationQueueRef.current.request(key, () =>
             postPreparationRef.current(key),
           );
+          if (!prepared.ok && prepared.superseded) {
+            const recovered = preparationQueueRef.current.successfulResult();
+            if (recovered?.setupUrl) {
+              prepared = recovered;
+            }
+          }
           setOpenMs(Math.round(performance.now() - openedAt));
           if (!prepared.ok || !prepared.setupUrl) {
+            if (!prepared.ok && prepared.superseded) {
+              return { setupUrl };
+            }
             const message =
               !prepared.ok && prepared.message
                 ? prepared.message
@@ -1661,18 +1683,15 @@ export function NzEnrolmentCheckout({
   }
 
   if (courseSummary) {
-    const belaBankPhase =
-      !bankStarted && !setupComplete
-        ? "idle"
-        : setupComplete
-          ? "complete"
-          : sectionErrors.dda || preparationState === "failed"
-            ? "failed"
-            : awaitingDirectDebit || preparationState === "preparing"
-              ? "preparing"
-              : setupUrl
-                ? "ready"
-                : "preparing";
+    const belaBankPhase = setupComplete
+      ? "complete"
+      : sectionErrors.dda || preparationState === "failed"
+        ? "failed"
+        : awaitingDirectDebit || preparationState === "preparing"
+          ? "preparing"
+          : ddaPopupOpen || setupUrl
+            ? "awaiting"
+            : "ready";
     return (
       <BelaAuCheckout
         tenant={tenant}
@@ -1694,8 +1713,21 @@ export function NzEnrolmentCheckout({
         bankPhase={belaBankPhase}
         bankError={sectionErrors.dda || error || null}
         onStartBank={() => {
-          setBankStarted(true);
+          setSectionErrors((current) => ({ ...current, dda: undefined }));
+          setError("");
           void startDirectDebitSetup();
+        }}
+        enrolReady={
+          studentValid &&
+          Boolean(resolvedFirstPaymentDate) &&
+          setupComplete &&
+          accepted &&
+          !busy
+        }
+        enrolBusy={busy}
+        enrolError={sectionErrors.review || null}
+        onEnrol={() => {
+          void confirmCheckout();
         }}
       />
     );
