@@ -28,7 +28,9 @@ import {
   payNowChoiceBody,
   payNowSavingFromCatalogue,
   paymentPlanChoiceCopy,
+  checkoutStudentForDisplay,
   planDisplay,
+  planSectionLead,
   sectionStatus,
   sectionStatusLabel,
   setCombinedDetailsPrivacyDeclaration,
@@ -376,9 +378,7 @@ export function NzEnrolmentCheckout({
   const stripeApiRef = useRef<{ stripe: Stripe; elements: StripeElements } | null>(null);
   const cardSectionRef = useRef<HTMLElement | null>(null);
 
-  const resolvedStudent = studentDetailsStarted(student)
-    ? student
-    : (storedDraft?.student ?? student);
+  const resolvedStudent = checkoutStudentForDisplay(student, storedDraft?.student);
   const resolvedUpfront =
     storedDraft && !studentDetailsStarted(student)
       ? storedDraft.upfrontAmountCents
@@ -536,6 +536,12 @@ export function NzEnrolmentCheckout({
     selectedOption: resolvedPaymentOption,
     amountCents: displayedCoursePriceCents,
     tenantAttribution: attribution,
+  });
+  const planLead = planSectionLead({
+    courseCode: course.courseCode,
+    showPaymentMethodRadios: renderFlags.showPaymentMethodRadios,
+    paymentChoiceLead: NZ_PAYMENT_CHOICE_LEAD,
+    paymentSectionLead: copy.paymentSectionLead,
   });
   const pifDeclarationsOk =
     payInFullDeclarationsAccepted(declarations) && psaAccepted;
@@ -923,9 +929,7 @@ export function NzEnrolmentCheckout({
     value: NzStudentDetails[K],
   ) {
     setStudent((current) => {
-      const base = studentDetailsStarted(current)
-        ? current
-        : (storedDraft?.student ?? current);
+      const base = checkoutStudentForDisplay(current, storedDraft?.student);
       return { ...base, [key]: value };
     });
   }
@@ -1715,20 +1719,10 @@ export function NzEnrolmentCheckout({
             status={planStatus}
             testId="nz-section-plan"
           >
-            <p className={styles.lead}>
-              {renderFlags.showPaymentMethodRadios
-                ? NZ_PAYMENT_CHOICE_LEAD
-                : copy.paymentSectionLead}
-            </p>
+            {planLead ? <p className={styles.lead}>{planLead}</p> : null}
             {kitDisclosureForPolicy(tenant.kitPolicy) ? (
               <p className={styles.note} data-testid="nz-kit-disclosure">
                 {kitDisclosureForPolicy(tenant.kitPolicy)}
-              </p>
-            ) : null}
-            {course.description.includes("Course access is 2 years") &&
-            course.description.includes("separate from the repayment term") ? (
-              <p className={styles.note} data-testid="nz-course-access">
-                Course access is 2 years. The repayment schedule is separate and continues for the full payment plan.
               </p>
             ) : null}
             {renderFlags.showPaymentMethodRadios ? null : (
@@ -2072,9 +2066,7 @@ export function NzEnrolmentCheckout({
                   error={fieldErrors.region}
                   onChange={(value) => {
                     setStudent((current) => {
-                      const base = studentDetailsStarted(current)
-                        ? current
-                        : (storedDraft?.student ?? current);
+                      const base = checkoutStudentForDisplay(current, storedDraft?.student);
                       return { ...base, region: value, city: value };
                     });
                   }}
