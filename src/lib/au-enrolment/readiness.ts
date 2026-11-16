@@ -18,7 +18,7 @@ export const academyAuEnrolmentBlockers = [
   {
     code: "provider_config_not_linked",
     summary:
-      "The ACADEMYAU provider configuration is inactive and is not linked to the Academy Australia account.",
+      "Academy Australia account 001Mp00000tiKOOIA2 is linked. Provider Integration Config a2BMp000002RFRdMAO remains inactive.",
   },
   {
     code: "provider_not_allowlisted",

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { AuPaymentPlanEnrolPreview } from "@/components/au-enrolment/AuPaymentPlanEnrolPreview";
+import { AuEnrolmentCheckout } from "@/components/au-enrolment/AuEnrolmentCheckout";
 import { CatalogueUnavailable } from "@/components/courses/CatalogueUnavailable";
 import { CatalogueEnrolmentForm } from "@/components/enrolment/CatalogueEnrolmentForm";
 import { getCourseBySlug } from "@/config/courses";
@@ -37,7 +37,7 @@ export async function generateMetadata({
   return {
     title: `${course.title} enrolment`,
     description:
-      "Held Academy Australia enrolment. The approved weekly plan is shown and submission stays off.",
+      "Held Academy Australia enrolment. The approved weekly plan is shown and the form cannot be submitted.",
     robots: { index: false, follow: false },
   };
 }
@@ -68,7 +68,7 @@ export default async function SandboxEnrolPage({
     }
 
     return (
-      <AuPaymentPlanEnrolPreview
+      <AuEnrolmentCheckout
         provider={provider}
         course={auPaymentPlanCourse}
       />
