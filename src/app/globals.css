@@ -5316,6 +5316,25 @@ select {
   color: var(--colour-white);
 }
 
+.au-plan-agreement {
+  max-height: 28rem;
+  overflow: auto;
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid #ece5de;
+  border-radius: var(--radius-medium);
+  background: #fff;
+  color: var(--colour-charcoal-900);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.au-plan-agreement h2,
+.au-plan-agreement h3 {
+  margin: 1.1rem 0 0.4rem;
+  font-size: 1rem;
+}
+
 .au-plan-enrol .button.au-plan-disabled,
 .au-plan-enrol .button.au-plan-disabled:hover {
   transform: none;
