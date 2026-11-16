@@ -853,6 +853,7 @@ export function NzEnrolmentCheckout({
     const pollPlan = shouldPollDirectDebitStatus({
       hasCheckoutSession: alreadyCreated,
       ddaReturn,
+      alreadyConfirmed,
     });
     if (!(isPayInFull ? pollPif : pollPlan)) {
       return;

@@ -205,7 +205,11 @@ export function shouldConfirmCheckout(input: {
 export function shouldPollDirectDebitStatus(input: {
   hasCheckoutSession: boolean;
   ddaReturn?: "return" | "cancelled" | null;
+  alreadyConfirmed?: boolean;
 }): boolean {
+  if (input.alreadyConfirmed) {
+    return false;
+  }
   return Boolean(input.hasCheckoutSession || input.ddaReturn);
 }
 
