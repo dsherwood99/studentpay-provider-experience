@@ -127,7 +127,12 @@ export function BelaAuCheckout({
   }
 
   const detailsReady =
-    Object.keys(validateStudentDetails({ ...student, country: "New Zealand" })).length === 0 &&
+    Object.keys(
+      validateStudentDetails(
+        { ...student, country: "New Zealand" },
+        { requireMobile: false },
+      ),
+    ).length === 0 &&
     Boolean(firstPaymentDate);
   const phase = bankPhase;
 
@@ -194,7 +199,7 @@ export function BelaAuCheckout({
                 onChange={(event) => onStudentChange("email", event.target.value)}
               />
             </Field>
-            <Field label="Mobile number" error={fieldErrors.mobile}>
+            <Field label="Mobile number">
               <input
                 type="tel"
                 name="tel"
@@ -306,7 +311,10 @@ export function BelaAuCheckout({
                   className={styles.button}
                   disabled={!detailsReady || phase === "preparing"}
                   onClick={() => {
-                    const errors = validateStudentDetails({ ...student, country: "New Zealand" });
+                    const errors = validateStudentDetails(
+                      { ...student, country: "New Zealand" },
+                      { requireMobile: false },
+                    );
                     onFieldErrors(errors);
                     if (Object.keys(errors).length > 0 || !firstPaymentDate) {
                       document.getElementById("your-details")?.scrollIntoView({

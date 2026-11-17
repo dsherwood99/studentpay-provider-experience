@@ -265,7 +265,9 @@ export async function POST(request: Request) {
   }
 
   const student = sanitiseStudent(body.student || {});
-  const studentErrors = validateStudentDetails(student);
+  const studentErrors = validateStudentDetails(student, {
+    requireMobile: tenant.providerCode !== "BELA_NZ",
+  });
   if (Object.keys(studentErrors).length > 0) {
     return jsonError(400, "INVALID_STUDENT", undefined, {
       invalid_fields: studentErrors,

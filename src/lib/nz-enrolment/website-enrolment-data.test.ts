@@ -103,6 +103,21 @@ test("browser mobile validation accepts NZ and international numbers", () => {
   assert.equal(sanitiseStudent({ ...student, mobile: "+61 412 345 678" }).mobile, "+61412345678");
   const invalid = validateStudentDetails({ ...student, mobile: "203423423" });
   assert.match(invalid.mobile || "", /valid mobile/i);
+  const belaBlank = validateStudentDetails(
+    { ...student, mobile: "" },
+    { requireMobile: false },
+  );
+  assert.equal(belaBlank.mobile, undefined);
+  assert.equal(belaBlank.firstName, undefined);
+  const belaIncomplete = validateStudentDetails(
+    { ...student, mobile: "203423423" },
+    { requireMobile: false },
+  );
+  assert.equal(belaIncomplete.mobile, undefined);
+  assert.equal(
+    sanitiseStudent({ ...student, mobile: "203423423" }).mobile,
+    "203423423",
+  );
 });
 
 test("confirm forwards the browser user agent instead of the server runtime", async () => {

@@ -52,15 +52,20 @@ export function approvedCheckoutSourceUrl(value: string | undefined | null): str
 
 export function validateStudentDetails(
   student: Partial<NzStudentDetails>,
+  options: { requireMobile?: boolean } = {},
 ): Record<string, string> {
   const errors: Record<string, string> = {};
+  const requireMobile = options.requireMobile !== false;
 
   if (!student.firstName?.trim()) errors.firstName = "Enter your first name.";
   if (!student.lastName?.trim()) errors.lastName = "Enter your last name.";
   if (!student.email?.trim() || !EMAIL_RE.test(student.email.trim())) {
     errors.email = "Enter a valid email address.";
   }
-  if (!student.mobile?.trim() || !normaliseServicingMobile(student.mobile).ok) {
+  if (
+    requireMobile &&
+    (!student.mobile?.trim() || !normaliseServicingMobile(student.mobile).ok)
+  ) {
     errors.mobile =
       "Enter a valid mobile number. Use + and the country code outside New Zealand.";
   }

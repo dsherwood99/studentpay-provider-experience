@@ -496,7 +496,10 @@ export function NzEnrolmentCheckout({
     paymentPlanCourseFeeCents: course.paymentPlanCourseFeeCents,
     taxPresentation,
   });
-  const studentValid = studentDetailsAreValid(resolvedStudent);
+  const mobileRequired = tenant.slug !== "bela-nz";
+  const studentValid = studentDetailsAreValid(resolvedStudent, {
+    requireMobile: mobileRequired,
+  });
   const studentStarted = studentDetailsStarted(resolvedStudent);
   const ddaError =
     sectionErrors.dda ||
@@ -991,7 +994,9 @@ export function NzEnrolmentCheckout({
     if (creatingRef.current) {
       return null;
     }
-    const nextErrors = validateStudentDetails(resolvedStudent);
+    const nextErrors = validateStudentDetails(resolvedStudent, {
+      requireMobile: mobileRequired,
+    });
     const createPlan = hostedCheckoutCreatePlan({
       mode: paymentMode,
       selectedOption: resolvedPaymentOption,
@@ -1177,7 +1182,9 @@ export function NzEnrolmentCheckout({
 
   async function startDirectDebitSetup() {
     if (reviewMode) {
-      const nextErrors = validateStudentDetails(resolvedStudent);
+      const nextErrors = validateStudentDetails(resolvedStudent, {
+      requireMobile: mobileRequired,
+    });
       if (Object.keys(nextErrors).length > 0) {
         setFieldErrors(nextErrors);
         setSectionErrors((current) => ({
@@ -1207,7 +1214,9 @@ export function NzEnrolmentCheckout({
       return;
     }
 
-    const nextErrors = validateStudentDetails(resolvedStudent);
+    const nextErrors = validateStudentDetails(resolvedStudent, {
+      requireMobile: mobileRequired,
+    });
     if (Object.keys(nextErrors).length > 0 && !alreadyCreated) {
       await createCheckout();
       return;
