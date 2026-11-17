@@ -149,8 +149,11 @@ export const NZ_REMOVED_STEPPER_LABELS = [
   "Complete",
 ] as const;
 
-export function studentDetailsAreValid(student: Partial<NzStudentDetails>): boolean {
-  return Object.keys(validateStudentDetails(student)).length === 0;
+export function studentDetailsAreValid(
+  student: Partial<NzStudentDetails>,
+  options?: { requireMobile?: boolean },
+): boolean {
+  return Object.keys(validateStudentDetails(student, options)).length === 0;
 }
 
 export function studentDetailsStarted(student: Partial<NzStudentDetails>): boolean {
