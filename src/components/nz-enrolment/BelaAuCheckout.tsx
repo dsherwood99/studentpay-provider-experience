@@ -268,14 +268,16 @@ export function BelaAuCheckout({
                   First payment date <span aria-hidden="true">*</span>
                 </p>
                 <p className={styles.copy}>
-                  Choose the date the first weekly direct debit is taken.
+                  Choose a weekday within the next 30 days. The first weekly direct debit is taken
+                  on that date.
                 </p>
                 <p className={styles.selectedDate} aria-live="polite">
                   <span>Selected date</span>
                   <strong>{formatDdMmYyyy(firstPaymentDate)}</strong>
                 </p>
                 <p className={styles.dateHelp}>
-                  Highlighted dates can be selected. Choose another to change this date.
+                  Highlighted dates can be selected. Weekends and dates more than 30 days away are
+                  unavailable.
                 </p>
               </div>
               <NzPaymentCalendar

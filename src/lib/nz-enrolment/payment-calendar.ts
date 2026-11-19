@@ -100,7 +100,7 @@ function monthsInWindow(window: FirstPaymentDateWindow): string[] {
  * Two conventional month grids. Each grid is six Monday-start weeks.
  * Days outside the month are empty cells. Days outside the New Zealand
  * window stay visible and are not selectable. Weekends stay selectable
- * when the window allows them.
+ * unless the window is weekdays only.
  */
 export function nzPaymentCalendarPanels(input: {
   window: FirstPaymentDateWindow;

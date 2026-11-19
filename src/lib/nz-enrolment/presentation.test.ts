@@ -121,7 +121,8 @@ describe("generic provider branding and presentation", () => {
     const pub = toPublicTenant(bela);
     assert.equal(bela.checkout.taxPresentation, undefined);
     assert.equal(pub.checkout.taxPresentation, undefined);
-    assert.equal(pub.checkout.maxFirstPaymentDelayDays, undefined);
+    assert.equal(pub.checkout.maxFirstPaymentDelayDays, 30);
+    assert.equal(pub.checkout.firstPaymentWeekdaysOnly, true);
     assert.equal(pub.checkout.paymentChoicePresentation, undefined);
     assert.equal(pub.branding.logoPath, "/nz-enrolment/bela/logo.png");
     assert.equal(pub.branding.backgroundColour, "#faf7f4");
