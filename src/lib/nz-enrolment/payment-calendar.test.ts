@@ -28,6 +28,24 @@ test("keeps a full Monday grid and leaves dates outside the New Zealand window u
   assert.equal(weeks[0]?.[0]?.selectable, false);
 });
 
+test("blocks weekends and dates more than 30 days ahead on the Bela window", () => {
+  const panels = nzPaymentCalendarPanels({
+    window: { min: "2026-11-20", max: "2026-12-20", weekdaysOnly: true },
+    anchor: "2026-11-27",
+  });
+  assert.equal(panels.length, 2);
+  assert.equal(panels[0]?.label, "November 2026");
+  assert.equal(panels[1]?.label, "December 2026");
+  const days = panels.flatMap((panel) => panel.weeks.flat());
+  assert.equal(days.find((day) => day.iso === "2026-11-20")?.selectable, true);
+  assert.equal(days.find((day) => day.iso === "2026-11-21")?.selectable, false);
+  assert.equal(days.find((day) => day.iso === "2026-11-22")?.selectable, false);
+  assert.equal(days.find((day) => day.iso === "2026-12-18")?.selectable, true);
+  assert.equal(days.find((day) => day.iso === "2026-12-19")?.selectable, false);
+  assert.equal(days.find((day) => day.iso === "2026-12-20")?.selectable, false);
+  assert.equal(days.find((day) => day.iso === "2026-12-21")?.selectable, false);
+});
+
 test("shows two even month grids for an uncapped New Zealand window", () => {
   const panels = nzPaymentCalendarPanels({
     window: { min: null, max: null },

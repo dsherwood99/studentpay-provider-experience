@@ -321,6 +321,7 @@ export async function POST(request: Request) {
   const firstPaymentDateError = hostedFirstPaymentDateError({
     submittedDate: plan.firstPaymentDate,
     maxDelayDays: tenant.checkout.maxFirstPaymentDelayDays,
+    weekdaysOnly: tenant.checkout.firstPaymentWeekdaysOnly,
   });
   if (firstPaymentDateError) {
     return jsonError(400, "VALIDATION_ERROR", firstPaymentDateError);

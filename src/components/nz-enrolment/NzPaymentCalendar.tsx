@@ -83,7 +83,7 @@ export function NzPaymentCalendar({ value, window, onChange }: Props) {
                       type="button"
                       disabled={!day.selectable}
                       aria-pressed={selected}
-                      aria-label={day.iso}
+                      aria-label={day.selectable ? day.iso : `${day.iso} unavailable`}
                       className={
                         selected
                           ? styles.calendarDaySelected

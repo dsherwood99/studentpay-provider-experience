@@ -407,6 +407,7 @@ export function NzEnrolmentCheckout({
       : numberOfInstalments;
   const paymentDateWindow = firstPaymentDateWindow({
     maxDelayDays: tenant.checkout.maxFirstPaymentDelayDays,
+    weekdaysOnly: tenant.checkout.firstPaymentWeekdaysOnly,
   });
   const resolvedFirstPaymentDate = resolveHostedFirstPaymentDate({
     selectedDate: firstPaymentDate,

@@ -274,6 +274,8 @@ export const NZ_TENANTS: readonly NzTenant[] = [
         supportNote:
           "Questions about this enrolment can be sent to Bela Beauty College or StudentPay NZ support.",
       },
+      maxFirstPaymentDelayDays: 30,
+      firstPaymentWeekdaysOnly: true,
       summaryPresentation: "course_card",
     },
     apiKeyEnv: "PROVIDER_API_KEY_BELA_NZ",
@@ -404,6 +406,9 @@ export function toPublicTenant(tenant: NzTenant): NzPublicTenant {
         : {}),
       ...(tenant.checkout.maxFirstPaymentDelayDays
         ? { maxFirstPaymentDelayDays: tenant.checkout.maxFirstPaymentDelayDays }
+        : {}),
+      ...(tenant.checkout.firstPaymentWeekdaysOnly
+        ? { firstPaymentWeekdaysOnly: true }
         : {}),
       ...(tenant.checkout.coursePageLinkStyle
         ? { coursePageLinkStyle: tenant.checkout.coursePageLinkStyle }

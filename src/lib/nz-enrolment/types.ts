@@ -133,6 +133,8 @@ export type NzTenantCheckoutConfig = {
   taxPresentation?: NzTaxPresentation;
   /** Opt-in calendar-day cap from Auckland today. Undefined tenants keep current date behaviour. */
   maxFirstPaymentDelayDays?: number;
+  /** Opt-in: Saturday and Sunday cannot be selected as the first payment date. */
+  firstPaymentWeekdaysOnly?: boolean;
   /** Opt-in "View the [course name] Course Page" copy. */
   coursePageLinkStyle?: "view_the_course_page";
   /** Opt-in Pay Now savings hierarchy and simplified Payment Plan card. */
@@ -311,6 +313,7 @@ export type NzPublicTenant = {
     wording?: NzTenantCheckoutConfig["wording"];
     taxPresentation?: NzTaxPresentation;
     maxFirstPaymentDelayDays?: number;
+    firstPaymentWeekdaysOnly?: boolean;
     coursePageLinkStyle?: NzTenantCheckoutConfig["coursePageLinkStyle"];
     paymentChoicePresentation?: NzTenantCheckoutConfig["paymentChoicePresentation"];
     hidePlanScheduleDetails?: boolean;

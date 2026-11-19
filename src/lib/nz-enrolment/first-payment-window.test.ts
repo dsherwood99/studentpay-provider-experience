@@ -7,6 +7,7 @@ import { addCalendarDays } from "./plan-math.ts";
 import { getNzTenantBySlug, toPublicTenant } from "./tenants.ts";
 import {
   FIRST_PAYMENT_DATE_RANGE_MESSAGE,
+  FIRST_PAYMENT_WEEKEND_MESSAGE,
   clampFirstPaymentDate,
   firstPaymentDateWindow,
   hostedFirstPaymentDateError,
@@ -25,7 +26,8 @@ describe("OLI first-payment date window", () => {
     const fixture = toPublicTenant(getNzTenantBySlug("fixture-institute")!);
     assert.equal(fixture.checkout.maxFirstPaymentDelayDays, undefined);
     const bela = toPublicTenant(getNzTenantBySlug("bela-nz")!);
-    assert.equal(bela.checkout.maxFirstPaymentDelayDays, undefined);
+    assert.equal(bela.checkout.maxFirstPaymentDelayDays, 30);
+    assert.equal(bela.checkout.firstPaymentWeekdaysOnly, true);
   });
 
   it("accepts Auckland today + 7 and rejects + 8", () => {
@@ -98,6 +100,54 @@ describe("OLI first-payment date window", () => {
         checkoutCreated: true,
       }),
       "2026-11-01",
+    );
+  });
+
+  it("keeps Bela first payments on weekdays inside 30 days", () => {
+    const today = "2026-11-20";
+    const window = firstPaymentDateWindow({
+      today,
+      maxDelayDays: 30,
+      weekdaysOnly: true,
+    });
+    assert.equal(window.min, "2026-11-20");
+    assert.equal(window.max, "2026-12-20");
+    assert.equal(isFirstPaymentDateInWindow("2026-11-20", window), true);
+    assert.equal(isFirstPaymentDateInWindow("2026-11-21", window), false);
+    assert.equal(isFirstPaymentDateInWindow("2026-11-22", window), false);
+    assert.equal(isFirstPaymentDateInWindow("2026-12-18", window), true);
+    assert.equal(isFirstPaymentDateInWindow("2026-12-19", window), false);
+    assert.equal(isFirstPaymentDateInWindow("2026-12-20", window), false);
+    assert.equal(isFirstPaymentDateInWindow("2026-12-21", window), false);
+    assert.equal(clampFirstPaymentDate("2026-11-21", window, "2026-11-27"), "2026-11-23");
+    assert.equal(clampFirstPaymentDate("2026-12-20", window, "2026-11-27"), "2026-12-18");
+    assert.equal(
+      hostedFirstPaymentDateError({
+        submittedDate: "2026-11-21",
+        maxDelayDays: 30,
+        weekdaysOnly: true,
+        today,
+      }),
+      FIRST_PAYMENT_WEEKEND_MESSAGE,
+    );
+    assert.equal(
+      hostedFirstPaymentDateError({
+        submittedDate: "2026-12-21",
+        maxDelayDays: 30,
+        weekdaysOnly: true,
+        today,
+      }),
+      FIRST_PAYMENT_DATE_RANGE_MESSAGE,
+    );
+    assert.equal(
+      resolveHostedFirstPaymentDate({
+        selectedDate: "2026-11-27",
+        storedDate: "2026-12-27",
+        defaultDate: "2026-11-27",
+        window,
+        checkoutCreated: false,
+      }),
+      "2026-11-27",
     );
   });
 
