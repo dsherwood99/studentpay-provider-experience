@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -46,7 +47,7 @@ export async function generateMetadata({
 
   return {
     title: `${course.title} | Academy Australia`,
-    description: `Academy Australia weekly plan for ${course.title}. Enrolment submission is held.`,
+    description: `Academy Australia weekly plan for ${course.title}.`,
     robots: { index: false, follow: false },
   };
 }
@@ -57,6 +58,8 @@ export default async function CourseDetailPage({
 }: CourseDetailPageProps) {
   const { providerSlug, courseSlug } = await params;
   const { payment } = await searchParams;
+  const headerStore = await headers();
+  const requestHost = headerStore.get("x-forwarded-host") || headerStore.get("host") || "";
 
   if (isProviderSlugBlockedByDeployment(providerSlug)) {
     notFound();
@@ -74,7 +77,7 @@ export default async function CourseDetailPage({
   );
 
   if (auPaymentPlanCourse) {
-    if (!isAuPaymentPlanRouteEnabled(provider.slug)) {
+    if (!isAuPaymentPlanRouteEnabled(provider.slug, requestHost)) {
       notFound();
     }
 

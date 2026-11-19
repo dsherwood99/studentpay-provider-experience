@@ -30,14 +30,15 @@ describe("Australian enrolment preview contract", () => {
     assert.doesNotMatch(preview, /fetch\s*\(/);
     assert.doesNotMatch(preview, /\/api\/studentpay/);
     const checkout = read("components/au-enrolment/AuEnrolmentCheckout.tsx");
-    const heldRoute = read("app/api/studentpay/au-enrolments/route.ts");
-    const guard = checkout.indexOf("if (!academyAuEnrolmentReady())");
-    const request = checkout.indexOf("fetch(\"/api/studentpay/au-enrolments\"");
-    assert.ok(guard >= 0 && request > guard);
-    assert.match(checkout, /disabled=\{!ready/);
+    const liveRoute = read("app/api/studentpay/au-enrolments/route.ts");
+    assert.match(checkout, /fetch\("\/api\/studentpay\/au-enrolments"/);
     assert.match(checkout, /coursePath/);
     assert.doesNotMatch(checkout, /providerSlug|student:\s*fields/);
     assert.match(checkout, /ACADEMYAU_AGREEMENT_HTML/);
+    assert.match(liveRoute, /academyEnrolmentProxyAllowed/);
+    assert.match(liveRoute, /prepareAcademyForwardBody/);
+    assert.doesNotMatch(liveRoute, /AU_ENROLMENT_API_KEY\s*=/);
+    assert.match(liveRoute, /readAcademyUpstream/);
     assert.equal(
       createHash("sha256").update(ACADEMYAU_AGREEMENT_HTML).digest("hex"),
       ACADEMYAU_AGREEMENT_HASH,
@@ -46,9 +47,9 @@ describe("Australian enrolment preview contract", () => {
       ACADEMYAU_AGREEMENT_HASH,
       "2fa546b9bd9580b2373f2756e9e863f228bb087ccd7e73d1c78791a278a31175",
     );
-    assert.doesNotMatch(checkout, /name="bsb"|accountNumber|BSB/);
-    assert.match(heldRoute, /if \(!academyAuEnrolmentReady\(\)\)/);
-    assert.doesNotMatch(heldRoute, /fetch\s*\(/);
+    assert.doesNotMatch(checkout, /name="bsb"|name="accountNumber"|name="BSB"/);
+    const bank = read("components/au-enrolment/BankSourceCapture.tsx");
+    assert.doesNotMatch(bank, /name="bsb"|name="accountNumber"/);
     assert.doesNotMatch(preview, /001Mp00000WkleDIAR/);
     assert.doesNotMatch(preview, /BELA_API_KEY/);
     assert.doesNotMatch(coursePage, /EnrolmentWizard|SimpleEnrolmentCheckout|CatalogueEnrolmentForm/);

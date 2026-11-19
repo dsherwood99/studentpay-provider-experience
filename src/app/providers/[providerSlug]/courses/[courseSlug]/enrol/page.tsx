@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { AuEnrolmentCheckout } from "@/components/au-enrolment/AuEnrolmentCheckout";
 import { CatalogueUnavailable } from "@/components/courses/CatalogueUnavailable";
@@ -21,6 +22,7 @@ type SandboxEnrolPageProps = {
   }>;
   searchParams: Promise<{
     payment?: string;
+    enrolment?: string;
   }>;
 };
 
@@ -37,7 +39,7 @@ export async function generateMetadata({
   return {
     title: `${course.title} enrolment`,
     description:
-      "Held Academy Australia enrolment. The approved weekly plan is shown and the form cannot be submitted.",
+      "Academy Australia enrolment for the approved weekly plan.",
     robots: { index: false, follow: false },
   };
 }
@@ -47,7 +49,9 @@ export default async function SandboxEnrolPage({
   searchParams,
 }: SandboxEnrolPageProps) {
   const { providerSlug, courseSlug } = await params;
-  const { payment } = await searchParams;
+  const { payment, enrolment } = await searchParams;
+  const headerStore = await headers();
+  const requestHost = headerStore.get("x-forwarded-host") || headerStore.get("host") || "";
 
   if (isAcademyProductionDemo() && providerSlug !== "academy-australia") {
     notFound();
@@ -63,7 +67,7 @@ export default async function SandboxEnrolPage({
     : undefined;
 
   if (provider && auPaymentPlanCourse) {
-    if (!isAuPaymentPlanRouteEnabled(provider.slug)) {
+    if (!isAuPaymentPlanRouteEnabled(provider.slug, requestHost)) {
       notFound();
     }
 
@@ -71,6 +75,7 @@ export default async function SandboxEnrolPage({
       <AuEnrolmentCheckout
         provider={provider}
         course={auPaymentPlanCourse}
+        enrolmentId={enrolment}
       />
     );
   }

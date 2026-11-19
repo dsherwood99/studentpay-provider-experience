@@ -2,24 +2,14 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   AU_ENROLMENT_SUBMISSIONS_ENABLED,
-  academyAuEnrolmentBlockers,
   academyAuEnrolmentReady,
 } from "./readiness.ts";
 import { isAuPaymentPlanCheckoutBlocked } from "./courses.ts";
 
 describe("Academy Australia enrolment readiness", () => {
-  it("keeps live submission closed", () => {
-    assert.equal(AU_ENROLMENT_SUBMISSIONS_ENABLED, false);
-    assert.equal(academyAuEnrolmentReady(), false);
-    assert.deepEqual(
-      academyAuEnrolmentBlockers.map((blocker) => blocker.code),
-      [
-        "agreement_not_activated",
-        "provider_config_not_linked",
-        "provider_not_allowlisted",
-        "submission_not_approved",
-      ],
-    );
+  it("opens the Academy enrolment form and keeps the catalogue checkout closed", () => {
+    assert.equal(AU_ENROLMENT_SUBMISSIONS_ENABLED, true);
+    assert.equal(academyAuEnrolmentReady(), true);
     assert.equal(
       isAuPaymentPlanCheckoutBlocked(
         "academy-australia",
@@ -29,11 +19,11 @@ describe("Academy Australia enrolment readiness", () => {
     );
   });
 
-  it("does not let an environment flag open submission", () => {
+  it("does not let an environment flag move the catalogue checkout", () => {
     const previous = process.env.AU_ENROLMENT_SUBMISSIONS_ENABLED;
-    process.env.AU_ENROLMENT_SUBMISSIONS_ENABLED = "true";
+    process.env.AU_ENROLMENT_SUBMISSIONS_ENABLED = "false";
     try {
-      assert.equal(academyAuEnrolmentReady(), false);
+      assert.equal(academyAuEnrolmentReady(), true);
       assert.equal(
         isAuPaymentPlanCheckoutBlocked(
           "academy-australia",

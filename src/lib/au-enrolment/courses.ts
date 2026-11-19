@@ -1,6 +1,6 @@
 import { getHostedProductMode } from "../nz-enrolment/environment.ts";
 import { isProviderSlugBlockedByDeployment } from "../provider-experience/provider-bindings.ts";
-import { academyAuEnrolmentReady } from "./readiness.ts";
+import { requestHost } from "./forward.ts";
 import {
   calculateAuWeeklySchedule,
   type AuWeeklySchedule,
@@ -43,7 +43,7 @@ type AuPaymentPlanInput = {
  * The owner approved the same weekly terms already calculated for the Bela
  * course: AUD $3,500, AUD $4 upfront within 24 hours, and 152 payments of
  * AUD $23. This row uses Academy's own course code and checkout prefix.
- * The public enrolment route stays held in readiness.ts.
+ * The public enrolment route uses the Australian enrolment service.
  */
 const AU_PAYMENT_PLAN_INPUTS: readonly AuPaymentPlanInput[] = [
   {
@@ -108,30 +108,36 @@ export function getAuPaymentPlanCourseForProvider(
   return getAuPaymentPlanCourse(courseSlug);
 }
 
+/**
+ * The catalogue checkout stays closed. Academy enrolments use the Australian
+ * enrolment service, not the provider-checkout route.
+ */
 export function isAuPaymentPlanCheckoutBlocked(
   providerSlug: string,
   courseSlug: string,
 ): boolean {
-  return (
-    getAuPaymentPlanCourseForProvider(providerSlug, courseSlug) !== undefined &&
-    academyAuEnrolmentReady() === false
-  );
+  return getAuPaymentPlanCourseForProvider(providerSlug, courseSlug) !== undefined;
 }
 
 /**
- * The demonstration is for Academy Australia and the generic provider demo.
- * NZ enrolment hosts and the Bela production host do not render it.
+ * The enrolment pages render on the Academy production host and on a
+ * deployment bound to ACADEMYAU. Other hosts do not render them.
  */
-export function isAuPaymentPlanRouteEnabled(providerSlug: string): boolean {
+export function isAuPaymentPlanRouteEnabled(
+  providerSlug: string,
+  hostHeader = "",
+): boolean {
   if (providerSlug !== ACADEMY_AUSTRALIA_PROVIDER_SLUG) {
     return false;
   }
   if (isProviderSlugBlockedByDeployment(providerSlug)) {
     return false;
   }
-
-  const mode = getHostedProductMode();
-  return mode === "academy" || mode === "generic";
+  const host = requestHost(hostHeader);
+  if (host === "www.academyaustralia.com" || host === "academyaustralia.com") {
+    return true;
+  }
+  return getHostedProductMode() === "academy";
 }
 
 export function auPaymentPlanCoursePath(courseSlug: string): string {

@@ -37,8 +37,8 @@ export function AuPaymentPlanDirectory({
 
             <p>
               Bridal Freelancer Bundle is an Academy Australia course. The
-              weekly terms are approved. Enrolment stays held until the Academy
-              agreement and the remaining production gates are approved.
+              weekly terms are approved. Enrolment uses the Academy Australia
+              checkout.
             </p>
           </div>
 
